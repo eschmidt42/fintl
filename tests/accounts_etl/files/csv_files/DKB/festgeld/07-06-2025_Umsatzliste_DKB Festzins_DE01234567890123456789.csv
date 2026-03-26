@@ -1,0 +1,9 @@
+﻿"DKB Festzins";"DE01234567890123456789"
+
+"Kontostand vom 07.06.2025:";"1.234,45 €"
+""
+"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"
+"03.06.25";"03.06.25";"Gebucht";"DKB AG";"DKB AG";"wup";"Ausgang";"12345";"-1,23";"";"";""
+"03.06.25";"03.06.25";"Gebucht";"DKB AG";"DKB AG";"wuppety";"Ausgang";"12345";"-12,34";"";"";""
+"03.06.25";"03.06.25";"Gebucht";"DKB AG";"DKB AG";"Zinsen vom ...";"Eingang";"1234567";"42";"";"";""
+"03.03.25";"03.03.25";"Gebucht";"You Know Who";"You Know Who";"DKB-Anlage 123";"Eingang";"DE01234567890123456789";"111.111";"";"";""

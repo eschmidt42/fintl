@@ -1,0 +1,7 @@
+﻿
+""
+"Kontostand vom 09.12.2023:";"1123,45 EUR"
+""
+"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"
+"11.12.23";"";"Vorgemerkt";"ISSUER";"AMZN";"2023-12-09T01:23 VISA";"Ausgang";"DExxxxxxxxxxxxx";"12,34";"";"";"1234567"
+"22.12.23";"";"Vorgemerkt";"ISSUER";"YOURFAVSUPERMARKET";"2023-12-12T34:56 VISA";"Ausgang";"DExxxxxxxxxxxxx";"-11,77";"";"";"1234567"

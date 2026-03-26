@@ -1,0 +1,41 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.coverage
+htmlcov
+
+# other generated files
+.ruff_cache
+.pytest_cache
+
+# Virtual environments
+.venv
+.vscode
+.envrc
+
+# configs
+.config/
+config.toml
+apps/receipt_parser_cli/secrets/
+apps/receipt_web_app/.secret/
+.sesskey
+apps/receipt_parser_cli/app.toml
+apps/receipt-data-editing-app/app.toml
+apps/receipt_web_app/data/
+
+# logs
+*.jsonl*
+
+# extractions
+dev/receipt-benchmark/extraction-artefacts
+
+# other
+.aider*
+.github/copilot-instructions.md
+mlflow.db
+coverage.xml
+apps/receipt_web_app/container/dev/data

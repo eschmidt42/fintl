@@ -1,0 +1,11 @@
+﻿Umsätze
+Konto;Filial-/Kontonummer;IBAN;Währung
+Postbank Giro plus;123 456 00;DE123456;EUR
+
+30.9.2023 - 28.10.2023
+Letzter Kontostand;;;;123,45;EUR
+Vorgemerkte und noch nicht gebuchte Umsätze sind nicht Bestandteil dieser Übersicht.
+Buchungstag;Wert;Umsatzart;Begünstigter / Auftraggeber;Verwendungszweck;IBAN / Kontonummer;BIC;Kundenreferenz;Mandatsreferenz;Gläubiger ID;Fremde Gebühren;Betrag;Abweichender Empfänger;Anzahl der Aufträge;Anzahl der Schecks;Soll;Haben;Währung
+26.10.2023;26.10.2023;SEPA Lastschrift;bla;bla;DE123456;;bla;bla;DE12345;;-12,34;bla;;;-12,34;;EUR
+16.10.2023;16.10.2023;SEPA Lastschrift;bla;blaaa;DE123456;;blaaaa;text;teeeext;;-12;company;;;-12;;EUR
+Kontostand;28.10.2023;;;123,45;EUR

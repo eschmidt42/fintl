@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+      "rich": {
+        "format": "%(message)s",
+        "datefmt": "%Y-%m-%dT%H:%M:%S%z"
+      }
+    },
+    "filters": {
+      "third_party": {
+        "()": "fintl.fine_logging.DependencyFilter",
+        "param": 20
+      }
+    },
+    "handlers": {
+      "stdout": {
+        "class": "rich.logging.RichHandler",
+        "formatter": "rich",
+        "level": "DEBUG",
+        "filters": ["third_party"]
+      }
+    },
+    "loggers": {
+      "root": {
+        "level": "DEBUG",
+        "handlers": [
+          "stdout"
+        ]
+      }
+    }
+  }

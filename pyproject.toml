@@ -1,0 +1,42 @@
+[project]
+name = "fintl"
+version = "0.1.0"
+description = "Financial ETL CLI: parse, normalize, and explore your bank transaction data."
+readme = "README.md"
+authors = [
+    { name = "eschmidt42", email = "11818904+eschmidt42@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "chardet>=7.3.0",
+    "instructor>=1.14.5",
+    "polars>=1.39.3",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
+    "python-dateutil>=2.9.0.post0",
+    "rich>=14.3.3",
+    "textual>=8.1.1",
+    "xlsxwriter>=3.2.9",
+]
+
+[project.scripts]
+fintl = "fintl.cli.main:app"
+
+[build-system]
+requires = ["uv_build>=0.6.6,<0.11"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "inline-snapshot>=0.32.5",
+    "notebook>=7.5.5",
+    "pre-commit>=4.5.1",
+    "pytest>=9.0.2",
+    "pytest-xdist>=3.8.0",
+    "ruff>=0.15.7",
+    "ty>=0.0.25",
+]
+
+[tool.inline-snapshot]
+format-command="ruff check --fix-only --stdin-filename {filename} | ruff format --stdin-filename {filename}"

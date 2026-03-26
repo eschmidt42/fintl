@@ -1,0 +1,9 @@
+"Kontonummer:";"DE12345 / Girokonto";
+
+"Von:";"15.09.2022";
+"Bis:";"15.10.2022";
+"Kontostand vom 15.10.2022:";"1.234,56 EUR";
+
+"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Beg�nstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gl�ubiger-ID";"Mandatsreferenz";"Kundenreferenz";
+"14.10.2022";"14.10.2022";"bla";"bla";"wup 202210";"DE123456";"B001";"12.345,67";"";"";"NOTPROVIDED";
+"14.10.2022";"14.10.2022";"Bargeldabhebung";"wubba";"VISA";"DE123456";"BY001";"-111,11";"";"";"1234567";

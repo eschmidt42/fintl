@@ -1,0 +1,45 @@
+
+.filter-row {
+    height: 3;
+    margin: 0 0 1 0;
+}
+
+.filter-label {
+    width: 12;
+    text-align: right;
+    margin: 0 1 0 0;
+}
+
+.filter-input {
+    /* width: 1fr; */
+    width: 42;
+}
+
+#stats {
+    height: 1;
+    background: $panel;
+    color: $text-muted;
+    padding: 0 1;
+    text-align: right;
+}
+
+
+#detail-dialog {
+    width: 80%;
+    height: 80%;
+    background: $surface;
+    border: thick $primary;
+    padding: 1 2;
+}
+
+#detail-hint {
+    height: 1;
+    margin-top: 1;
+    color: $text-muted;
+    text-align: center;
+}
+
+#filter-container {
+    max-height: 22;
+    padding: 1;
+}

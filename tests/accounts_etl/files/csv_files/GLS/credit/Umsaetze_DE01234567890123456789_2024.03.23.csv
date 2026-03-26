@@ -1,0 +1,2 @@
+Bezeichnung Auftragskonto;IBAN Auftragskonto;BIC Auftragskonto;Bankname Auftragskonto;Buchungstag;Valutadatum;Name Zahlungsbeteiligter;IBAN Zahlungsbeteiligter;BIC (SWIFT-Code) Zahlungsbeteiligter;Buchungstext;Verwendungszweck;Betrag;Waehrung;Saldo nach Buchung;Bemerkung;Kategorie;Steuerrelevant;Glaeubiger ID;Mandatsreferenz
+Kreditkartenkonto;DE01234567890123456789;GENODEM1GLS;GLS Gemeinschaftsbank eG;19.03.2024;18.03.2024;;;;Basislastschrift;Jahresbeitrag              Umsatz vom 18.03.2024      MC Hauptkarte;-21,00;EUR;-21,00;;Sonstiges;;;
