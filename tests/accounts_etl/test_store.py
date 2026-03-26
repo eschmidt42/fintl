@@ -5,6 +5,7 @@ no real parser execution or network access is required.
 """
 
 from pathlib import Path
+from typing import Callable
 from unittest.mock import MagicMock
 
 from fintl.accounts_etl.schemas import (
@@ -21,6 +22,8 @@ from fintl.accounts_etl.store import (
     match_file_to_parsers,
     store_files,
 )
+
+_NO_CHOOSE: Callable[[Path, list[ParserSpec]], ParserSpec | None] = lambda _f, _s: None
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -180,6 +183,7 @@ def test_store_files_copies_confirmed(tmp_path: Path):
         config,
         [spec],
         confirm=lambda _: True,
+        choose=_NO_CHOOSE,
     )
 
     raw_dir = config.get_raw_dir(spec.case)
@@ -202,6 +206,7 @@ def test_store_files_skips_on_rejection(tmp_path: Path):
         config,
         [spec],
         confirm=lambda _: False,
+        choose=_NO_CHOOSE,
     )
 
     raw_dir = config.get_raw_dir(spec.case)
@@ -222,6 +227,7 @@ def test_store_files_counts_unmatched(tmp_path: Path):
         config,
         [spec],
         confirm=lambda _: True,
+        choose=_NO_CHOOSE,
     )
 
     assert counts["unmatched"] == 1
@@ -233,6 +239,101 @@ def test_store_files_no_candidates(tmp_path: Path):
     source_dir.mkdir()
     config = _config(tmp_path)
 
-    counts = store_files(source_dir, config, [], confirm=lambda _: True)
+    counts = store_files(
+        source_dir, config, [], confirm=lambda _: True, choose=_NO_CHOOSE
+    )
 
-    assert counts == {"matched": 0, "copied": 0, "skipped": 0, "unmatched": 0}
+    assert counts == {
+        "matched": 0,
+        "copied": 0,
+        "skipped": 0,
+        "unmatched": 0,
+        "ambiguous": 0,
+    }
+
+
+# ── store_files – ambiguous (multi-match) path ────────────────────────────────
+
+
+def test_store_files_ambiguous_counts_and_skips_when_choose_returns_none(
+    tmp_path: Path,
+):
+    """A file matching multiple parsers is counted as ambiguous, not matched.
+    When choose returns None the file is not copied."""
+    (tmp_path / "downloads").mkdir()
+    src_file = tmp_path / "downloads" / "export.csv"
+    src_file.write_text("data")
+
+    config = _config(tmp_path)
+    spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
+    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+
+    choose_calls: list[tuple[Path, list[ParserSpec]]] = []
+
+    def choose(file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
+        choose_calls.append((file, specs))
+        return None
+
+    counts = store_files(
+        tmp_path / "downloads",
+        config,
+        [spec_a, spec_b],
+        confirm=lambda _: True,
+        choose=choose,
+    )
+
+    assert counts["ambiguous"] == 1
+    assert counts["matched"] == 0
+    assert counts["copied"] == 0
+    assert counts["skipped"] == 0
+    assert len(choose_calls) == 1
+    assert choose_calls[0][1] == [spec_a, spec_b]
+    assert not (config.get_raw_dir(spec_a.case) / "export.csv").exists()
+    assert not (config.get_raw_dir(spec_b.case) / "export.csv").exists()
+
+
+def test_store_files_ambiguous_choose_copies_selected_spec_only(tmp_path: Path):
+    """When choose returns one spec, the file is copied only to that parser's raw dir."""
+    (tmp_path / "downloads").mkdir()
+    src_file = tmp_path / "downloads" / "export.csv"
+    src_file.write_text("data")
+
+    config = _config(tmp_path)
+    spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
+    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+
+    counts = store_files(
+        tmp_path / "downloads",
+        config,
+        [spec_a, spec_b],
+        confirm=lambda _: True,
+        choose=lambda _f, specs: specs[1],  # always pick second
+    )
+
+    assert counts["ambiguous"] == 1
+    assert counts["copied"] == 1
+    assert counts["matched"] == 0
+    assert (config.get_raw_dir(spec_b.case) / "export.csv").exists()
+    assert not (config.get_raw_dir(spec_a.case) / "export.csv").exists()
+
+
+def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
+    """confirm must never be invoked for a multi-match file; only choose is called."""
+    (tmp_path / "downloads").mkdir()
+    (tmp_path / "downloads" / "export.csv").write_text("data")
+
+    config = _config(tmp_path)
+    spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
+    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+
+    confirm_calls: list[str] = []
+
+    store_files(
+        tmp_path / "downloads",
+        config,
+        [spec_a, spec_b],
+        confirm=lambda p: confirm_calls.append(p) or True,  # type: ignore[func-returns-value]
+        choose=_NO_CHOOSE,
+    )
+
+    assert confirm_calls == [], "confirm should not be called for ambiguous files"

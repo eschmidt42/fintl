@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.text import Text
 
 from fintl.accounts_etl.registry import ALL_PARSERS
-from fintl.accounts_etl.schemas import Config
+from fintl.accounts_etl.schemas import Config, ParserSpec
 from fintl.accounts_etl.store import store_files
 from fintl.fine_logging import setup_logging
 
@@ -57,7 +57,43 @@ def run(
         console.print(Text(prompt, style="cyan"))
         return typer.confirm("  Copy this file?", default=False)
 
-    counts = store_files(source_dir, config, ALL_PARSERS, confirm=confirm)
+    def choose(file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
+        if yes:
+            console.print(
+                Text(
+                    f"⚠ {file.name}  matched {len(specs)} parsers — ambiguous, skipping.",
+                    style="yellow",
+                )
+            )
+            return None
+        console.print()
+        console.print(
+            Text(
+                f"⚠ {file.name} matched multiple parsers — select one:", style="yellow"
+            )
+        )
+        for i, spec in enumerate(specs, 1):
+            raw_dir = config.get_raw_dir(spec.case)
+            console.print(
+                f"  [{i}] {spec.case.provider} / {spec.case.service} / {spec.case.parser}"
+                f"  →  {raw_dir}"
+            )
+        console.print("  [0] Skip this file")
+        while True:
+            raw = typer.prompt(f"Select parser (0–{len(specs)})", default="0")
+            try:
+                idx = int(raw)
+            except ValueError:
+                idx = -1
+            if idx == 0:
+                return None
+            if 1 <= idx <= len(specs):
+                return specs[idx - 1]
+            console.print(f"  Please enter a number between 0 and {len(specs)}.")
+
+    counts = store_files(
+        source_dir, config, ALL_PARSERS, confirm=confirm, choose=choose
+    )
 
     console.print()
     console.print(
@@ -65,13 +101,19 @@ def run(
         f"Files matched: {counts['matched']} | "
         f"Copied: {counts['copied']} | "
         f"Skipped: {counts['skipped']} | "
-        f"Unmatched: {counts['unmatched']}"
+        f"Unmatched: {counts['unmatched']} | "
+        f"Ambiguous: {counts['ambiguous']}"
     )
 
     if counts["unmatched"] > 0:
         console.print(
             "[yellow]Some files were not recognised by any parser. "
             "Check the filenames or add new parser definitions.[/yellow]"
+        )
+    if counts["ambiguous"] > 0:
+        console.print(
+            "[yellow]Some files matched multiple parsers and were skipped. "
+            "Review your parser applicability predicates.[/yellow]"
         )
 
 
