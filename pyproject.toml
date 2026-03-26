@@ -3,6 +3,18 @@ name = "fintl"
 version = "0.1.0"
 description = "Financial ETL CLI: parse, normalize, and explore your bank transaction data."
 readme = "README.md"
+license = { text = "MIT" }
+keywords = ["finance", "etl", "banking", "transactions", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+]
 authors = [
     { name = "eschmidt42", email = "11818904+eschmidt42@users.noreply.github.com" }
 ]
@@ -20,6 +32,11 @@ dependencies = [
     "xlsxwriter>=3.2.9",
 ]
 
+[project.urls]
+Homepage = "https://github.com/eschmidt42/fintl"
+Repository = "https://github.com/eschmidt42/fintl"
+Issues = "https://github.com/eschmidt42/fintl/issues"
+
 [project.scripts]
 fintl = "fintl.cli.main:app"
 
@@ -33,9 +50,11 @@ dev = [
     "notebook>=7.5.5",
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",
+    "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
     "ruff>=0.15.7",
     "ty>=0.0.25",
+    "vulture>=2.16",
 ]
 
 [tool.inline-snapshot]
