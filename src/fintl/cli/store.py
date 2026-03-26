@@ -20,7 +20,7 @@ app = typer.Typer(
 
 @app.command()
 def run(
-    from_dir: Path = typer.Option(
+    from_dir: Path | None = typer.Option(
         None,
         "--from-dir",
         "-d",
