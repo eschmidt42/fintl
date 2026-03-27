@@ -180,37 +180,22 @@ def test_get_lm_extraction_calls_client_create(tmp_path: Path):
     mock_client.create.assert_called_once()
 
 
-def test_get_ollama_client_returns_none_on_failure():
-    """_get_ollama_client returns None (and logs a warning) when the provider raises."""
+def test_check_ollama_availability_raises_on_connection_failure():
+    """_check_ollama_availability raises OllamaUnavailableError when the server is unreachable."""
     from unittest.mock import patch
 
-    from fintl.accounts_etl.scalable import broker20260309 as broker
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import (
+        OllamaUnavailableError,
+        _check_ollama_availability,
+    )
 
     with patch.object(
-        broker.instructor,
-        "from_provider",
-        side_effect=RuntimeError("connection refused"),
+        httpx, "get", side_effect=httpx.ConnectError("connection refused")
     ):
-        result = broker._get_ollama_client(model="some-model")
-
-    assert result is None
-
-
-def test_extract_balance_raises_when_client_is_none(tmp_path: Path):
-    """extract_balance raises RuntimeError when _get_ollama_client returns None."""
-    from unittest.mock import patch
-
-    from fintl.accounts_etl.scalable import broker20260309 as broker
-    from fintl.accounts_etl.schemas import OllamaConfig
-
-    dummy_file = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
-    dummy_file.write_bytes(b"\x89PNG")
-
-    with patch.object(broker, "_get_ollama_client", return_value=None):
-        with pytest.raises(RuntimeError, match="Could not create ollama client"):
-            broker.extract_balance(
-                broker.CASE, dummy_file, ollama_config=OllamaConfig(model="m")
-            )
+        with pytest.raises(OllamaUnavailableError, match="not reachable"):
+            _check_ollama_availability("http://localhost:11434/v1")
 
 
 def test_parse_new_files_skips_when_ollama_not_configured(
@@ -235,33 +220,144 @@ def test_parse_new_files_skips_when_ollama_not_configured(
     assert not (tmp_path / "parsed").exists()
 
 
-def test_parse_new_files_skips_file_on_runtime_error(
+def test_check_ollama_availability_strips_v1_suffix():
+    """_check_ollama_availability GET-s the root URL (without /v1)."""
+    from unittest.mock import MagicMock, patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import _check_ollama_availability
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    with patch.object(httpx, "get", return_value=mock_response) as mock_get:
+        _check_ollama_availability("http://localhost:11434/v1")
+
+    mock_get.assert_called_once_with("http://localhost:11434", timeout=5.0)
+
+
+def test_get_ollama_client_raises_on_unavailable_server():
+    """_get_ollama_client raises OllamaUnavailableError when ollama is not reachable."""
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.scalable.broker20260309 import (
+        OllamaUnavailableError,
+        _get_ollama_client,
+    )
+
+    with patch(
+        "fintl.accounts_etl.scalable.broker20260309._check_ollama_availability",
+        side_effect=OllamaUnavailableError("not reachable"),
+    ):
+        with pytest.raises(OllamaUnavailableError):
+            _get_ollama_client(model="some-model")
+
+
+def test_get_ollama_client_propagates_provider_error():
+    """_get_ollama_client lets exceptions from instructor.from_provider bubble up."""
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.scalable import broker20260309 as broker
+
+    with (
+        patch("fintl.accounts_etl.scalable.broker20260309._check_ollama_availability"),
+        patch.object(
+            broker.instructor,
+            "from_provider",
+            side_effect=ValueError("bad model"),
+        ),
+    ):
+        with pytest.raises(ValueError, match="bad model"):
+            broker._get_ollama_client(model="bad-model")
+
+
+def test_check_ollama_availability_uses_base_url_as_is_without_v1_suffix():
+    """_check_ollama_availability uses base_url unchanged when it has no /v1 suffix."""
+    from unittest.mock import MagicMock, patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import _check_ollama_availability
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    with patch.object(httpx, "get", return_value=mock_response) as mock_get:
+        _check_ollama_availability("http://localhost:11434")
+
+    mock_get.assert_called_once_with("http://localhost:11434", timeout=5.0)
+
+
+def test_parse_new_files_aborts_on_ollama_unavailable(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ):
-    """parse_new_files continues processing remaining files when one raises RuntimeError."""
+    """parse_new_files stops processing all files when OllamaUnavailableError is raised."""
     import logging
     from unittest.mock import patch
 
     from fintl.accounts_etl.scalable import broker20260309 as broker
     from fintl.accounts_etl.schemas import OllamaConfig
 
-    dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
-    dummy.write_bytes(b"\x89PNG")
+    files = [
+        tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",
+        tmp_path / "Screenshot 2026-03-10 at 14.30.53.png",
+    ]
+    for f in files:
+        f.write_bytes(b"\x89PNG")
     parsed_dir = tmp_path / "parsed"
 
-    with patch.object(
-        broker, "parse_image_file", side_effect=RuntimeError("ollama unavailable")
-    ):
+    call_count = 0
+
+    def _raise_unavailable(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        raise broker.OllamaUnavailableError("server down")
+
+    with patch.object(broker, "parse_image_file", side_effect=_raise_unavailable):
         with caplog.at_level(
             logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
         ):
             broker.parse_new_files(
-                broker.CASE,
-                [dummy],
-                parsed_dir,
-                ollama_config=OllamaConfig(model="m"),
+                broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
             )
 
-    assert "ollama unavailable" in caplog.text
-    # parsed_dir should not contain any output files since the file was skipped
-    assert not any(parsed_dir.iterdir()) if parsed_dir.exists() else True
+    assert "Ollama is not available" in caplog.text
+    # Should have aborted after first file — second file never attempted
+    assert call_count == 1
+
+
+def test_parse_new_files_continues_on_generic_error(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """parse_new_files skips a file on generic Exception and continues with remaining files."""
+    import logging
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.schemas import OllamaConfig
+
+    files = [
+        tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",
+        tmp_path / "Screenshot 2026-03-10 at 14.30.53.png",
+    ]
+    for f in files:
+        f.write_bytes(b"\x89PNG")
+    parsed_dir = tmp_path / "parsed"
+
+    call_count = 0
+
+    def _raise_generic(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        raise ValueError("parse failed")
+
+    with patch.object(broker, "parse_image_file", side_effect=_raise_generic):
+        with caplog.at_level(
+            logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
+        ):
+            broker.parse_new_files(
+                broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
+            )
+
+    assert "parse failed" in caplog.text
+    # Both files attempted (error is per-file, not fatal)
+    assert call_count == 2

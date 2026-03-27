@@ -3,6 +3,7 @@ import logging
 import re
 from pathlib import Path
 
+import httpx
 import instructor
 import polars as pl
 from instructor.processing.multimodal import Image
@@ -37,6 +38,10 @@ CASE = Case(
 )
 
 
+class OllamaUnavailableError(Exception):
+    """Raised when the ollama server cannot be reached."""
+
+
 def check_if_parser_applies(file_path: Path) -> bool:
     "Example: Screenshot 2026-03-02 at 14.30.53.png"
     pattern_result = re.search(
@@ -63,23 +68,36 @@ def get_date_from_string(name: str) -> datetime.date:
         raise ValueError(f"Could not extract date from {name=}")
 
 
+def _check_ollama_availability(base_url: str) -> None:
+    """Check that the ollama server is reachable.
+
+    Strips the ``/v1`` suffix (if present) to reach the ollama root endpoint
+    and performs a GET with a short timeout.
+
+    Raises:
+        OllamaUnavailableError: when the server cannot be reached.
+    """
+    root_url = base_url.rstrip("/")
+    if root_url.endswith("/v1"):
+        root_url = root_url[:-3]
+    try:
+        httpx.get(root_url, timeout=5.0).raise_for_status()
+    except Exception as exc:
+        raise OllamaUnavailableError(
+            f"Ollama is not reachable at {base_url}: {exc}"
+        ) from exc
+
+
 def _get_ollama_client(
     *, model: str, ollama_base_url: str = "http://localhost:11434/v1"
-) -> instructor.Instructor | None:
-    try:
-        return instructor.from_provider(
-            f"ollama/{model}",
-            base_url=ollama_base_url,
-            mode=instructor.Mode.JSON,
-            async_client=False,
-        )
-    except Exception:
-        logger.warning(
-            f"Failed to connect to ollama at {ollama_base_url} with {model=}. "
-            "Skipping PNG parsing.",
-            exc_info=True,
-        )
-        return None
+) -> instructor.Instructor:
+    _check_ollama_availability(ollama_base_url)
+    return instructor.from_provider(
+        f"ollama/{model}",
+        base_url=ollama_base_url,
+        mode=instructor.Mode.JSON,
+        async_client=False,
+    )
 
 
 _SYSTEM_PROMPT = (
@@ -111,8 +129,6 @@ def extract_balance(
     extraction_client = _get_ollama_client(
         model=ollama_config.model, ollama_base_url=ollama_config.base_url
     )
-    if extraction_client is None:
-        raise RuntimeError(f"Could not create ollama client for {file_path}. Skipping.")
 
     extraction = _get_lm_extraction(file_path, extraction_client)
 
@@ -169,8 +185,11 @@ def parse_new_files(
             transactions, balance = parse_image_file(
                 case, file_path, ollama_config=ollama_config
             )
-        except RuntimeError as exc:
-            logger.warning(str(exc))
+        except OllamaUnavailableError as exc:
+            logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
+            return
+        except Exception as exc:
+            logger.warning("Failed to parse %s: %s", file_path.name, exc)
             continue
 
         store_transactions(parsed_dir, file_path, transactions)
