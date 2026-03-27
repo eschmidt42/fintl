@@ -27,6 +27,8 @@ def mock_lm_extraction():
     mock_result = broker._BalanceInfoExtract(amount=MOCK_AMOUNT, currency=MOCK_CURRENCY)
     mock_client = object()  # dummy; _get_lm_extraction is also patched
     with (
+        patch.object(broker, "_check_ollama_availability"),
+        patch.object(broker, "_check_model_available"),
         patch.object(broker, "_get_ollama_client", return_value=mock_client),
         patch.object(broker, "_get_lm_extraction", return_value=mock_result),
     ):
@@ -242,13 +244,10 @@ def test_get_ollama_client_propagates_provider_error():
 
     from fintl.accounts_etl.scalable import broker20260309 as broker
 
-    with (
-        patch("fintl.accounts_etl.scalable.broker20260309._check_ollama_availability"),
-        patch.object(
-            broker.instructor,
-            "from_provider",
-            side_effect=ValueError("bad model"),
-        ),
+    with patch.object(
+        broker.instructor,
+        "from_provider",
+        side_effect=ValueError("bad model"),
     ):
         with pytest.raises(ValueError, match="bad model"):
             broker._get_ollama_client(model="bad-model")
@@ -268,6 +267,42 @@ def test_check_ollama_availability_uses_base_url_as_is_without_v1_suffix():
         _check_ollama_availability("http://localhost:11434")
 
     mock_get.assert_called_once_with("http://localhost:11434", timeout=5.0)
+
+
+def test_check_model_available_raises_when_bare_name_also_missing():
+    """_check_model_available raises when model has no tag and no bare-name match."""
+    from unittest.mock import MagicMock, patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import (
+        OllamaModelUnavailableError,
+        _check_model_available,
+    )
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {"models": [{"name": "llama3.2:latest"}]}
+    with patch.object(httpx, "get", return_value=mock_response):
+        with pytest.raises(OllamaModelUnavailableError, match="qwen3.5"):
+            _check_model_available("http://localhost:11434/v1", "qwen3.5")
+
+
+def test_check_model_available_uses_base_url_as_is_without_v1_suffix():
+    """_check_model_available calls /api/tags on the URL when /v1 is absent."""
+    from unittest.mock import MagicMock, patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import _check_model_available
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {"models": [{"name": "qwen3.5:27b"}]}
+    with patch.object(httpx, "get", return_value=mock_response) as mock_get:
+        _check_model_available("http://localhost:11434", "qwen3.5:27b")
+
+    mock_get.assert_called_once_with("http://localhost:11434/api/tags", timeout=5.0)
 
 
 def test_parse_new_files_aborts_on_ollama_unavailable(
@@ -304,6 +339,108 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     assert not parsed_dir.exists()
 
 
+def test_parse_new_files_aborts_on_model_unavailable(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """parse_new_files stops before the loop when _check_model_available raises."""
+    import logging
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.schemas import OllamaConfig
+
+    dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy.write_bytes(b"\x89PNG")
+    parsed_dir = tmp_path / "parsed"
+
+    with (
+        patch.object(broker, "_check_ollama_availability"),
+        patch.object(
+            broker,
+            "_check_model_available",
+            side_effect=broker.OllamaModelUnavailableError("model not found"),
+        ),
+    ):
+        with caplog.at_level(
+            logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
+        ):
+            broker.parse_new_files(
+                broker.CASE, [dummy], parsed_dir, ollama_config=OllamaConfig(model="m")
+            )
+
+    assert "Ollama model (m) not available" in caplog.text
+    assert not parsed_dir.exists()
+
+
+def test_check_model_available_passes_when_model_present():
+    """_check_model_available does not raise when the model is in the tags response."""
+    from unittest.mock import MagicMock, patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import _check_model_available
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "models": [{"name": "qwen3.5:27b"}, {"name": "llama3.2:latest"}]
+    }
+    with patch.object(httpx, "get", return_value=mock_response):
+        _check_model_available("http://localhost:11434/v1", "qwen3.5:27b")  # no raise
+
+
+def test_check_model_available_passes_on_bare_name_match():
+    """_check_model_available accepts a bare model name that matches before the colon."""
+    from unittest.mock import MagicMock, patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import _check_model_available
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {"models": [{"name": "qwen3.5:27b"}]}
+    with patch.object(httpx, "get", return_value=mock_response):
+        _check_model_available("http://localhost:11434/v1", "qwen3.5")  # no raise
+
+
+def test_check_model_available_raises_when_model_missing():
+    """_check_model_available raises OllamaModelUnavailableError for an absent model."""
+    from unittest.mock import MagicMock, patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import (
+        OllamaModelUnavailableError,
+        _check_model_available,
+    )
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {"models": [{"name": "llama3.2:latest"}]}
+    with patch.object(httpx, "get", return_value=mock_response):
+        with pytest.raises(OllamaModelUnavailableError, match="qwen3.5:27b"):
+            _check_model_available("http://localhost:11434/v1", "qwen3.5:27b")
+
+
+def test_check_model_available_raises_on_http_error():
+    """_check_model_available raises OllamaModelUnavailableError when the tags call fails."""
+    from unittest.mock import patch
+
+    import httpx
+
+    from fintl.accounts_etl.scalable.broker20260309 import (
+        OllamaModelUnavailableError,
+        _check_model_available,
+    )
+
+    with patch.object(
+        httpx, "get", side_effect=httpx.ConnectError("connection refused")
+    ):
+        with pytest.raises(OllamaModelUnavailableError, match="Could not retrieve"):
+            _check_model_available("http://localhost:11434/v1", "qwen3.5:27b")
+
+
 def test_parse_new_files_continues_on_generic_error(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ):
@@ -329,7 +466,11 @@ def test_parse_new_files_continues_on_generic_error(
         call_count += 1
         raise ValueError("parse failed")
 
-    with patch.object(broker, "parse_image_file", side_effect=_raise_generic):
+    with (
+        patch.object(broker, "_check_ollama_availability"),
+        patch.object(broker, "_check_model_available"),
+        patch.object(broker, "parse_image_file", side_effect=_raise_generic),
+    ):
         with caplog.at_level(
             logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
         ):

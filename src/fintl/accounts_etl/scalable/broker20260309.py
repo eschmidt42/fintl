@@ -42,6 +42,10 @@ class OllamaUnavailableError(Exception):
     """Raised when the ollama server cannot be reached."""
 
 
+class OllamaModelUnavailableError(Exception):
+    """Raised when the requested model is not present in the ollama instance."""
+
+
 def check_if_parser_applies(file_path: Path) -> bool:
     "Example: Screenshot 2026-03-02 at 14.30.53.png"
     pattern_result = re.search(
@@ -86,6 +90,43 @@ def _check_ollama_availability(base_url: str) -> None:
         raise OllamaUnavailableError(
             f"Ollama is not reachable at {base_url}: {exc}"
         ) from exc
+
+
+def _check_model_available(base_url: str, model: str) -> None:
+    """Check that *model* has been pulled into the local ollama instance.
+
+    Calls ``GET {root}/api/tags`` and inspects the returned model list.
+    Model names returned by ollama may include a tag suffix (e.g. ``":latest"``);
+    if *model* contains no ``:``, a bare-name match against the part before
+    ``:`` is also accepted.
+
+    Raises:
+        OllamaModelUnavailableError: when the model is not found.
+    """
+    root_url = base_url.rstrip("/")
+    if root_url.endswith("/v1"):
+        root_url = root_url[:-3]
+    try:
+        response = httpx.get(f"{root_url}/api/tags", timeout=5.0)
+        response.raise_for_status()
+        available = [m["name"] for m in response.json().get("models", [])]
+    except Exception as exc:
+        raise OllamaModelUnavailableError(
+            f"Could not retrieve model list from ollama at {base_url}: {exc}"
+        ) from exc
+
+    # exact match first; then fall back to bare-name match when model has no tag
+    if model in available:
+        return
+    if ":" not in model:
+        bare_names = {m.split(":")[0] for m in available}
+        if model in bare_names:
+            return
+
+    raise OllamaModelUnavailableError(
+        f"Model '{model}' is not available in ollama. "
+        f"Pull it first with: ollama pull {model}"
+    )
 
 
 def _get_ollama_client(
@@ -176,6 +217,16 @@ def parse_new_files(
         _check_ollama_availability(ollama_config.base_url)
     except OllamaUnavailableError as exc:
         logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
+        return
+
+    try:
+        _check_model_available(ollama_config.base_url, ollama_config.model)
+    except OllamaModelUnavailableError as exc:
+        logger.warning(
+            "Ollama model (%s) not available, aborting PNG parsing: %s",
+            ollama_config.model,
+            exc,
+        )
         return
 
     if not parsed_dir.exists():
