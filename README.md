@@ -1,5 +1,7 @@
 # `fintl`
 
+[![codecov](https://codecov.io/gh/eschmidt42/fintl/branch/main/graph/badge.svg)](https://codecov.io/gh/eschmidt42/fintl)
+
 ## How to use
 
 ### Bank / investment accounts ETL
