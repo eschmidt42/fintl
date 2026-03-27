@@ -63,10 +63,10 @@ fintl [OPTIONS] COMMAND [ARGS]...
 
 Available commands:
 
-- `fintl etl run` — run the accounts ETL pipeline
-- `fintl store run` — copy downloaded bank files into the ETL input directories
+- `fintl etl` — run the accounts ETL pipeline
+- `fintl store` — copy downloaded bank files into the ETL input directories
 - `fintl search` — interactive transaction search
-- `fintl plot run` — open a balances chart in your browser
+- `fintl plot` — open a balances chart in your browser
 
 You can inspect the live CLI help with:
 
@@ -79,12 +79,12 @@ fintl search --help
 ```
 
 
-## `fintl etl run`
+## `fintl etl`
 
 Loads configuration and runs the accounts ETL pipeline.
 
 ```bash
-fintl etl run
+fintl etl
 ```
 
 This command produces the consolidated parquet files used by the other commands, including:
@@ -92,29 +92,29 @@ This command produces the consolidated parquet files used by the other commands,
 - `all-balances.parquet`
 - `all-transactions.parquet`
 
-If you have not run the ETL yet, run this command before using `fintl search` or `fintl plot run`.
+If you have not run the ETL yet, run this command before using `fintl search` or `fintl plot`.
 
 Source: `src/fintl/cli/etl.py`
 
 
-## `fintl store run`
+## `fintl store`
 
 Scans a directory for downloaded bank files and copies them into the correct ETL input directories.
 
 ```bash
-fintl store run
+fintl store
 ```
 
 By default, the current working directory is scanned. To specify a different directory:
 
 ```bash
-fintl store run --from-dir ~/Downloads
+fintl store --from-dir ~/Downloads
 ```
 
 Each file is tested against all registered parser applicability predicates. For every match you are asked to confirm before the file is copied. To auto-confirm all matches:
 
 ```bash
-fintl store run --yes
+fintl store --yes
 ```
 
 When a file matches multiple parsers you are prompted to choose one (or skip). With `--yes`, ambiguous files are skipped automatically.
@@ -163,18 +163,18 @@ Useful interactions:
 Source: `src/fintl/cli/search.py`
 
 
-## `fintl plot run`
+## `fintl plot`
 
 Builds a scatter chart of account balances over time and opens it in your default browser.
 
 ```bash
-fintl plot run
+fintl plot
 ```
 
 To save the chart to a specific HTML file:
 
 ```bash
-fintl plot run --save chart.html
+fintl plot --save chart.html
 ```
 
 The command reads `all-balances.parquet` from `Config.target_dir`.
