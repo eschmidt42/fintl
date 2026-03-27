@@ -1,4 +1,5 @@
 import polars as pl
+import pytest
 
 import fintl.accounts_etl.labels as fintl_labels
 from fintl.accounts_etl.schemas import LabelCondition, LabelConditionOp, LabelRule
@@ -504,5 +505,5 @@ def test_condition_expr_no_case_matches_returns_none():
     from fintl.accounts_etl.labels import _condition_expr
     from fintl.accounts_etl.schemas import LabelConditionOp
 
-    result = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")
-    assert result is None
+    with pytest.raises(NotImplementedError):
+        result = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")

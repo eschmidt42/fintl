@@ -351,6 +351,10 @@ def test_run_service_no_parsers_registered_logs_warning(tmp_path: Path):
     sources = Sources(dkb=Provider(giro=tmp_path))
     config = _config(tmp_path, sources)
 
-    with patch.object(runner, "parsers_for", return_value=[]):
+    with (
+        patch.object(runner, "parsers_for", return_value=[]),
+        patch.object(runner.logger, "warning") as mock_warning,
+    ):
         # Must not raise and must simply return without touching the filesystem.
         runner.run_service(config, "dkb", "giro")
+        mock_warning.assert_called()

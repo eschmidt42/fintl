@@ -1,6 +1,14 @@
 from pathlib import Path
+from unittest.mock import patch
+
+import polars as pl
+import pytest
 
 import fintl.accounts_etl.gls.helper
+import fintl.accounts_etl.gls.helper as gls_helper
+from fintl.accounts_etl.schemas import Case
+
+_CASE = Case(provider="gls", service="giro", parser="giro0")
 
 
 def test_detect_separator_semicolon():
@@ -66,17 +74,6 @@ def test_check_if_parser_applies_empty_file(tmp_path: Path):
     assert fintl.accounts_etl.gls.helper.check_if_parser_applies(file_path) is False
 
 
-from unittest.mock import patch
-
-import polars as pl
-import pytest
-
-import fintl.accounts_etl.gls.helper as gls_helper
-from fintl.accounts_etl.schemas import Case
-
-_CASE = Case(provider="gls", service="giro", parser="giro0")
-
-
 def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
     """extract_transactions must raise ValueError when detect_separator returns None."""
     lines = ["Bezeichnung Auftragskonto;IBAN Auftragskonto;...\n", "data;row\n"]
@@ -104,20 +101,6 @@ def test_extract_balance_raises_when_date_is_not_datetime_date(tmp_path: Path):
     """extract_balance must raise ValueError when the date column entry is not
     a datetime.date instance."""
 
-    schema = {
-        "date": pl.Utf8,  # wrong type — will not be a datetime.date
-        "source": pl.Utf8,
-        "recipient": pl.Utf8,
-        "amount": pl.Float64,
-        "description": pl.Utf8,
-        "hash": pl.UInt64,
-        "provider": pl.Utf8,
-        "service": pl.Utf8,
-        "parser": pl.Utf8,
-        "file": pl.Utf8,
-        "Saldo nach Buchung": pl.Float64,
-        "Waehrung": pl.Utf8,
-    }
     transactions = pl.DataFrame(
         {
             "date": ["2024-01-01"],
