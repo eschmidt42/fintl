@@ -1,6 +1,11 @@
 # `fintl`
 
+[![CI](https://github.com/eschmidt42/fintl/actions/workflows/ci.yml/badge.svg)](https://github.com/eschmidt42/fintl/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/eschmidt42/fintl/branch/main/graph/badge.svg)](https://codecov.io/gh/eschmidt42/fintl)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
 ## How to use
 
