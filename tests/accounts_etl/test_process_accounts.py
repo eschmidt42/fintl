@@ -49,18 +49,6 @@ def _triples(path: Path) -> set[tuple[str, str, str]]:
     return set(df.select(["provider", "service", "parser"]).rows())
 
 
-def _providers(path: Path) -> set[str]:
-    return {t[0] for t in _triples(path)}
-
-
-def _services(path: Path) -> set[str]:
-    return {t[1] for t in _triples(path)}
-
-
-def _parsers(path: Path) -> set[str]:
-    return {t[2] for t in _triples(path)}
-
-
 def _assert_labelled_output(config: Config) -> None:
     """Verify the labelled output file exists and contains the label_root column."""
     labelled_parquet = config.target_dir / "all-transactions-labelled.parquet"
