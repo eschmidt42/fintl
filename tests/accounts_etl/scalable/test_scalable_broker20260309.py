@@ -214,10 +214,11 @@ def test_parse_new_files_skips_when_ollama_not_configured(
     with caplog.at_level(
         logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
     ):
-        broker.parse_new_files(
+        result = broker.parse_new_files(
             broker.CASE, [dummy], tmp_path / "parsed", ollama_config=None
         )
 
+    assert result == []
     assert "Ollama is not configured" in caplog.text
     assert not (tmp_path / "parsed").exists()
 
@@ -481,3 +482,53 @@ def test_parse_new_files_continues_on_generic_error(
     assert "parse failed" in caplog.text
     # Both files attempted (error is per-file, not fatal)
     assert call_count == 2
+
+
+def test_main_no_ollama_png_files_exist(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """main() completes without error when PNG files exist but ollama is not configured.
+
+    ETL should: copy PNGs to raw_dir, skip parsing (no parquets), skip history
+    concatenation (nothing was parsed), and log a warning about missing ollama config.
+    """
+    import logging
+
+    broker_source_dir = (
+        Path(__file__).parent.parent / "files" / "png_files" / "Scalable-Capital"
+    )
+    assert broker_source_dir.exists()
+
+    logger_path = (
+        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
+    )
+    assert logger_path.exists()
+
+    config = Config(
+        target_dir=tmp_path,
+        sources=Sources(scalable=Provider(broker=broker_source_dir)),
+        logging=Logging(config_file=logger_path),
+        ollama=None,  # opt-out
+    )
+
+    with caplog.at_level(
+        logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
+    ):
+        broker.main(config)  # must not raise
+
+    raw_dir = config.get_raw_dir(broker.CASE)
+    parsed_dir = config.get_parsed_dir(broker.CASE)
+    parser_dir = config.get_parser_dir(broker.CASE)
+
+    # PNG is copied to raw_dir
+    assert raw_dir.exists()
+    assert (raw_dir / PNG_FILENAME).exists()
+
+    # No parquets created (parsing was skipped)
+    assert not parsed_dir.exists()
+
+    # No parser-level history created (nothing was parsed to concatenate)
+    assert not (parser_dir / "balances.parquet").exists()
+    assert not (parser_dir / "transactions.parquet").exists()
+
+    assert "Ollama is not configured" in caplog.text

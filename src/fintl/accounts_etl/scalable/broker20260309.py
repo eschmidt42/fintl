@@ -201,23 +201,24 @@ def parse_new_files(
     parsed_dir: Path,
     *,
     ollama_config: OllamaConfig | None,
-):
+) -> list[Path]:
+    """Parse PNG files and return the list of files that were successfully parsed."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
-        return
+        return []
 
     if ollama_config is None:
         logger.warning(
             "Ollama is not configured. Skipping PNG parsing for %d file(s).",
             len(new_files_to_parse),
         )
-        return
+        return []
 
     try:
         _check_ollama_availability(ollama_config.base_url)
     except OllamaUnavailableError as exc:
         logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
-        return
+        return []
 
     try:
         _check_model_available(ollama_config.base_url, ollama_config.model)
@@ -227,7 +228,7 @@ def parse_new_files(
             ollama_config.model,
             exc,
         )
-        return
+        return []
 
     if not parsed_dir.exists():
         logger.info(f"Creating {parsed_dir=}")
@@ -235,6 +236,7 @@ def parse_new_files(
 
     logger.info(f"Parsing {len(new_files_to_parse):_} new files to {parsed_dir=}")
 
+    parsed: list[Path] = []
     for file_path in new_files_to_parse:
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
         try:
@@ -247,8 +249,10 @@ def parse_new_files(
 
         store_transactions(parsed_dir, file_path, transactions)
         store_balance(parsed_dir, file_path, balance)
+        parsed.append(file_path)
 
-    logger.info(f"Finished parsing {len(new_files_to_parse):_d} new files")
+    logger.info(f"Finished parsing {len(parsed):_d} new files")
+    return parsed
 
 
 def main(config: Config):
@@ -278,10 +282,12 @@ def main(config: Config):
     )
 
     # parse new files to parquet -> transactions & balance
-    parse_new_files(CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama)
+    actually_parsed = parse_new_files(
+        CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama
+    )
 
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)
-    concatenate_new_information_to_history(parser_dir, parsed_dir, new_files_to_parse)
+    concatenate_new_information_to_history(parser_dir, parsed_dir, actually_parsed)
 
     logger.info(f"Done processing {CASE=}")
