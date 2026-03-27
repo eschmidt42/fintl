@@ -43,7 +43,7 @@ which fintl
 3. Select your service, e.g. Giro.
 4. Export csv file or similar to `~/Downloads`, or directly your source dir for your bank / service.
 5. Optionally, if you've stored your file in `~/Downloads`, run `cd ~/Downloads` followed by `fintl store` (uses your `fintl.toml` from step 1).
-6. Optionally, if you want to process png screenshots via ollama, start ollama.
+6. Optionally, if you want to process PNG screenshots via Ollama, start Ollama.
 7. Run the etl via `fintl etl` (also uses your `fintl.toml` from step 1).
 8. Upon success visualize / search your data via `fintl plot` or `fintl search`.
 
