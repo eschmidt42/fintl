@@ -102,7 +102,7 @@ If you have not run the ETL yet, run this command before using `fintl search` or
 
 ### Ollama (PNG parsing)
 
-The Scalable broker parser `broker20260309` extracts balance data from PNG screenshots using a local [ollama](https://ollama.com) multimodal model. This is **opt-in**: PNG files are silently skipped unless an `[ollama]` section is present in `fintl.toml`.
+The Scalable broker parser `broker20260309` extracts balance data from PNG screenshots using a local [ollama](https://ollama.com) multimodal model. This is **opt-in**: PNG files are skipped, and a warning is logged, unless an `[ollama]` section is present in `fintl.toml` and [`ollama` locally running](https://docs.ollama.com/quickstart#get-started).
 
 To enable it, add to your `~/.config/petprojects/fintl.toml`:
 
