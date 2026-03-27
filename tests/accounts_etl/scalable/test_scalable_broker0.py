@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from fintl.accounts_etl.scalable import broker0 as broker
 from fintl.accounts_etl.scalable.files import (
@@ -119,3 +120,74 @@ def test_main(tmp_path: Path):
     assert t_balance_parquet_single < get_time(path_balance_parquet_single)
     assert t_transactions_parquet_single < get_time(path_transactions_parquet_single)
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
+
+
+# ── Edge case / error path tests ──────────────────────────────────────────────
+
+
+def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
+    """check_if_parser_applies must raise ValueError when the inner date regex
+    returns None (defensive check that cannot normally be triggered without
+    mocking, since the outer pattern already requires the date format)."""
+    from unittest.mock import MagicMock, patch
+
+    file_path = tmp_path / "2022-08-12.html"
+    file_path.write_text("€")
+
+    outer_match = MagicMock()  # truthy – outer pattern 'matches'
+    # First call returns the outer match; second call returns None (inner date pattern)
+    with patch("fintl.accounts_etl.scalable.broker0.re") as mock_re:
+        mock_re.search.side_effect = [outer_match, None]
+        with pytest.raises(ValueError, match="is None"):
+            broker.check_if_parser_applies(file_path)
+
+
+def test_extract_balance_raises_when_large_price_missing(tmp_path: Path):
+    """extract_balance must raise ValueError when large-price div is absent."""
+    html = "<html><body><div>no price here</div></body></html>"
+    file_path = tmp_path / "2022-08-12.html"
+    file_path.write_text(html)
+    with pytest.raises(ValueError):
+        broker.extract_balance(broker.CASE, file_path, [])
+
+
+def test_extract_balance_raises_when_decimal_missing(tmp_path: Path):
+    """extract_balance must raise ValueError when decimal div is absent."""
+    html = (
+        '<html><body><div data-testid="large-price"><div>1234</div></div></body></html>'
+    )
+    file_path = tmp_path / "2022-08-12.html"
+    file_path.write_text(html)
+    with pytest.raises(ValueError):
+        broker.extract_balance(broker.CASE, file_path, [])
+
+
+def test_extract_balance_raises_when_suffix_missing(tmp_path: Path):
+    """extract_balance must raise ValueError when suffix div is absent."""
+    html = (
+        "<html><body>"
+        '<div data-testid="large-price"><div>1234</div></div>'
+        '<div data-testid="decimal">69</div>'
+        "</body></html>"
+    )
+    file_path = tmp_path / "2022-08-12.html"
+    file_path.write_text(html)
+    with pytest.raises(ValueError):
+        broker.extract_balance(broker.CASE, file_path, [])
+
+
+def test_extract_balance_currency_none_falls_back_to_empty_string(tmp_path: Path):
+    """When suffix > div has multiple string children .string returns None;
+    currency must fall back to ''."""
+    # Two spans inside the inner div → BeautifulSoup .string returns None
+    html = (
+        "<html><body>"
+        '<div data-testid="large-price"><div>1234</div></div>'
+        '<div data-testid="decimal">69</div>'
+        '<div data-testid="suffix"><div><span>€</span><span> </span></div></div>'
+        "</body></html>"
+    )
+    file_path = tmp_path / "2022-08-12.html"
+    file_path.write_text(html)
+    balance = broker.extract_balance(broker.CASE, file_path, [])
+    assert balance.currency == ""

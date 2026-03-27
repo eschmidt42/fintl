@@ -1,4 +1,5 @@
 import polars as pl
+import pytest
 
 import fintl.accounts_etl.labels as fintl_labels
 from fintl.accounts_etl.schemas import LabelCondition, LabelConditionOp, LabelRule
@@ -458,3 +459,51 @@ def test_assign_labels():
         df_labelled["label_root"].to_list()
         == df_labelled["expected_label_root"].to_list()
     )
+
+
+def test_condition_expr_not_equals():
+    """_condition_expr must handle the not_equals operator."""
+    expr = fintl_labels._condition_expr("source", LabelConditionOp.not_equals, "foo")
+    df = pl.DataFrame({"source": ["foo", "bar"]})
+    result = df.select(expr.alias("r"))["r"].to_list()
+    assert result == [False, True]
+
+
+def test_build_label_expr_empty_rules():
+    """build_label_expr with an empty list must always return 'unknown'."""
+    expr = fintl_labels.build_label_expr([])
+    df = pl.DataFrame({"source": ["anything"]})
+    result = df.select(expr.alias("label"))["label"].to_list()
+    assert result == ["unknown"]
+
+
+def test_build_label_expr_multi_condition_first_rule():
+    """The AND-combining loop inside build_label_expr must be exercised
+    when the *first* rule has more than one condition."""
+    rules = [
+        LabelRule(
+            label="match",
+            conditions=[
+                LabelCondition(column="source", op=LabelConditionOp.equals, value="A"),
+                LabelCondition(
+                    column="recipient", op=LabelConditionOp.equals, value="B"
+                ),
+            ],
+        )
+    ]
+    expr = fintl_labels.build_label_expr(rules)
+    df = pl.DataFrame({"source": ["A", "A", "X"], "recipient": ["B", "X", "B"]})
+    result = df.select(expr.alias("label"))["label"].to_list()
+    assert result == ["match", "unknown", "unknown"]
+
+
+def test_condition_expr_no_case_matches_returns_none():
+    """_condition_expr must return None (implicit) when op matches no case arm.
+    This covers the unreachable match-exit branch of the last case."""
+    from typing import cast
+
+    from fintl.accounts_etl.labels import _condition_expr
+    from fintl.accounts_etl.schemas import LabelConditionOp
+
+    with pytest.raises(NotImplementedError):
+        result = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")

@@ -119,3 +119,21 @@ def test_main(tmp_path: Path):
     assert t_balance_parquet_single < get_time(path_balance_parquet_single)
     assert t_transactions_parquet_single < get_time(path_transactions_parquet_single)
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
+
+
+def test_extract_transactions_returns_empty_dataframe_when_no_data_rows(tmp_path: Path):
+    """When the header line is the last line (no transaction rows), extract_transactions
+    must return an empty DataFrame rather than raising."""
+    from fintl.accounts_etl.dkb.tagesgeld0 import CASE, extract_transactions
+
+    # The header pattern is '^("?Buchungstag";"Wertstellung")'
+    lines = [
+        '"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Begünstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"\n',
+    ]
+    file_path = tmp_path / "empty.csv"
+    file_path.write_text("".join(lines))
+
+    df = extract_transactions(CASE, file_path, lines, "utf-8")
+
+    assert isinstance(df, pl.DataFrame)
+    assert len(df) == 0

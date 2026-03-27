@@ -22,6 +22,8 @@ def _condition_expr(col: str, op: LabelConditionOp, value: str) -> pl.Expr:
             return pl.col(col) == value
         case LabelConditionOp.not_equals:
             return pl.col(col) != value
+        case _:
+            raise NotImplementedError(f"{op=} is not implemented in this function.")
 
 
 def build_label_expr(rules: list[LabelRule]) -> pl.Expr:
