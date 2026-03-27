@@ -1,14 +1,17 @@
 import typer
 
-from fintl.cli.etl import app as etl_app
-from fintl.cli.plot import app as plot_app
-from fintl.cli.store import app as store_app
+from fintl.cli.etl import run as etl
+from fintl.cli.plot import run as plot
+from fintl.cli.store import run as store
 
 app = typer.Typer()
 
-app.add_typer(etl_app, name="etl")
-app.add_typer(plot_app, name="plot")
-app.add_typer(store_app, name="store")
+app.command(name="etl", help="Run the accounts ETL pipeline.")(etl)
+app.command(name="plot", help="Plot bank account balances.")(plot)
+app.command(
+    name="store",
+    help="Store downloaded bank files into the correct ETL input directories.",
+)(store)
 
 
 @app.command()
