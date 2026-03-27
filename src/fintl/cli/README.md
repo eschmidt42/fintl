@@ -52,6 +52,12 @@ handlers_file_json_filename = "YOURPATH/fintl-etl.log.jsonl"
 handlers_file_json_maxbytes = 10_000_000
 handlers_file_json_backup_count = 3
 root_level = "DEBUG"
+
+# Optional: enable local ollama for Scalable broker PNG parsing.
+# Remove this section (or omit it) to skip PNG parsing entirely.
+[ollama]
+model = "qwen3.5:27b"
+# base_url = "http://localhost:11434/v1"  # default; override if your ollama runs elsewhere
 ```
 
 
@@ -93,6 +99,20 @@ This command produces the consolidated parquet files used by the other commands,
 - `all-transactions.parquet`
 
 If you have not run the ETL yet, run this command before using `fintl search` or `fintl plot`.
+
+### Ollama (PNG parsing)
+
+The Scalable broker parser `broker20260309` extracts balance data from PNG screenshots using a local [ollama](https://ollama.com) multimodal model. This is **opt-in**: PNG files are skipped, and a warning is logged, unless an `[ollama]` section is present in `fintl.toml` and [`ollama` locally running](https://docs.ollama.com/quickstart#get-started).
+
+To enable it, add to your `~/.config/petprojects/fintl.toml`:
+
+```toml
+[ollama]
+model = "qwen3.5:27b"          # any multimodal model available in your ollama instance
+# base_url = "http://localhost:11434/v1"  # optional; default shown
+```
+
+If ollama is configured but unreachable (not running, model not pulled, wrong URL), the affected PNG files are skipped with a warning and the rest of the ETL continues normally.
 
 Source: `src/fintl/cli/etl.py`
 

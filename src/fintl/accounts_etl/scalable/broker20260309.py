@@ -3,6 +3,7 @@ import logging
 import re
 from pathlib import Path
 
+import httpx
 import instructor
 import polars as pl
 from instructor.processing.multimodal import Image
@@ -22,6 +23,7 @@ from fintl.accounts_etl.schemas import (
     BalanceInfo,
     Case,
     Config,
+    OllamaConfig,
     ProviderEnum,
     ScalableBrokerParserEnum,
     ServiceEnum,
@@ -34,6 +36,14 @@ CASE = Case(
     service=ServiceEnum.broker.value,
     parser=ScalableBrokerParserEnum.broker20260309.value,
 )
+
+
+class OllamaUnavailableError(Exception):
+    """Raised when the ollama server cannot be reached."""
+
+
+class OllamaModelUnavailableError(Exception):
+    """Raised when the requested model is not present in the ollama instance."""
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
@@ -60,6 +70,63 @@ def get_date_from_string(name: str) -> datetime.date:
         return date
     else:
         raise ValueError(f"Could not extract date from {name=}")
+
+
+def _check_ollama_availability(base_url: str) -> None:
+    """Check that the ollama server is reachable.
+
+    Strips the ``/v1`` suffix (if present) to reach the ollama root endpoint
+    and performs a GET with a short timeout.
+
+    Raises:
+        OllamaUnavailableError: when the server cannot be reached.
+    """
+    root_url = base_url.rstrip("/")
+    if root_url.endswith("/v1"):
+        root_url = root_url[:-3]
+    try:
+        httpx.get(root_url, timeout=5.0).raise_for_status()
+    except Exception as exc:
+        raise OllamaUnavailableError(
+            f"Ollama is not reachable at {base_url}: {exc}"
+        ) from exc
+
+
+def _check_model_available(base_url: str, model: str) -> None:
+    """Check that *model* has been pulled into the local ollama instance.
+
+    Calls ``GET {root}/api/tags`` and inspects the returned model list.
+    Model names returned by ollama may include a tag suffix (e.g. ``":latest"``);
+    if *model* contains no ``:``, a bare-name match against the part before
+    ``:`` is also accepted.
+
+    Raises:
+        OllamaModelUnavailableError: when the model is not found.
+    """
+    root_url = base_url.rstrip("/")
+    if root_url.endswith("/v1"):
+        root_url = root_url[:-3]
+    try:
+        response = httpx.get(f"{root_url}/api/tags", timeout=5.0)
+        response.raise_for_status()
+        available = [m["name"] for m in response.json().get("models", [])]
+    except Exception as exc:
+        raise OllamaModelUnavailableError(
+            f"Could not retrieve model list from ollama at {base_url}: {exc}"
+        ) from exc
+
+    # exact match first; then fall back to bare-name match when model has no tag
+    if model in available:
+        return
+    if ":" not in model:
+        bare_names = {m.split(":")[0] for m in available}
+        if model in bare_names:
+            return
+
+    raise OllamaModelUnavailableError(
+        f"Model '{model}' is not available in ollama. "
+        f"Pull it first with: ollama pull {model}"
+    )
 
 
 def _get_ollama_client(
@@ -97,9 +164,11 @@ def _get_lm_extraction(
 
 
 def extract_balance(
-    case: Case, file_path: Path, *, model: str = "qwen3.5:27b"
+    case: Case, file_path: Path, *, ollama_config: OllamaConfig
 ) -> BalanceInfo:
-    extraction_client = _get_ollama_client(model=model)
+    extraction_client = _get_ollama_client(
+        model=ollama_config.model, ollama_base_url=ollama_config.base_url
+    )
 
     extraction = _get_lm_extraction(file_path, extraction_client)
 
@@ -118,10 +187,10 @@ def extract_balance(
 
 
 def parse_image_file(
-    case: Case, file_path: Path, *, model: str = "qwen3.5:27b"
+    case: Case, file_path: Path, *, ollama_config: OllamaConfig
 ) -> tuple[pl.DataFrame, BalanceInfo]:
     transactions = extract_transactions()
-    balance = extract_balance(case, file_path, model=model)
+    balance = extract_balance(case, file_path, ollama_config=ollama_config)
 
     return transactions, balance
 
@@ -130,10 +199,36 @@ def parse_new_files(
     case: Case,
     new_files_to_parse: list[Path],
     parsed_dir: Path,
-):
+    *,
+    ollama_config: OllamaConfig | None,
+) -> list[Path]:
+    """Parse PNG files and return the list of files that were successfully parsed."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
-        return
+        return []
+
+    if ollama_config is None:
+        logger.warning(
+            "Ollama is not configured. Skipping PNG parsing for %d file(s).",
+            len(new_files_to_parse),
+        )
+        return []
+
+    try:
+        _check_ollama_availability(ollama_config.base_url)
+    except OllamaUnavailableError as exc:
+        logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
+        return []
+
+    try:
+        _check_model_available(ollama_config.base_url, ollama_config.model)
+    except OllamaModelUnavailableError as exc:
+        logger.warning(
+            "Ollama model (%s) not available, aborting PNG parsing: %s",
+            ollama_config.model,
+            exc,
+        )
+        return []
 
     if not parsed_dir.exists():
         logger.info(f"Creating {parsed_dir=}")
@@ -141,14 +236,23 @@ def parse_new_files(
 
     logger.info(f"Parsing {len(new_files_to_parse):_} new files to {parsed_dir=}")
 
+    parsed: list[Path] = []
     for file_path in new_files_to_parse:
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
-        transactions, balance = parse_image_file(case, file_path)
+        try:
+            transactions, balance = parse_image_file(
+                case, file_path, ollama_config=ollama_config
+            )
+        except Exception:
+            logger.warning("Failed to parse %s", file_path.name, exc_info=True)
+            continue
 
         store_transactions(parsed_dir, file_path, transactions)
         store_balance(parsed_dir, file_path, balance)
+        parsed.append(file_path)
 
-    logger.info(f"Finished parsing {len(new_files_to_parse):_d} new files")
+    logger.info(f"Finished parsing {len(parsed):_d} new files")
+    return parsed
 
 
 def main(config: Config):
@@ -178,10 +282,12 @@ def main(config: Config):
     )
 
     # parse new files to parquet -> transactions & balance
-    parse_new_files(CASE, new_files_to_parse, parsed_dir)
+    actually_parsed = parse_new_files(
+        CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama
+    )
 
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)
-    concatenate_new_information_to_history(parser_dir, parsed_dir, new_files_to_parse)
+    concatenate_new_information_to_history(parser_dir, parsed_dir, actually_parsed)
 
     logger.info(f"Done processing {CASE=}")

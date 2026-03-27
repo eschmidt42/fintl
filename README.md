@@ -16,7 +16,7 @@ This tool helps you process, visualize and search your balance and transaction i
 
 Currently supports DKB, Postbank, GLS and Scalable Capital Broker.
 
-Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](https://ollama.com) instance with a multimodal model (required only for Scalable broker PNG statements).
+Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](https://ollama.com) instance with a multimodal model — opt-in via `fintl.toml` (required only for Scalable broker PNG statements; gracefully skipped when not configured).
 
 **All your data stays on your machine. No need to trust another entity that is PSD2 certified.**
 
@@ -42,9 +42,10 @@ which fintl
 2. Go to your bank account.
 3. Select your service, e.g. Giro.
 4. Export csv file or similar to `~/Downloads`, or directly your source dir for your bank / service.
-5. optionally if you've stored your file in `~/Downloads`, run `cd ~/Downloads` followed by `fintl store` (uses your `fintl.toml` from step 1).
-6. Run the etl via `fintl etl` (also uses your `fintl.toml` from step 1).
-7. Upon success visualize / search your data via `fintl plot` or `fintl search`.
+5. Optionally, if you've stored your file in `~/Downloads`, run `cd ~/Downloads` followed by `fintl store` (uses your `fintl.toml` from step 1).
+6. Optionally, if you want to process PNG screenshots via Ollama, start Ollama.
+7. Run the etl via `fintl etl` (also uses your `fintl.toml` from step 1).
+8. Upon success visualize / search your data via `fintl plot` or `fintl search`.
 
 [Please see here and below](./src/fintl/cli/README.md#top-level-usage) for more usage details.
 
