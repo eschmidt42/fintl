@@ -83,3 +83,25 @@ def test_verify_transactions(tmp_path: Path):
     transaction_columns = ["col1", "col2", "col3"]
     with pytest.raises(ValueError):
         verify_transactions(transaction_columns, transactions, tmp_path)
+
+
+def test_check_if_german_number_multiple_commas():
+    """A string with more than one comma must not be a valid German number."""
+    assert check_if_german_number("1,000,00") is False
+    assert check_if_german_number(",,") is False
+
+
+def test_detect_encoding_fallback_when_chardet_returns_none(tmp_path: Path):
+    """When chardet cannot detect an encoding (returns None), detect_encoding
+    must fall back to the default encoding ('utf-8')."""
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.utils import detect_encoding
+
+    dummy_file = tmp_path / "dummy.csv"
+    dummy_file.write_bytes(b"some bytes")
+
+    with patch("chardet.detect", return_value={"encoding": None}):
+        result = detect_encoding(dummy_file)
+
+    assert result == "utf-8"

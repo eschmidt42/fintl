@@ -1,15 +1,21 @@
 """Unit tests for ServicePlugin and ProviderPlugin in schemas.py."""
 
 from dataclasses import FrozenInstanceError
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from fintl.accounts_etl.schemas import (
     Case,
+    Config,
+    Logging,
     ParserSpec,
+    Provider,
     ProviderPlugin,
     ServicePlugin,
+    Sources,
 )
 
 
@@ -120,3 +126,67 @@ def test_all_parsers_preserves_parser_order_within_service():
 
     result = plugin.all_parsers()
     assert [s.case.parser for s in result] == ["giro0", "giro202307", "giro202312"]
+
+
+# ── Provider ──────────────────────────────────────────────────────────────────
+
+
+def test_provider_check_path_is_valid_none():
+    """When a Provider field is explicitly set to None the validator must return None
+    without attempting to normalise or sanity-check the path."""
+    provider = Provider(giro=None)
+    assert provider.giro is None
+
+
+def test_sources_at_least_one_source_raises_when_all_none():
+    """Sources with every provider set to None must raise a ValidationError."""
+    with pytest.raises(ValidationError):
+        Sources(dkb=None, postbank=None, scalable=None, gls=None)
+
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+_LOGGER_PATH = Path(__file__).parent.parent / "fine_logging" / "logger-config.json"
+
+
+def _config(tmp_path: Path) -> Config:
+    return Config(
+        target_dir=tmp_path,
+        sources=Sources(dkb=Provider(giro=tmp_path)),
+        logging=Logging(config_file=_LOGGER_PATH),
+    )
+
+
+def test_config_repr_rich(tmp_path: Path):
+    """__repr_rich__ must yield (key, value) pairs without raising."""
+    config = _config(tmp_path)
+    items = list(config.__repr_rich__())
+    keys = [item[0] for item in items]
+    assert "sources" in keys
+    assert "target" in keys
+
+
+def test_config_get_logger_config_path_no_config_file(tmp_path: Path):
+    """get_logger_config_path must log an error and return None when
+    logging.config_file is None (the default)."""
+    config = Config(
+        target_dir=tmp_path,
+        sources=Sources(dkb=Provider(giro=tmp_path)),
+        logging=Logging(),  # config_file defaults to None
+    )
+    result = config.get_logger_config_path()
+    assert result is None
+
+
+def test_config_get_logger_config_path_with_config_file(tmp_path: Path):
+    """get_logger_config_path must return the resolved path when config_file is set."""
+    config_file = tmp_path / "logger.json"
+    config_file.write_text("{}")
+
+    config = Config(
+        sources=Sources(dkb=Provider(giro=tmp_path)),
+        target_dir=tmp_path,
+        logging=Logging(config_file=config_file),
+    )
+    result = config.get_logger_config_path()
+    assert result == config_file.resolve().absolute()

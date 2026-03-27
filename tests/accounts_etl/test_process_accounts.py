@@ -382,3 +382,50 @@ def test_mixed_dkb_giro_versions(tmp_path: Path):
     )
 
     _assert_labelled_output(config)
+
+
+# ── concatenate_all_providers: balances=None branch ───────────────────────────
+
+
+def test_concatenate_all_providers_balances_none(tmp_path: Path):
+    """When concatenate_parquets returns None for balances the warning branch is
+    exercised and no balances parquet/xlsx files are written."""
+    from unittest.mock import patch
+
+    import polars as pl
+
+    config = _config(
+        tmp_path,
+        sources=Sources(dkb=Provider(giro=_DKB_GIRO)),
+    )
+
+    dummy_transactions = pl.DataFrame(
+        {
+            col: pl.Series([], dtype=pl.Utf8)
+            for col in [
+                "date",
+                "source",
+                "recipient",
+                "amount",
+                "description",
+                "hash",
+                "provider",
+                "service",
+                "parser",
+                "file",
+            ]
+        }
+    )
+
+    def _fake_concat(fname, cfg, cases, columns):
+        if "balance" in fname:
+            return None
+        return dummy_transactions
+
+    with patch.object(
+        process_accounts, "concatenate_parquets", side_effect=_fake_concat
+    ):
+        process_accounts.concatenate_all_providers(config)
+
+    assert not (config.target_dir / "all-balances.parquet").exists()
+    assert not (config.target_dir / "all-balances.xlsx").exists()

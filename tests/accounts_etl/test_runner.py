@@ -340,3 +340,17 @@ def test_get_source_files_falls_back_to_csv_getter(tmp_path: Path):
         runner._get_source_files(spec, config)
 
     mock_csv.assert_called_once_with(spec.case, config, spec.applies)
+
+
+# ── run_service: no parsers registered ────────────────────────────────────────
+
+
+def test_run_service_no_parsers_registered_logs_warning(tmp_path: Path):
+    """run_service must log a warning and return early when parsers_for yields
+    nothing for the requested provider/service pair."""
+    sources = Sources(dkb=Provider(giro=tmp_path))
+    config = _config(tmp_path, sources)
+
+    with patch.object(runner, "parsers_for", return_value=[]):
+        # Must not raise and must simply return without touching the filesystem.
+        runner.run_service(config, "dkb", "giro")

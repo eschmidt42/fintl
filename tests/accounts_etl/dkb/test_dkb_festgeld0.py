@@ -241,3 +241,39 @@ def test_case_enum():
     assert CASE.provider == ProviderEnum.dkb.value
     assert CASE.service == ServiceEnum.festgeld.value
     assert CASE.parser == DKBFestgeltParserEnum.festgeld0.value
+
+
+def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
+    """extract_transactions must raise ValueError when no CSV separator is found."""
+    file_path = tmp_path / "test.csv"
+    # Lines without the expected separator header pattern
+    lines = ["Buchungsdatum,Wertstellung,Status\n", "01.01.24,01.01.24,Gebucht\n"]
+    file_path.write_text("".join(lines))
+
+    with pytest.raises(ValueError, match="separator"):
+        extract_transactions(CASE, file_path, lines, "utf-8")
+
+
+def test_extract_transactions_raises_on_invalid_date(tmp_path: Path):
+    """extract_transactions must raise InvalidOperationError when a date column
+    contains values that cannot be parsed in the expected format."""
+    # Build a minimal valid CSV with a correct separator but an unparseable date.
+    header_lines = [
+        "",  # empty first line so is_empty_1st_line is True
+        '"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"\n',
+        '"NOT-A-DATE";"01.01.24";"Gebucht";"Alice";"Bob";"desc";"Lastschrift";"DE00";"−1,00";"";"";""\n',
+    ]
+    file_path = tmp_path / "DE12345678901234567890.csv"
+    file_path.write_text("".join(header_lines), encoding="utf-8")
+
+    import polars as pl
+
+    lines = header_lines
+    # Patch detect_separator to return ";" so the separator branch is passed.
+    with pytest.raises(pl.exceptions.InvalidOperationError):
+        from unittest.mock import patch
+
+        from fintl.accounts_etl.dkb import festgeld0 as _f0
+
+        with patch.object(_f0, "detect_separator", return_value=";"):
+            extract_transactions(CASE, file_path, lines, "utf-8")

@@ -119,3 +119,34 @@ def test_main(tmp_path: Path):
     assert t_balance_parquet_single < get_time(path_balance_parquet_single)
     assert t_transactions_parquet_single < get_time(path_transactions_parquet_single)
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
+
+
+# ── Edge case / error path tests ──────────────────────────────────────────────
+
+
+def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
+    """check_if_parser_applies must raise ValueError when the inner date regex
+    returns None (defensive branch)."""
+    from unittest.mock import MagicMock, patch
+
+    import pytest
+
+    file_path = tmp_path / "2023-10-28.html"
+    file_path.write_text("€")
+
+    outer_match = MagicMock()
+    with patch("fintl.accounts_etl.scalable.broker20231028.re") as mock_re:
+        mock_re.search.side_effect = [outer_match, None]
+        with pytest.raises(ValueError, match="is None"):
+            broker.check_if_parser_applies(file_path)
+
+
+def test_extract_balance_raises_when_product_list_item_missing(tmp_path: Path):
+    """extract_balance must raise ValueError when product-list-item div is absent."""
+    import pytest
+
+    html = "<html><body><div>no product list here</div></body></html>"
+    file_path = tmp_path / "2023-10-28.html"
+    file_path.write_text(html)
+    with pytest.raises(ValueError):
+        broker.extract_balance(broker.CASE, file_path, [])

@@ -2,6 +2,7 @@ import datetime
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from fintl.accounts_etl.dkb import giro202307 as giro
 from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
@@ -137,3 +138,11 @@ def test_main(tmp_path: Path):
     assert t_balance_parquet_single < get_time(path_balance_parquet_single)
     assert t_transactions_parquet_single < get_time(path_transactions_parquet_single)
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
+
+
+def test_extract_balance_raises_when_pattern_no_match(tmp_path: Path):
+    """extract_balance must raise ValueError when the balance line does not
+    match the expected pattern."""
+    lines = ['"Kontostand vom 26.03.2026:";NOT_A_VALID_AMOUNT\n']
+    with pytest.raises(ValueError, match="Could not match"):
+        giro.extract_balance(giro.CASE, tmp_path / "dummy.csv", lines)

@@ -275,3 +275,17 @@ def test_case_enum():
     assert CASE.provider == ProviderEnum.dkb.value
     assert CASE.service == ServiceEnum.giro.value
     assert CASE.parser == DKBGiroParserEnum.giro202312.value
+
+
+def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
+    """extract_transactions must raise ValueError when no separator is found in lines."""
+    from unittest.mock import patch
+
+    file_path = tmp_path / "no_separator.csv"
+    # Include the transaction header so find_line_with_pattern succeeds
+    lines = ['"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r"\n']
+    file_path.write_text("".join(lines))
+
+    with patch.object(giro202312, "detect_separator", return_value=None):
+        with pytest.raises(ValueError, match="separator=None"):
+            extract_transactions(CASE, file_path, lines, "utf-8")

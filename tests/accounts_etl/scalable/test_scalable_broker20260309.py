@@ -137,3 +137,39 @@ def test_main(tmp_path: Path, mock_lm_extraction):
     assert t_balance_parquet_single < get_time(path_balance_parquet_single)
     assert t_transactions_parquet_single < get_time(path_transactions_parquet_single)
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
+
+
+# ── Edge case / error path tests ──────────────────────────────────────────────
+
+
+def test_get_date_from_string_raises_when_name_does_not_match(tmp_path: Path):
+    """get_date_from_string must raise ValueError for a filename that does not
+    match the expected 'Screenshot YYYY-MM-DD*.png' pattern."""
+    import pytest
+
+    from fintl.accounts_etl.scalable.broker20260309 import get_date_from_string
+
+    with pytest.raises(ValueError, match="Could not extract date"):
+        get_date_from_string("not_a_screenshot.txt")
+
+
+def test_get_lm_extraction_calls_client_create(tmp_path: Path):
+    """_get_lm_extraction must call extraction_client.create and return its result."""
+    from unittest.mock import MagicMock
+
+    from fintl.accounts_etl.scalable.broker20260309 import (
+        _BalanceInfoExtract,
+        _get_lm_extraction,
+    )
+
+    expected = _BalanceInfoExtract(amount=1234.56, currency="EUR")
+    mock_client = MagicMock()
+    mock_client.create.return_value = expected
+
+    dummy_file = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy_file.write_bytes(b"\x89PNG")  # minimal non-empty file
+
+    result = _get_lm_extraction(dummy_file, mock_client)
+
+    assert result is expected
+    mock_client.create.assert_called_once()

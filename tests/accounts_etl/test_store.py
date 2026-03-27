@@ -337,3 +337,60 @@ def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
     )
 
     assert confirm_calls == [], "confirm should not be called for ambiguous files"
+
+
+def test_store_files_ambiguous_choose_skips_when_copy_already_exists(tmp_path: Path):
+    """Ambiguous path: when choose returns a spec but _copy_file returns False
+    (file already at destination), skipped count is incremented."""
+    (tmp_path / "downloads").mkdir()
+    src_file = tmp_path / "downloads" / "export.csv"
+    src_file.write_text("data")
+
+    config = _config(tmp_path)
+    spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
+    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+
+    # Pre-place the file at the chosen spec's raw dir so _copy_file returns False.
+    chosen_raw = config.get_raw_dir(spec_b.case)
+    chosen_raw.mkdir(parents=True, exist_ok=True)
+    (chosen_raw / "export.csv").write_text("existing")
+
+    counts = store_files(
+        tmp_path / "downloads",
+        config,
+        [spec_a, spec_b],
+        confirm=lambda _: True,
+        choose=lambda _f, specs: specs[1],
+    )
+
+    assert counts["skipped"] == 1
+    assert counts["copied"] == 0
+    assert (chosen_raw / "export.csv").read_text() == "existing"
+
+
+def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path):
+    """Single-match path: when confirm returns True but _copy_file returns False
+    (file already at destination), skipped count is incremented."""
+    (tmp_path / "downloads").mkdir()
+    src_file = tmp_path / "downloads" / "export.csv"
+    src_file.write_text("data")
+
+    config = _config(tmp_path)
+    spec = _spec("dkb", "giro", "giro202312", applies_result=True)
+
+    # Pre-place the file at the target raw dir.
+    raw_dir = config.get_raw_dir(spec.case)
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    (raw_dir / "export.csv").write_text("existing")
+
+    counts = store_files(
+        tmp_path / "downloads",
+        config,
+        [spec],
+        confirm=lambda _: True,
+        choose=_NO_CHOOSE,
+    )
+
+    assert counts["skipped"] == 1
+    assert counts["copied"] == 0
+    assert (raw_dir / "export.csv").read_text() == "existing"
