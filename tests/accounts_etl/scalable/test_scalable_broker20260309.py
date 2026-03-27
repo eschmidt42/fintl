@@ -178,3 +178,90 @@ def test_get_lm_extraction_calls_client_create(tmp_path: Path):
 
     assert result is expected
     mock_client.create.assert_called_once()
+
+
+def test_get_ollama_client_returns_none_on_failure():
+    """_get_ollama_client returns None (and logs a warning) when the provider raises."""
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.scalable import broker20260309 as broker
+
+    with patch.object(
+        broker.instructor,
+        "from_provider",
+        side_effect=RuntimeError("connection refused"),
+    ):
+        result = broker._get_ollama_client(model="some-model")
+
+    assert result is None
+
+
+def test_extract_balance_raises_when_client_is_none(tmp_path: Path):
+    """extract_balance raises RuntimeError when _get_ollama_client returns None."""
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.schemas import OllamaConfig
+
+    dummy_file = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy_file.write_bytes(b"\x89PNG")
+
+    with patch.object(broker, "_get_ollama_client", return_value=None):
+        with pytest.raises(RuntimeError, match="Could not create ollama client"):
+            broker.extract_balance(
+                broker.CASE, dummy_file, ollama_config=OllamaConfig(model="m")
+            )
+
+
+def test_parse_new_files_skips_when_ollama_not_configured(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """parse_new_files logs a warning and returns early when ollama_config is None."""
+    import logging
+
+    from fintl.accounts_etl.scalable import broker20260309 as broker
+
+    dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy.write_bytes(b"\x89PNG")
+
+    with caplog.at_level(
+        logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
+    ):
+        broker.parse_new_files(
+            broker.CASE, [dummy], tmp_path / "parsed", ollama_config=None
+        )
+
+    assert "Ollama is not configured" in caplog.text
+    assert not (tmp_path / "parsed").exists()
+
+
+def test_parse_new_files_skips_file_on_runtime_error(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """parse_new_files continues processing remaining files when one raises RuntimeError."""
+    import logging
+    from unittest.mock import patch
+
+    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.schemas import OllamaConfig
+
+    dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy.write_bytes(b"\x89PNG")
+    parsed_dir = tmp_path / "parsed"
+
+    with patch.object(
+        broker, "parse_image_file", side_effect=RuntimeError("ollama unavailable")
+    ):
+        with caplog.at_level(
+            logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
+        ):
+            broker.parse_new_files(
+                broker.CASE,
+                [dummy],
+                parsed_dir,
+                ollama_config=OllamaConfig(model="m"),
+            )
+
+    assert "ollama unavailable" in caplog.text
+    # parsed_dir should not contain any output files since the file was skipped
+    assert not any(parsed_dir.iterdir()) if parsed_dir.exists() else True
