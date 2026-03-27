@@ -1,29 +1,29 @@
-# `cli`
-
-CLI entry point for the `money` command.
+# fintl CLI
 
 This module is wired up in `pyproject.toml` as:
 
 ```toml
 [project.scripts]
-money = "cli.main:app"
+fintl = "fintl.cli.main:app"
 ```
 
 You can run it either from an installed environment:
 
 ```bash
-money --help
+fintl --help
 ```
 
 or directly from the repository with `uv`:
 
 ```bash
-uv run money --help
+uv run fintl --help
 ```
 
-The `etl`, `search`, and `plot` commands read from the directory configured by `packages.accounts_etl.schemas.Config`, especially `Config.target_dir`.
+The `etl`, `store`, `search`, and `plot` commands read from the directory configured by `fintl.accounts_etl.schemas.Config`, especially `Config.target_dir`.
 
-By default, `Config` reads `~/.config/petprojects/money.toml`. As a starting point, copy this dummy config and edit the paths for your machine:
+## `fintl.toml`
+
+By default, `Config` reads `~/.config/petprojects/fintl.toml`. Only configure the providers you actually use — unused `[sources.*]` sections can be omitted. As a starting point, copy this dummy config and edit the paths for your machine:
 
 ```toml
 target_dir = "YOURPATH/accounts-data"
@@ -48,7 +48,7 @@ credit = "YOURPATH/GLS/credit"
 third_party_filter_level = 20
 handlers_stdout_level = "INFO"
 handlers_file_json_level = "DEBUG"
-handlers_file_json_filename = "YOURPATH/money-etl.log.jsonl"
+handlers_file_json_filename = "YOURPATH/fintl-etl.log.jsonl"
 handlers_file_json_maxbytes = 10_000_000
 handlers_file_json_backup_count = 3
 root_level = "DEBUG"
@@ -58,31 +58,33 @@ root_level = "DEBUG"
 ## Top-level usage
 
 ```bash
-money [OPTIONS] COMMAND [ARGS]...
+fintl [OPTIONS] COMMAND [ARGS]...
 ```
 
 Available commands:
 
-- `money search` — interactive transaction search
-- `money etl run` — run the accounts ETL pipeline
-- `money plot run` — open a balances chart in your browser
+- `fintl etl run` — run the accounts ETL pipeline
+- `fintl store run` — copy downloaded bank files into the ETL input directories
+- `fintl search` — interactive transaction search
+- `fintl plot run` — open a balances chart in your browser
 
 You can inspect the live CLI help with:
 
 ```bash
-money --help
-money etl --help
-money plot --help
-money search --help
+fintl --help
+fintl etl --help
+fintl store --help
+fintl plot --help
+fintl search --help
 ```
 
 
-## `money etl run`
+## `fintl etl run`
 
 Loads configuration and runs the accounts ETL pipeline.
 
 ```bash
-money etl run
+fintl etl run
 ```
 
 This command produces the consolidated parquet files used by the other commands, including:
@@ -90,17 +92,48 @@ This command produces the consolidated parquet files used by the other commands,
 - `all-balances.parquet`
 - `all-transactions.parquet`
 
-If you have not run the ETL yet, run this command before using `money search` or `money plot run`.
+If you have not run the ETL yet, run this command before using `fintl search` or `fintl plot run`.
 
-Source: `apps/accounts/etl.py`
+Source: `src/fintl/cli/etl.py`
 
 
-## `money search`
+## `fintl store run`
+
+Scans a directory for downloaded bank files and copies them into the correct ETL input directories.
+
+```bash
+fintl store run
+```
+
+By default, the current working directory is scanned. To specify a different directory:
+
+```bash
+fintl store run --from-dir ~/Downloads
+```
+
+Each file is tested against all registered parser applicability predicates. For every match you are asked to confirm before the file is copied. To auto-confirm all matches:
+
+```bash
+fintl store run --yes
+```
+
+When a file matches multiple parsers you are prompted to choose one (or skip). With `--yes`, ambiguous files are skipped automatically.
+
+A summary is printed at the end:
+
+```
+Done. Files matched: 3 | Copied: 2 | Skipped: 1 | Unmatched: 0 | Ambiguous: 0
+```
+
+Source: `src/fintl/cli/store.py`
+
+
+## `fintl search`
 
 Launches a Textual terminal UI for browsing and filtering bank transactions.
 
 ```bash
-money search
+fintl search
 ```
 
 The app reads `all-transactions.parquet` from `Config.target_dir`.
@@ -120,37 +153,46 @@ Filter fields available in the UI:
 Useful interactions:
 
 - filters apply automatically about 1 second after typing stops
+- clicking a column header sorts by that column (click again to reverse)
 - `Esc` focuses the results table
 - `Ctrl+X` clears all filters
 - selecting a row opens a detail dialog
-- pressing `Enter` in the detail dialog copies the selected value
+- pressing `Enter` in the detail dialog copies the selected value to the clipboard
 - `Ctrl+Q` quits
 
-Source: `apps/accounts/search.py`
+Source: `src/fintl/cli/search.py`
 
 
-## `money plot run`
+## `fintl plot run`
 
 Builds a scatter chart of account balances over time and opens it in your default browser.
 
 ```bash
-money plot run
+fintl plot run
 ```
 
-To save the chart to a specific HTML file first:
+To save the chart to a specific HTML file:
 
 ```bash
-money plot run --save chart.html
+fintl plot run --save chart.html
 ```
 
 The command reads `all-balances.parquet` from `Config.target_dir`.
 
 When `--save` is omitted, the chart is written to a temporary HTML file and opened automatically. When `--save` is provided, the chart is saved to that path and then opened.
 
-Source: `apps/accounts/plot_cli.py`
+Source: `src/fintl/cli/plot.py`
 
 
 ## Extending the ETL
+
+The ETL is organised around three levels:
+
+- **Provider** — a bank or broker (e.g. `dkb`, `scalable`)
+- **Service** — an account type at that provider (e.g. `giro`, `broker`)
+- **Parser** — a versioned format handler for a specific file layout exported by that service
+
+Each parser module is registered as a `ParserSpec` inside a provider's `plugin.py`. The runner discovers all specs through the central `ALL_PLUGINS` list in `src/fintl/accounts_etl/registry.py` and calls each parser in precedence order.
 
 The ETL is designed so that adding a new parser version, service, or provider
 requires changes in as few places as possible.
@@ -161,7 +203,7 @@ A "parser version" handles a specific file format for an existing bank
 account type, e.g. a new CSV layout that DKB started exporting in 2025.
 
 1. **Create the parser module** in the appropriate provider package, e.g.
-   `src/packages/accounts_etl/dkb/giro202501.py`.  The module must expose:
+   `src/fintl/accounts_etl/dkb/giro202501.py`.  The module must expose:
 
    - `CASE: Case` — a `Case(provider=..., service=..., parser=...)` instance
      that uniquely names this parser.
@@ -171,11 +213,11 @@ account type, e.g. a new CSV layout that DKB started exporting in 2025.
    - `main(config: Config) -> None` — runs the full parse-and-store pipeline.
 
 2. **Register the parser** in the provider's plugin module, e.g.
-   `src/packages/accounts_etl/dkb/plugin.py`, by adding a `ParserSpec` to
+   `src/fintl/accounts_etl/dkb/plugin.py`, by adding a `ParserSpec` to
    the relevant `ServicePlugin`:
 
    ```python
-   from packages.accounts_etl.dkb import giro202501
+   from fintl.accounts_etl.dkb import giro202501
 
    GIRO = ServicePlugin(
        name="giro",
@@ -204,7 +246,7 @@ A "service" is a new account type at a bank that already has a provider
 entry, e.g. adding a `depot` service to Postbank.
 
 1. Add the service field to `Provider` and `ServiceEnum` in
-   `src/packages/accounts_etl/schemas.py`:
+   `src/fintl/accounts_etl/schemas.py`:
 
    ```python
    class ServiceEnum(str, Enum):
@@ -222,7 +264,7 @@ entry, e.g. adding a `depot` service to Postbank.
 2. Create the parser module(s) following the same steps as above.
 
 3. Add a new `ServicePlugin` to the provider's `plugin.py`, e.g.
-   `src/packages/accounts_etl/postbank/plugin.py`:
+   `src/fintl/accounts_etl/postbank/plugin.py`:
 
    ```python
    DEPOT = ServicePlugin(
@@ -240,12 +282,12 @@ entry, e.g. adding a `depot` service to Postbank.
    PLUGIN = ProviderPlugin(name="postbank", services=(GIRO, DEPOT))
    ```
 
-4. Update `~/.config/petprojects/money.toml` with the new service path.
+4. Update `~/.config/petprojects/fintl.toml` with the new service path.
 
 ### Adding a new provider (bank)
 
 1. Add the provider to `ProviderEnum` and `Sources` in
-   `src/packages/accounts_etl/schemas.py`:
+   `src/fintl/accounts_etl/schemas.py`:
 
    ```python
    class ProviderEnum(str, Enum):
@@ -258,13 +300,13 @@ entry, e.g. adding a `depot` service to Postbank.
    ```
 
 2. Create a provider sub-package, e.g.
-   `src/packages/accounts_etl/n26/`, with an `__init__.py`, at least one
+   `src/fintl/accounts_etl/n26/`, with an `__init__.py`, at least one
    parser module, and a `plugin.py` that exports `PLUGIN`:
 
    ```python
-   # src/packages/accounts_etl/n26/plugin.py
-   from packages.accounts_etl.n26 import giro0
-   from packages.accounts_etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
+   # src/fintl/accounts_etl/n26/plugin.py
+   from fintl.accounts_etl.n26 import giro0
+   from fintl.accounts_etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 
    GIRO = ServicePlugin(
        name="giro",
@@ -282,10 +324,10 @@ entry, e.g. adding a `depot` service to Postbank.
    ```
 
 3. Import and add the plugin to `ALL_PLUGINS` in
-   `src/packages/accounts_etl/registry.py`:
+   `src/fintl/accounts_etl/registry.py`:
 
    ```python
-   from packages.accounts_etl.n26.plugin import PLUGIN as N26_PLUGIN
+   from fintl.accounts_etl.n26.plugin import PLUGIN as N26_PLUGIN
 
    ALL_PLUGINS: list[ProviderPlugin] = [
        DKB_PLUGIN,
@@ -296,10 +338,10 @@ entry, e.g. adding a `depot` service to Postbank.
    ]
    ```
 
-4. Add the new provider's source paths to `~/.config/petprojects/money.toml`.
+4. Add the new provider's source paths to `~/.config/petprojects/fintl.toml`.
 
 The runner iterates `config.sources` dynamically, so no changes to
-`process_accounts.py` or any other orchestration file are required.
+`src/fintl/accounts_etl/process_accounts.py` or any other orchestration file are required.
 
 ### Parsers with non-CSV source files
 
@@ -308,7 +350,7 @@ by the Scalable broker parsers), pass a custom `source_files_getter` to
 `ParserSpec` inside the provider's `plugin.py`:
 
 ```python
-from packages.accounts_etl.scalable.files import (
+from fintl.accounts_etl.scalable.files import (
     get_parser_source_files as scalable_get_source_files,
 )
 

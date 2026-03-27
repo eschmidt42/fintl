@@ -6,21 +6,70 @@
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
+
+> Financial ETL CLI: parse, normalize, and explore your bank transaction data.
+
+## TL;DR
+
+This tool helps you process, visualize and search your balance and transaction information that you have exported from your bank accounts.
+
+Currently supports DKB, Postbank, GLS and Scalable Capital Broker.
+
+Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](https://ollama.com) instance with a multimodal model (required only for Scalable broker PNG statements).
+
+**All your data stays on your machine. No need to trust another entity that is PSD2 certified.**
+
+## How to install
+
+```bash
+git clone https://github.com/eschmidt42/fintl.git
+cd fintl
+uv sync
+uv tool install .
+```
+
+After installation, `fintl` should be available on your `PATH`:
+
+```bash
+which fintl
+# e.g. /Users/YOURUSER/.local/bin/fintl
+```
 
 ## How to use
 
-### Bank / investment accounts ETL
+1. Configure your `~/.config/petprojects/fintl.toml`. For details see [here](./src/fintl/cli/README.md#fintltoml).
+2. Go to your bank account.
+3. Select your service, e.g. Giro.
+4. Export csv file or similar to `~/Downloads`, or directly your source dir for your bank / service.
+5. optionally if you've stored your file in `~/Downloads`, run `cd ~/Downloads` followed by `fintl store run` (uses your `fintl.toml` from step 1).
+6. Run the etl via `fintl etl run` (also uses your `fintl.toml` from step 1).
+7. Upon success visualize / search your data via `fintl plot run` or `fintl search`.
 
-Install as a `uv tool` via
-
-  uv tool install .
-
-from the project root. If you are somewhere else than in the project repo, point to the path where you cloned the repo.
-
-After the installation `fintl` should become available as a cli tool. See [this README.md](./src/fintl/cli/README.md) for details.
+[Please see here and below](./src/fintl/cli/README.md#top-level-usage) for more usage details.
 
 ## Repo structure
 
-* `src/fintl/`: core packages providing base functionality
-* `src/fintl/cli/`: fintl CLI main and components
-* `tests/`: tests for packages of this repo
+* `src/fintl/accounts_etl/` — core ETL logic: schemas, parsers, registry, runner
+* `src/fintl/cli/` — CLI entry point and subcommands (`etl`, `store`, `search`, `plot`)
+* `tests/` — tests for packages of this repo
+
+## Development
+
+Run tests:
+
+```bash
+uv run pytest -n auto tests
+```
+
+Type check:
+
+```bash
+uv run ty check src
+```
+
+Lint, format, type check, test and all the other good stuff:
+
+```bash
+pre-commit run --all-files
+```
