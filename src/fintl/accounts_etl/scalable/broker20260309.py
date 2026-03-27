@@ -243,8 +243,8 @@ def parse_new_files(
             transactions, balance = parse_image_file(
                 case, file_path, ollama_config=ollama_config
             )
-        except Exception as exc:
-            logger.warning("Failed to parse %s: %s", file_path.name, exc)
+        except Exception:
+            logger.warning("Failed to parse %s", file_path.name, exc_info=True)
             continue
 
         store_transactions(parsed_dir, file_path, transactions)
