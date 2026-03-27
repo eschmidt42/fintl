@@ -91,7 +91,6 @@ def _check_ollama_availability(base_url: str) -> None:
 def _get_ollama_client(
     *, model: str, ollama_base_url: str = "http://localhost:11434/v1"
 ) -> instructor.Instructor:
-    _check_ollama_availability(ollama_base_url)
     return instructor.from_provider(
         f"ollama/{model}",
         base_url=ollama_base_url,
@@ -173,6 +172,12 @@ def parse_new_files(
         )
         return
 
+    try:
+        _check_ollama_availability(ollama_config.base_url)
+    except OllamaUnavailableError as exc:
+        logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
+        return
+
     if not parsed_dir.exists():
         logger.info(f"Creating {parsed_dir=}")
         parsed_dir.mkdir(parents=True, exist_ok=True)
@@ -185,9 +190,6 @@ def parse_new_files(
             transactions, balance = parse_image_file(
                 case, file_path, ollama_config=ollama_config
             )
-        except OllamaUnavailableError as exc:
-            logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
-            return
         except Exception as exc:
             logger.warning("Failed to parse %s: %s", file_path.name, exc)
             continue

@@ -236,23 +236,6 @@ def test_check_ollama_availability_strips_v1_suffix():
     mock_get.assert_called_once_with("http://localhost:11434", timeout=5.0)
 
 
-def test_get_ollama_client_raises_on_unavailable_server():
-    """_get_ollama_client raises OllamaUnavailableError when ollama is not reachable."""
-    from unittest.mock import patch
-
-    from fintl.accounts_etl.scalable.broker20260309 import (
-        OllamaUnavailableError,
-        _get_ollama_client,
-    )
-
-    with patch(
-        "fintl.accounts_etl.scalable.broker20260309._check_ollama_availability",
-        side_effect=OllamaUnavailableError("not reachable"),
-    ):
-        with pytest.raises(OllamaUnavailableError):
-            _get_ollama_client(model="some-model")
-
-
 def test_get_ollama_client_propagates_provider_error():
     """_get_ollama_client lets exceptions from instructor.from_provider bubble up."""
     from unittest.mock import patch
@@ -290,7 +273,7 @@ def test_check_ollama_availability_uses_base_url_as_is_without_v1_suffix():
 def test_parse_new_files_aborts_on_ollama_unavailable(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ):
-    """parse_new_files stops processing all files when OllamaUnavailableError is raised."""
+    """parse_new_files stops before the loop when _check_ollama_availability raises."""
     import logging
     from unittest.mock import patch
 
@@ -305,14 +288,11 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
         f.write_bytes(b"\x89PNG")
     parsed_dir = tmp_path / "parsed"
 
-    call_count = 0
-
-    def _raise_unavailable(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        raise broker.OllamaUnavailableError("server down")
-
-    with patch.object(broker, "parse_image_file", side_effect=_raise_unavailable):
+    with patch.object(
+        broker,
+        "_check_ollama_availability",
+        side_effect=broker.OllamaUnavailableError("server down"),
+    ):
         with caplog.at_level(
             logging.WARNING, logger="fintl.accounts_etl.scalable.broker20260309"
         ):
@@ -321,8 +301,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
             )
 
     assert "Ollama is not available" in caplog.text
-    # Should have aborted after first file — second file never attempted
-    assert call_count == 1
+    assert not parsed_dir.exists()
 
 
 def test_parse_new_files_continues_on_generic_error(
