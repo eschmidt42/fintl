@@ -10,6 +10,7 @@ from fintl.accounts_etl.schemas import (
     Case,
     Config,
     Logging,
+    OllamaConfig,
     Provider,
     Sources,
 )
@@ -227,7 +228,7 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     from fintl.accounts_etl.scalable import broker20260309
 
     def _fake_extract_balance(
-        case: Case, file_path: Path, *, model: str = ""
+        case: Case, file_path: Path, *, ollama_config: OllamaConfig
     ) -> BalanceInfo:
         date = broker20260309.get_date_from_string(file_path.name)
         return BalanceInfo(
@@ -251,6 +252,7 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     out_dir = tmp_path / "out"
     out_dir.mkdir()
     config = _config(out_dir, Sources(scalable=Provider(broker=scalable_src)))
+    config = config.model_copy(update={"ollama": OllamaConfig(model="fake-model")})
     process_accounts.main(config)
 
     bal_path = config.target_dir / "all-balances.parquet"

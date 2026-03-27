@@ -11,7 +11,7 @@ from fintl.accounts_etl.scalable.files import (
     transaction_htm_name_to_parquet,
     transaction_htm_name_to_xlsx,
 )
-from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
+from fintl.accounts_etl.schemas import Config, Logging, OllamaConfig, Provider, Sources
 
 PNG_FILENAME = "Screenshot 2026-03-09 at 14.30.53.png"
 MOCK_AMOUNT = 1234.56
@@ -25,7 +25,11 @@ def get_time(path: Path) -> float:
 @pytest.fixture
 def mock_lm_extraction():
     mock_result = broker._BalanceInfoExtract(amount=MOCK_AMOUNT, currency=MOCK_CURRENCY)
-    with patch.object(broker, "_get_lm_extraction", return_value=mock_result):
+    mock_client = object()  # dummy; _get_lm_extraction is also patched
+    with (
+        patch.object(broker, "_get_ollama_client", return_value=mock_client),
+        patch.object(broker, "_get_lm_extraction", return_value=mock_result),
+    ):
         yield
 
 
@@ -44,6 +48,7 @@ def test_main(tmp_path: Path, mock_lm_extraction):
         target_dir=tmp_path,
         sources=Sources(scalable=Provider(broker=broker_source_dir)),
         logging=Logging(config_file=logger_path),
+        ollama=OllamaConfig(model="fake-model"),
     )
 
     # paths

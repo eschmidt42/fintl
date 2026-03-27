@@ -97,12 +97,18 @@ class LabelRule(BaseModel):
     conditions: list[LabelCondition]
 
 
+class OllamaConfig(BaseModel):
+    model: str
+    base_url: str = "http://localhost:11434/v1"
+
+
 class Config(BaseSettings):
     # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#other-settings-source
     target_dir: Path = Field(default=...)
     sources: Sources = Field(default=...)
     logging: Logging = Logging()
     label_rules: list[LabelRule] = Field(default_factory=list)
+    ollama: OllamaConfig | None = None
 
     model_config = SettingsConfigDict(toml_file="~/.config/petprojects/fintl.toml")
 

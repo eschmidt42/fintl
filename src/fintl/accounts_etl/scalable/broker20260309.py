@@ -22,6 +22,7 @@ from fintl.accounts_etl.schemas import (
     BalanceInfo,
     Case,
     Config,
+    OllamaConfig,
     ProviderEnum,
     ScalableBrokerParserEnum,
     ServiceEnum,
@@ -64,13 +65,21 @@ def get_date_from_string(name: str) -> datetime.date:
 
 def _get_ollama_client(
     *, model: str, ollama_base_url: str = "http://localhost:11434/v1"
-) -> instructor.Instructor:
-    return instructor.from_provider(
-        f"ollama/{model}",
-        base_url=ollama_base_url,
-        mode=instructor.Mode.JSON,
-        async_client=False,
-    )
+) -> instructor.Instructor | None:
+    try:
+        return instructor.from_provider(
+            f"ollama/{model}",
+            base_url=ollama_base_url,
+            mode=instructor.Mode.JSON,
+            async_client=False,
+        )
+    except Exception:
+        logger.warning(
+            f"Failed to connect to ollama at {ollama_base_url} with {model=}. "
+            "Skipping PNG parsing.",
+            exc_info=True,
+        )
+        return None
 
 
 _SYSTEM_PROMPT = (
@@ -97,9 +106,13 @@ def _get_lm_extraction(
 
 
 def extract_balance(
-    case: Case, file_path: Path, *, model: str = "qwen3.5:27b"
+    case: Case, file_path: Path, *, ollama_config: OllamaConfig
 ) -> BalanceInfo:
-    extraction_client = _get_ollama_client(model=model)
+    extraction_client = _get_ollama_client(
+        model=ollama_config.model, ollama_base_url=ollama_config.base_url
+    )
+    if extraction_client is None:
+        raise RuntimeError(f"Could not create ollama client for {file_path}. Skipping.")
 
     extraction = _get_lm_extraction(file_path, extraction_client)
 
@@ -118,10 +131,10 @@ def extract_balance(
 
 
 def parse_image_file(
-    case: Case, file_path: Path, *, model: str = "qwen3.5:27b"
+    case: Case, file_path: Path, *, ollama_config: OllamaConfig
 ) -> tuple[pl.DataFrame, BalanceInfo]:
     transactions = extract_transactions()
-    balance = extract_balance(case, file_path, model=model)
+    balance = extract_balance(case, file_path, ollama_config=ollama_config)
 
     return transactions, balance
 
@@ -130,9 +143,18 @@ def parse_new_files(
     case: Case,
     new_files_to_parse: list[Path],
     parsed_dir: Path,
+    *,
+    ollama_config: OllamaConfig | None,
 ):
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
+        return
+
+    if ollama_config is None:
+        logger.warning(
+            "Ollama is not configured. Skipping PNG parsing for %d file(s).",
+            len(new_files_to_parse),
+        )
         return
 
     if not parsed_dir.exists():
@@ -143,7 +165,13 @@ def parse_new_files(
 
     for file_path in new_files_to_parse:
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
-        transactions, balance = parse_image_file(case, file_path)
+        try:
+            transactions, balance = parse_image_file(
+                case, file_path, ollama_config=ollama_config
+            )
+        except RuntimeError as exc:
+            logger.warning(str(exc))
+            continue
 
         store_transactions(parsed_dir, file_path, transactions)
         store_balance(parsed_dir, file_path, balance)
@@ -178,7 +206,7 @@ def main(config: Config):
     )
 
     # parse new files to parquet -> transactions & balance
-    parse_new_files(CASE, new_files_to_parse, parsed_dir)
+    parse_new_files(CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama)
 
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)
