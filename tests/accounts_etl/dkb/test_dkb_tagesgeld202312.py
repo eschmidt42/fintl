@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 import polars as pl
@@ -10,6 +11,21 @@ from fintl.accounts_etl.dkb.files import (
     transaction_csv_name_to_xlsx,
 )
 from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
+
+
+def test_extract_balance_with_xa0_character(tmp_path: Path):
+    """Regression test: extract_balance must handle \xa0 (non-breaking space) in the total field."""
+    # \xa0 between amount and currency, as produced by some DKB exports
+    lines = [
+        '""',
+        '"Kontostand vom 02.12.2023:";"1.123,45\xa0EUR"',
+        '""',
+    ]
+    result = tagesgeld.extract_balance(tagesgeld.CASE, tmp_path / "dummy.csv", lines)
+
+    assert result.date == datetime.date(2023, 12, 2)
+    assert result.amount == 1123.45
+    assert result.currency == "EUR"
 
 
 def get_time(path: Path) -> float:
