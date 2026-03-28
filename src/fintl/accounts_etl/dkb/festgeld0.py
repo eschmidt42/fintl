@@ -7,6 +7,10 @@ import polars as pl
 
 from fintl.accounts_etl.dkb.giro202307 import extract_balance
 from fintl.accounts_etl.dkb.giro202312 import detect_separator
+from fintl.accounts_etl.exceptions import (
+    ExtractBalanceException,
+    ExtractTransactionsException,
+)
 from fintl.accounts_etl.file_helper import (
     concatenate_new_information_to_history,
     detect_new_parsed_files,
@@ -158,8 +162,20 @@ def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceIn
     logger.debug(f"{file_path=} has {encoding=}")
 
     lines = load_lines(file_path, encoding)
-    transactions = extract_transactions(case, file_path, lines, encoding)
-    balance = extract_balance(case, file_path, lines)
+
+    try:
+        transactions = extract_transactions(case, file_path, lines, encoding)
+    except Exception as e:
+        msg = f"failed to parse {case=} transactions: {file_path=}"
+        logger.error(msg)
+        raise ExtractTransactionsException(msg) from e
+
+    try:
+        balance = extract_balance(case, file_path, lines)
+    except Exception as e:
+        msg = f"failed to parse {case=} balance: {file_path=}"
+        logger.error(msg)
+        raise ExtractBalanceException(msg) from e
 
     return transactions, balance
 
@@ -181,7 +197,10 @@ def parse_new_files(
 
     for file_path in new_files_to_parse:
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
-        transactions, balance = parse_csv_file(case, file_path)
+        try:
+            transactions, balance = parse_csv_file(case, file_path)
+        except (ExtractBalanceException, ExtractTransactionsException):
+            continue  # already logged in parse_csv_file
 
         store_transactions(parsed_dir, file_path, transactions)
         store_balance(parsed_dir, file_path, balance)

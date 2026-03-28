@@ -1,9 +1,24 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import polars as pl
+import pytest
 
 from fintl.accounts_etl.dkb import giro0 as giro
+from fintl.accounts_etl.exceptions import (
+    ExtractBalanceException,
+    ExtractTransactionsException,
+)
 from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
+
+_FIXTURE_CSV = (
+    Path(__file__).parent.parent
+    / "files"
+    / "csv_files"
+    / "DKB"
+    / "kontoauszug"
+    / "0123456789_2022-09-15_to_2022-10-15.csv"
+)
 
 
 def get_time(path: Path) -> float:
@@ -118,3 +133,52 @@ def test_main(tmp_path: Path):
     assert t_balance_parquet_single < get_time(path_balance_parquet_single)
     assert t_transactions_parquet_single < get_time(path_transactions_parquet_single)
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
+
+
+def test_parse_csv_file_raises_extract_transactions_exception():
+    with patch(
+        "fintl.accounts_etl.dkb.giro0.extract_transactions",
+        side_effect=ValueError("malformed transactions"),
+    ):
+        with pytest.raises(ExtractTransactionsException) as exc_info:
+            giro.parse_csv_file(giro.CASE, _FIXTURE_CSV)
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+def test_parse_csv_file_raises_extract_balance_exception():
+    with patch(
+        "fintl.accounts_etl.dkb.giro0.extract_balance",
+        side_effect=ValueError("malformed balance"),
+    ):
+        with pytest.raises(ExtractBalanceException) as exc_info:
+            giro.parse_csv_file(giro.CASE, _FIXTURE_CSV)
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    good_file = tmp_path / "good.csv"
+    bad_file = tmp_path / "bad.csv"
+    good_file.touch()
+    bad_file.touch()
+
+    parsed_dir = tmp_path / "parsed"
+    good_transactions = pl.DataFrame()
+    good_balance = object()
+
+    def _parse_csv_file(case, file_path):
+        if file_path == bad_file:
+            raise ExtractTransactionsException("bad file")
+        return good_transactions, good_balance
+
+    with (
+        patch(
+            "fintl.accounts_etl.dkb.giro0.parse_csv_file",
+            side_effect=_parse_csv_file,
+        ),
+        patch("fintl.accounts_etl.dkb.giro0.store_transactions") as mock_store_t,
+        patch("fintl.accounts_etl.dkb.giro0.store_balance") as mock_store_b,
+    ):
+        giro.parse_new_files(giro.CASE, [bad_file, good_file], parsed_dir)
+
+    mock_store_t.assert_called_once_with(parsed_dir, good_file, good_transactions)
+    mock_store_b.assert_called_once_with(parsed_dir, good_file, good_balance)
