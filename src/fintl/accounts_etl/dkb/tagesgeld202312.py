@@ -148,6 +148,8 @@ def extract_balance(case: Case, file_path: Path, lines: T.List[str]) -> BalanceI
     line = balance_line.split(";")
     date, total = line[0], line[1]
 
+    total = total.replace("\xa0", " ")
+
     date = date.strip('"').strip(":").split(" ")[2]
 
     date = [int(v) for v in date.split(".")]
