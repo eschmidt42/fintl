@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from unittest.mock import patch
 
 import polars as pl
 import pytest
@@ -21,6 +22,10 @@ from fintl.accounts_etl.dkb.giro202312 import (
     extract_transactions,
     load_lines,
 )
+from fintl.accounts_etl.exceptions import (
+    ExtractBalanceException,
+    ExtractTransactionsException,
+)
 from fintl.accounts_etl.schemas import (
     Config,
     DKBGiroParserEnum,
@@ -29,6 +34,15 @@ from fintl.accounts_etl.schemas import (
     ProviderEnum,
     ServiceEnum,
     Sources,
+)
+
+_FIXTURE_CSV = (
+    Path(__file__).parent.parent
+    / "files"
+    / "csv_files"
+    / "DKB"
+    / "kontoauszug"
+    / "09-12-2023_Umsatzliste_Girokonto_DE01234567890123456789.csv"
 )
 
 
@@ -289,3 +303,52 @@ def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
     with patch.object(giro202312, "detect_separator", return_value=None):
         with pytest.raises(ValueError, match="separator=None"):
             extract_transactions(CASE, file_path, lines, "utf-8")
+
+
+def test_parse_csv_file_raises_extract_transactions_exception():
+    with patch(
+        "fintl.accounts_etl.dkb.giro202312.extract_transactions",
+        side_effect=ValueError("malformed transactions"),
+    ):
+        with pytest.raises(ExtractTransactionsException) as exc_info:
+            giro.parse_csv_file(giro.CASE, _FIXTURE_CSV)
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+def test_parse_csv_file_raises_extract_balance_exception():
+    with patch(
+        "fintl.accounts_etl.dkb.giro202312.extract_balance",
+        side_effect=ValueError("malformed balance"),
+    ):
+        with pytest.raises(ExtractBalanceException) as exc_info:
+            giro.parse_csv_file(giro.CASE, _FIXTURE_CSV)
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    good_file = tmp_path / "good.csv"
+    bad_file = tmp_path / "bad.csv"
+    good_file.touch()
+    bad_file.touch()
+
+    parsed_dir = tmp_path / "parsed"
+    good_transactions = pl.DataFrame()
+    good_balance = object()
+
+    def _parse_csv_file(case, file_path):
+        if file_path == bad_file:
+            raise ExtractTransactionsException("bad file")
+        return good_transactions, good_balance
+
+    with (
+        patch(
+            "fintl.accounts_etl.dkb.giro202312.parse_csv_file",
+            side_effect=_parse_csv_file,
+        ),
+        patch("fintl.accounts_etl.dkb.giro202312.store_transactions") as mock_store_t,
+        patch("fintl.accounts_etl.dkb.giro202312.store_balance") as mock_store_b,
+    ):
+        giro.parse_new_files(giro.CASE, [bad_file, good_file], parsed_dir)
+
+    mock_store_t.assert_called_once_with(parsed_dir, good_file, good_transactions)
+    mock_store_b.assert_called_once_with(parsed_dir, good_file, good_balance)

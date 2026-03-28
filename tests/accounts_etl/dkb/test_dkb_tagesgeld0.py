@@ -1,6 +1,8 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import polars as pl
+import pytest
 
 from fintl.accounts_etl.dkb import tagesgeld0 as tagesgeld
 from fintl.accounts_etl.dkb.files import (
@@ -9,7 +11,20 @@ from fintl.accounts_etl.dkb.files import (
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
 )
+from fintl.accounts_etl.exceptions import (
+    ExtractBalanceException,
+    ExtractTransactionsException,
+)
 from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
+
+_FIXTURE_CSV = (
+    Path(__file__).parent.parent
+    / "files"
+    / "csv_files"
+    / "DKB"
+    / "tagesgeld"
+    / "0123456789_2023-04-16.csv"
+)
 
 
 def get_time(path: Path) -> float:
@@ -137,3 +152,52 @@ def test_extract_transactions_returns_empty_dataframe_when_no_data_rows(tmp_path
 
     assert isinstance(df, pl.DataFrame)
     assert len(df) == 0
+
+
+def test_parse_csv_file_raises_extract_transactions_exception():
+    with patch(
+        "fintl.accounts_etl.dkb.tagesgeld0.extract_transactions",
+        side_effect=ValueError("malformed transactions"),
+    ):
+        with pytest.raises(ExtractTransactionsException) as exc_info:
+            tagesgeld.parse_csv_file(tagesgeld.CASE, _FIXTURE_CSV)
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+def test_parse_csv_file_raises_extract_balance_exception():
+    with patch(
+        "fintl.accounts_etl.dkb.tagesgeld0.extract_balance",
+        side_effect=ValueError("malformed balance"),
+    ):
+        with pytest.raises(ExtractBalanceException) as exc_info:
+            tagesgeld.parse_csv_file(tagesgeld.CASE, _FIXTURE_CSV)
+    assert isinstance(exc_info.value.__cause__, ValueError)
+
+
+def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    good_file = tmp_path / "good.csv"
+    bad_file = tmp_path / "bad.csv"
+    good_file.touch()
+    bad_file.touch()
+
+    parsed_dir = tmp_path / "parsed"
+    good_transactions = pl.DataFrame()
+    good_balance = object()
+
+    def _parse_csv_file(case, file_path):
+        if file_path == bad_file:
+            raise ExtractTransactionsException("bad file")
+        return good_transactions, good_balance
+
+    with (
+        patch(
+            "fintl.accounts_etl.dkb.tagesgeld0.parse_csv_file",
+            side_effect=_parse_csv_file,
+        ),
+        patch("fintl.accounts_etl.dkb.tagesgeld0.store_transactions") as mock_store_t,
+        patch("fintl.accounts_etl.dkb.tagesgeld0.store_balance") as mock_store_b,
+    ):
+        tagesgeld.parse_new_files(tagesgeld.CASE, [bad_file, good_file], parsed_dir)
+
+    mock_store_t.assert_called_once_with(parsed_dir, good_file, good_transactions)
+    mock_store_b.assert_called_once_with(parsed_dir, good_file, good_balance)
