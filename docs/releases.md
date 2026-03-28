@@ -67,7 +67,7 @@ Use pre-releases to validate that the package builds and installs correctly befo
 git tag v1.2.3a1 && git push origin v1.2.3a1
 
 # Install from TestPyPI to verify
-uv pip install --index-url https://test.pypi.org/simple/ fintl==1.2.3a1
+uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple fintl==1.2.3a1
 
 # Once satisfied, tag the final release
 git tag v1.2.3 && git push origin v1.2.3
