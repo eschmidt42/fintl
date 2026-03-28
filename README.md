@@ -74,3 +74,5 @@ Lint, format, type check, test and all the other good stuff:
 ```bash
 pre-commit run --all-files
 ```
+
+For release steps see [here](./docs/releases.md).
