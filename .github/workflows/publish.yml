@@ -18,6 +18,8 @@ jobs:
         persist-credentials: false
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.10.10"
     - name: Build a binary wheel and a source tarball
       run: uv build --sdist --wheel
     - name: Store the distribution packages
