@@ -67,6 +67,35 @@ def match_file_to_parsers(file: Path, parsers: list[ParserSpec]) -> list[ParserS
     return matches
 
 
+def deduplicate_by_provider_service(matches: list[ParserSpec]) -> list[ParserSpec]:
+    """Reduce *matches* to at most one ``ParserSpec`` per provider/service pair.
+
+    All parser versions for the same provider and service share the same source
+    directory, so only one representative is needed for routing purposes.  When
+    multiple versions match, the spec with the lowest ``precedence`` value is
+    kept (lower precedence = higher priority, consistent with the ETL runner).
+
+    Args:
+        matches: Parser specs returned by :func:`match_file_to_parsers`.
+
+    Returns:
+        List containing at most one spec per ``(provider, service)`` pair,
+        preserving the relative order of first occurrence.
+    """
+    deduplicated_matches: dict[tuple[str, str], ParserSpec] = {}
+
+    for m in matches:
+        key = (m.case.provider, m.case.service)
+        if key in deduplicated_matches:
+            entry = deduplicated_matches[key]
+            if m.precedence < entry.precedence:
+                deduplicated_matches[key] = m
+        else:
+            deduplicated_matches[key] = m
+
+    return list(deduplicated_matches.values())
+
+
 def _copy_file(file: Path, raw_dir: Path) -> bool:
     """Copy *file* into *raw_dir*, skipping if already present.
 
@@ -98,11 +127,10 @@ def store_files(
     """Scan *source_dir*, match files to parsers, and copy on confirmation.
 
     Files that match **exactly one** parser are presented to the caller via
-    *confirm* before being copied.  Files that match **two or more** parsers are
+    *confirm* before being copied. Files that match **more than one provider-service** combination are
     treated as ambiguous: *choose* is called so the caller can select the single
-    correct parser (or return ``None`` to skip the file entirely).  Copying the
-    same source file into multiple parser raw directories is intentionally
-    prevented to avoid duplicate parsing runs.
+    correct provider-service combination (or return ``None`` to skip the file entirely).  Copying the
+    same source file multiple times is intentionally prevented.
 
     Args:
         source_dir: Directory to scan for candidate files.
@@ -118,8 +146,9 @@ def store_files(
         Summary counts: ``{"matched": int, "copied": int, "skipped": int,
         "unmatched": int, "ambiguous": int}``.
         *matched* counts files with exactly one parser match.
-        *ambiguous* counts files that matched two or more parsers.
+        *ambiguous* counts files that matched more than one provider-service configuration, e.g. DKB giro and DKB credit.
     """
+
     candidates = find_candidate_files(source_dir)
     logger.info("Scanning %d candidate file(s) in %s", len(candidates), source_dir)
 
@@ -127,6 +156,7 @@ def store_files(
 
     for file in candidates:
         matches = match_file_to_parsers(file, parsers)
+        matches = deduplicate_by_provider_service(matches)
 
         if not matches:
             counts["unmatched"] += 1
@@ -135,25 +165,31 @@ def store_files(
 
         if len(matches) > 1:
             counts["ambiguous"] += 1
+
             logger.warning(
                 "%s matched %d parsers (%s) — ambiguous; requesting user selection.",
                 file.name,
                 len(matches),
                 ", ".join(s.case.name for s in matches),
             )
+
             chosen = choose(file, matches)
+
             if chosen is None:
                 logger.debug("Ambiguous file skipped by user: %s", file.name)
                 continue
-            if _copy_file(file, config.get_raw_dir(chosen.case)):
+
+            if _copy_file(file, config.get_source_dir_from_case(chosen.case)):
                 counts["copied"] += 1
             else:
                 counts["skipped"] += 1
             continue
 
         counts["matched"] += 1
+
         spec = matches[0]
-        raw_dir = config.get_raw_dir(spec.case)
+        raw_dir = config.get_source_dir_from_case(spec.case)
+
         prompt = (
             f"{file.name}  →  {spec.case.provider} / {spec.case.service} / {spec.case.parser}\n"
             f"    target: {raw_dir}"

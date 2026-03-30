@@ -73,10 +73,10 @@ def run(
             )
         )
         for i, spec in enumerate(specs, 1):
-            raw_dir = config.get_raw_dir(spec.case)
+            source_dir_for_case = config.get_source_dir_from_case(spec.case)
             console.print(
                 f"  [{i}] {spec.case.provider} / {spec.case.service} / {spec.case.parser}"
-                f"  →  {raw_dir}"
+                f"  →  {source_dir_for_case}"
             )
         console.print("  [0] Skip this file")
         while True:
