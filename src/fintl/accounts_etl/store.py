@@ -127,9 +127,9 @@ def store_files(
     """Scan *source_dir*, match files to parsers, and copy on confirmation.
 
     Files that match **exactly one** parser are presented to the caller via
-    *confirm* before being copied. Files that match **two or more** parsers are
+    *confirm* before being copied. Files that match **more than one provider-service** combination are
     treated as ambiguous: *choose* is called so the caller can select the single
-    correct parser (or return ``None`` to skip the file entirely).  Copying the
+    correct provider-service combination (or return ``None`` to skip the file entirely).  Copying the
     same source file multiple times is intentionally prevented.
 
     Args:
@@ -146,7 +146,7 @@ def store_files(
         Summary counts: ``{"matched": int, "copied": int, "skipped": int,
         "unmatched": int, "ambiguous": int}``.
         *matched* counts files with exactly one parser match.
-        *ambiguous* counts files that matched two or more parsers.
+        *ambiguous* counts files that matched more than one provider-service configuration, e.g. DKB giro and DKB credit.
     """
 
     candidates = find_candidate_files(source_dir)

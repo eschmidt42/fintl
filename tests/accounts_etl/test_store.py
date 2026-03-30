@@ -247,8 +247,8 @@ def test_store_files_copies_confirmed(tmp_path: Path):
         choose=_NO_CHOOSE,
     )
 
-    soure_dir = config.get_source_dir_from_case(spec.case)
-    assert (soure_dir / "export.csv").exists()
+    source_dir = config.get_source_dir_from_case(spec.case)
+    assert (source_dir / "export.csv").exists()
     assert counts["copied"] == 1
     assert counts["skipped"] == 0
     assert counts["unmatched"] == 0
@@ -439,7 +439,7 @@ def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path)
     config = _config(tmp_path)
     spec = _spec("dkb", "giro", "giro202312", applies_result=True)
 
-    # Pre-place the file at the target raw dir.
+    # Pre-place the file in the parser's source directory so _copy_file returns False.
     source_dir = config.get_source_dir_from_case(spec.case)
     source_dir.mkdir(parents=True, exist_ok=True)
     (source_dir / "export.csv").write_text("existing")
