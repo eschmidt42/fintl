@@ -1,12 +1,8 @@
-import logging
-
 import typer
 
 from fintl.accounts_etl import process_accounts
 from fintl.accounts_etl.schemas import Config
 from fintl.fine_logging import setup_logging
-
-logger = logging.getLogger(__name__)
 
 app = typer.Typer(help="Run the accounts ETL pipeline.")
 
