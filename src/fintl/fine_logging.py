@@ -101,12 +101,7 @@ class DependencyFilter(logging.Filter):
 
     @override
     def filter(self, record: logging.LogRecord) -> bool:
-        is_1st_party = (
-            record.name.startswith("apps")
-            or record.name.startswith("packages")
-            or record.name == "__main__"
-            or record.name.startswith("receipt")
-        )
+        is_1st_party = record.name.startswith("fintl") or record.name == "__main__"
         is_3rd_party = not is_1st_party
         if is_3rd_party:
             allow = record.levelno >= self.param
