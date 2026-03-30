@@ -145,7 +145,7 @@ class Logging(BaseModel):
     third_party_filter_level: int = 20
     handlers_stdout_level: LevelsEnum = LevelsEnum.info
     handlers_file_json_level: LevelsEnum = LevelsEnum.debug
-    handlers_file_json_filename: str = "accounts-etl.log.jsonl"
+    handlers_file_json_filename: str = "fintl-etl.log.jsonl"
     handlers_file_json_maxbytes: int = 10_000_000
     handlers_file_json_backup_count: int = 3
     root_level: LevelsEnum = LevelsEnum.debug

@@ -16,9 +16,7 @@ def test_broker_parsers_apply(tmp_path: Path):
 
     assert scalable_broker_source_dir.exists()
 
-    logger_path = (
-        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
-    )
+    logger_path = Path(__file__).parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(

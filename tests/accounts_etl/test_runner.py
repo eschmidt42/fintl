@@ -21,7 +21,7 @@ from fintl.accounts_etl.schemas import (
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
-_LOGGER_PATH = Path(__file__).parent.parent / "fine_logging" / "logger-config.json"
+_LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
 _CSV_DIR = Path(__file__).parent / "files" / "csv_files" / "DKB" / "kontoauszug"
 
 
