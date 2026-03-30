@@ -18,6 +18,7 @@ from fintl.accounts_etl.schemas import (
 )
 from fintl.accounts_etl.store import (
     _copy_file,
+    deduplicate_by_provider_service,
     find_candidate_files,
     match_file_to_parsers,
     store_files,
@@ -43,12 +44,32 @@ def _config(tmp_path: Path) -> Config:
 
 
 def _spec(
-    provider: str, service: str, parser: str, applies_result: bool = True
+    provider: str,
+    service: str,
+    parser: str,
+    applies_result: bool = True,
+    precedence: int = 0,
 ) -> ParserSpec:
     return ParserSpec(
         case=Case(provider=provider, service=service, parser=parser),
         applies=MagicMock(return_value=applies_result),
         run=MagicMock(),
+        precedence=precedence,
+    )
+
+
+def _config_two_services(tmp_path: Path) -> Config:
+    """Config with dkb/giro and dkb/credit source dirs, for ambiguity tests."""
+    giro_dir = tmp_path / "src" / "dkb" / "giro"
+    credit_dir = tmp_path / "src" / "dkb" / "credit"
+    giro_dir.mkdir(parents=True, exist_ok=True)
+    credit_dir.mkdir(parents=True, exist_ok=True)
+    target_dir = tmp_path / "target"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    return Config(
+        target_dir=target_dir,
+        sources=Sources(dkb=Provider(giro=giro_dir, credit=credit_dir)),
+        logging=Logging(config_file=_LOGGER_PATH),
     )
 
 
@@ -126,6 +147,46 @@ def test_match_file_to_parsers_swallows_exceptions(tmp_path: Path):
     matches = match_file_to_parsers(f, [raising_spec, ok_spec])
     assert len(matches) == 1
     assert matches[0].case.parser == "giro202312"
+
+
+# ── deduplicate_by_provider_service ──────────────────────────────────────────
+
+
+def test_deduplicate_empty_list():
+    assert deduplicate_by_provider_service([]) == []
+
+
+def test_deduplicate_single_spec():
+    spec = _spec("dkb", "giro", "giro0")
+    assert deduplicate_by_provider_service([spec]) == [spec]
+
+
+def test_deduplicate_same_provider_service_keeps_lower_precedence():
+    low = _spec("dkb", "giro", "giro0", precedence=0)
+    high = _spec("dkb", "giro", "giro202312", precedence=1)
+    assert deduplicate_by_provider_service([low, high]) == [low]
+    assert deduplicate_by_provider_service([high, low]) == [low]
+
+
+def test_deduplicate_same_precedence_keeps_first():
+    first = _spec("dkb", "giro", "giro0", precedence=0)
+    second = _spec("dkb", "giro", "giro202312", precedence=0)
+    assert deduplicate_by_provider_service([first, second]) == [first]
+
+
+def test_deduplicate_different_provider_service_keeps_both():
+    spec_a = _spec("dkb", "giro", "giro0")
+    spec_b = _spec("dkb", "credit", "credit0")
+    result = deduplicate_by_provider_service([spec_a, spec_b])
+    assert result == [spec_a, spec_b]
+
+
+def test_deduplicate_preserves_insertion_order():
+    spec_a = _spec("dkb", "giro", "giro0")
+    spec_b = _spec("dkb", "credit", "credit0")
+    spec_c = _spec("postbank", "giro", "giro0")
+    result = deduplicate_by_provider_service([spec_a, spec_b, spec_c])
+    assert result == [spec_a, spec_b, spec_c]
 
 
 # ── _copy_file ────────────────────────────────────────────────────────────────
@@ -264,9 +325,9 @@ def test_store_files_ambiguous_counts_and_skips_when_choose_returns_none(
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
 
-    config = _config(tmp_path)
+    config = _config_two_services(tmp_path)
     spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
-    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+    spec_b = _spec("dkb", "credit", "credit0", applies_result=True)
 
     choose_calls: list[tuple[Path, list[ParserSpec]]] = []
 
@@ -298,9 +359,9 @@ def test_store_files_ambiguous_choose_copies_selected_spec_only(tmp_path: Path):
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
 
-    config = _config(tmp_path)
+    config = _config_two_services(tmp_path)
     spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
-    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+    spec_b = _spec("dkb", "credit", "credit0", applies_result=True)
 
     counts = store_files(
         tmp_path / "downloads",
@@ -314,6 +375,7 @@ def test_store_files_ambiguous_choose_copies_selected_spec_only(tmp_path: Path):
     assert counts["copied"] == 1
     assert counts["matched"] == 0
     assert (config.get_source_dir_from_case(spec_b.case) / "export.csv").exists()
+    assert not (config.get_source_dir_from_case(spec_a.case) / "export.csv").exists()
 
 
 def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
@@ -321,9 +383,9 @@ def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
     (tmp_path / "downloads").mkdir()
     (tmp_path / "downloads" / "export.csv").write_text("data")
 
-    config = _config(tmp_path)
+    config = _config_two_services(tmp_path)
     spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
-    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+    spec_b = _spec("dkb", "credit", "credit0", applies_result=True)
 
     confirm_calls: list[str] = []
 
@@ -345,11 +407,11 @@ def test_store_files_ambiguous_choose_skips_when_copy_already_exists(tmp_path: P
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
 
-    config = _config(tmp_path)
+    config = _config_two_services(tmp_path)
     spec_a = _spec("dkb", "giro", "giro0", applies_result=True)
-    spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
+    spec_b = _spec("dkb", "credit", "credit0", applies_result=True)
 
-    # Pre-place the file at the chosen spec's raw dir so _copy_file returns False.
+    # Pre-place the file at the chosen spec's source dir so _copy_file returns False.
     chosen_source = config.get_source_dir_from_case(spec_b.case)
     chosen_source.mkdir(parents=True, exist_ok=True)
     (chosen_source / "export.csv").write_text("existing")

@@ -67,6 +67,35 @@ def match_file_to_parsers(file: Path, parsers: list[ParserSpec]) -> list[ParserS
     return matches
 
 
+def deduplicate_by_provider_service(matches: list[ParserSpec]) -> list[ParserSpec]:
+    """Reduce *matches* to at most one ``ParserSpec`` per provider/service pair.
+
+    All parser versions for the same provider and service share the same source
+    directory, so only one representative is needed for routing purposes.  When
+    multiple versions match, the spec with the lowest ``precedence`` value is
+    kept (lower precedence = higher priority, consistent with the ETL runner).
+
+    Args:
+        matches: Parser specs returned by :func:`match_file_to_parsers`.
+
+    Returns:
+        List containing at most one spec per ``(provider, service)`` pair,
+        preserving the relative order of first occurrence.
+    """
+    deduplicated_matches: dict[tuple[str, str], ParserSpec] = {}
+
+    for m in matches:
+        key = (m.case.provider, m.case.service)
+        if key in deduplicated_matches:
+            entry = deduplicated_matches[key]
+            if m.precedence < entry.precedence:
+                deduplicated_matches[key] = m
+        else:
+            deduplicated_matches[key] = m
+
+    return list(deduplicated_matches.values())
+
+
 def _copy_file(file: Path, raw_dir: Path) -> bool:
     """Copy *file* into *raw_dir*, skipping if already present.
 
@@ -127,6 +156,7 @@ def store_files(
 
     for file in candidates:
         matches = match_file_to_parsers(file, parsers)
+        matches = deduplicate_by_provider_service(matches)
 
         if not matches:
             counts["unmatched"] += 1
