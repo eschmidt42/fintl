@@ -148,6 +148,9 @@ class Config(BaseSettings):
     def get_source_dir(self, provider: str, service: str) -> Path:
         return getattr(getattr(self.sources, provider), service)
 
+    def get_source_dir_from_case(self, case: Case) -> Path:
+        return getattr(getattr(self.sources, case.provider), case.service)
+
     def get_provider(self, provider: str) -> Provider:
         return getattr(self.sources, provider)
 

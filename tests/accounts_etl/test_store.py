@@ -186,8 +186,8 @@ def test_store_files_copies_confirmed(tmp_path: Path):
         choose=_NO_CHOOSE,
     )
 
-    raw_dir = config.get_raw_dir(spec.case)
-    assert (raw_dir / "export.csv").exists()
+    soure_dir = config.get_source_dir_from_case(spec.case)
+    assert (soure_dir / "export.csv").exists()
     assert counts["copied"] == 1
     assert counts["skipped"] == 0
     assert counts["unmatched"] == 0
@@ -209,8 +209,8 @@ def test_store_files_skips_on_rejection(tmp_path: Path):
         choose=_NO_CHOOSE,
     )
 
-    raw_dir = config.get_raw_dir(spec.case)
-    assert not (raw_dir / "export.csv").exists()
+    source_dir = config.get_source_dir_from_case(spec.case)
+    assert not (source_dir / "export.csv").exists()
     assert counts["copied"] == 0
     assert counts["skipped"] == 1
 
@@ -288,12 +288,12 @@ def test_store_files_ambiguous_counts_and_skips_when_choose_returns_none(
     assert counts["skipped"] == 0
     assert len(choose_calls) == 1
     assert choose_calls[0][1] == [spec_a, spec_b]
-    assert not (config.get_raw_dir(spec_a.case) / "export.csv").exists()
-    assert not (config.get_raw_dir(spec_b.case) / "export.csv").exists()
+    assert not (config.get_source_dir_from_case(spec_a.case) / "export.csv").exists()
+    assert not (config.get_source_dir_from_case(spec_b.case) / "export.csv").exists()
 
 
 def test_store_files_ambiguous_choose_copies_selected_spec_only(tmp_path: Path):
-    """When choose returns one spec, the file is copied only to that parser's raw dir."""
+    """When choose returns one spec, the file is copied only to that parser's source dir."""
     (tmp_path / "downloads").mkdir()
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
@@ -313,8 +313,7 @@ def test_store_files_ambiguous_choose_copies_selected_spec_only(tmp_path: Path):
     assert counts["ambiguous"] == 1
     assert counts["copied"] == 1
     assert counts["matched"] == 0
-    assert (config.get_raw_dir(spec_b.case) / "export.csv").exists()
-    assert not (config.get_raw_dir(spec_a.case) / "export.csv").exists()
+    assert (config.get_source_dir_from_case(spec_b.case) / "export.csv").exists()
 
 
 def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
@@ -351,9 +350,9 @@ def test_store_files_ambiguous_choose_skips_when_copy_already_exists(tmp_path: P
     spec_b = _spec("dkb", "giro", "giro202312", applies_result=True)
 
     # Pre-place the file at the chosen spec's raw dir so _copy_file returns False.
-    chosen_raw = config.get_raw_dir(spec_b.case)
-    chosen_raw.mkdir(parents=True, exist_ok=True)
-    (chosen_raw / "export.csv").write_text("existing")
+    chosen_source = config.get_source_dir_from_case(spec_b.case)
+    chosen_source.mkdir(parents=True, exist_ok=True)
+    (chosen_source / "export.csv").write_text("existing")
 
     counts = store_files(
         tmp_path / "downloads",
@@ -365,7 +364,7 @@ def test_store_files_ambiguous_choose_skips_when_copy_already_exists(tmp_path: P
 
     assert counts["skipped"] == 1
     assert counts["copied"] == 0
-    assert (chosen_raw / "export.csv").read_text() == "existing"
+    assert (chosen_source / "export.csv").read_text() == "existing"
 
 
 def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path):
@@ -379,9 +378,9 @@ def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path)
     spec = _spec("dkb", "giro", "giro202312", applies_result=True)
 
     # Pre-place the file at the target raw dir.
-    raw_dir = config.get_raw_dir(spec.case)
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    (raw_dir / "export.csv").write_text("existing")
+    source_dir = config.get_source_dir_from_case(spec.case)
+    source_dir.mkdir(parents=True, exist_ok=True)
+    (source_dir / "export.csv").write_text("existing")
 
     counts = store_files(
         tmp_path / "downloads",
@@ -393,4 +392,4 @@ def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path)
 
     assert counts["skipped"] == 1
     assert counts["copied"] == 0
-    assert (raw_dir / "export.csv").read_text() == "existing"
+    assert (source_dir / "export.csv").read_text() == "existing"

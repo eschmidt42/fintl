@@ -98,11 +98,10 @@ def store_files(
     """Scan *source_dir*, match files to parsers, and copy on confirmation.
 
     Files that match **exactly one** parser are presented to the caller via
-    *confirm* before being copied.  Files that match **two or more** parsers are
+    *confirm* before being copied. Files that match **two or more** parsers are
     treated as ambiguous: *choose* is called so the caller can select the single
     correct parser (or return ``None`` to skip the file entirely).  Copying the
-    same source file into multiple parser raw directories is intentionally
-    prevented to avoid duplicate parsing runs.
+    same source file multiple times is intentionally prevented.
 
     Args:
         source_dir: Directory to scan for candidate files.
@@ -120,6 +119,7 @@ def store_files(
         *matched* counts files with exactly one parser match.
         *ambiguous* counts files that matched two or more parsers.
     """
+
     candidates = find_candidate_files(source_dir)
     logger.info("Scanning %d candidate file(s) in %s", len(candidates), source_dir)
 
@@ -135,25 +135,31 @@ def store_files(
 
         if len(matches) > 1:
             counts["ambiguous"] += 1
+
             logger.warning(
                 "%s matched %d parsers (%s) — ambiguous; requesting user selection.",
                 file.name,
                 len(matches),
                 ", ".join(s.case.name for s in matches),
             )
+
             chosen = choose(file, matches)
+
             if chosen is None:
                 logger.debug("Ambiguous file skipped by user: %s", file.name)
                 continue
-            if _copy_file(file, config.get_raw_dir(chosen.case)):
+
+            if _copy_file(file, config.get_source_dir_from_case(chosen.case)):
                 counts["copied"] += 1
             else:
                 counts["skipped"] += 1
             continue
 
         counts["matched"] += 1
+
         spec = matches[0]
-        raw_dir = config.get_raw_dir(spec.case)
+        raw_dir = config.get_source_dir_from_case(spec.case)
+
         prompt = (
             f"{file.name}  →  {spec.case.provider} / {spec.case.service} / {spec.case.parser}\n"
             f"    target: {raw_dir}"

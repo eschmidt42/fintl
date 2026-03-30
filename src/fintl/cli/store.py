@@ -73,7 +73,7 @@ def run(
             )
         )
         for i, spec in enumerate(specs, 1):
-            raw_dir = config.get_raw_dir(spec.case)
+            raw_dir = config.get_source_dir_from_case(spec.case)
             console.print(
                 f"  [{i}] {spec.case.provider} / {spec.case.service} / {spec.case.parser}"
                 f"  →  {raw_dir}"
