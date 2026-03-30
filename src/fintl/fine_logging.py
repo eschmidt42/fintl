@@ -113,6 +113,14 @@ class DependencyFilter(logging.Filter):
     logging levels: https://docs.python.org/3/library/logging.html
     custom level handling: https://docs.python.org/3/howto/logging-cookbook.html#custom-handling-of-levels
     custom filters: https://docs.python.org/3/howto/logging-cookbook.html#configuring-filters-with-dictconfig
+
+    level & numerical value mapping (https://docs.python.org/3/library/logging.html#logging-levels):
+    - NOTSET -> 0
+    - DEBUG -> 10
+    - INFO -> 20
+    - WARNING -> 30
+    - ERROR -> 40
+    - CRITICAL -> 50
     """
 
     def __init__(self, param: int):
