@@ -31,13 +31,17 @@ def concatenate_parquets(
         logger.info(f"Processing {path=}.")
 
         if not path.exists():
-            logger.warning(f"{path=} does not exist, skipping.")
+            logger.warning(
+                f"{path=} does not exist for {case.provider} / {case.service} / {case.parser}, skipping."
+            )
             continue
 
         tmp = pl.read_parquet(path)
 
         if len(tmp) == 0:
-            logger.warning(f"{len(tmp)=}, skipping.")
+            logger.warning(
+                f"{len(tmp)=} for {case.provider} / {case.service} / {case.parser}, skipping."
+            )
             continue
         else:
             logger.info(f"Appending {len(tmp):_d} rows for {case=}")

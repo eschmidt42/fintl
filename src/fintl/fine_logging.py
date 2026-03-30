@@ -15,6 +15,10 @@ from typing import override
 
 import rich.logging
 from pydantic import BaseModel, field_validator
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 from fintl.path_utils import normalize_path, sanity_check_path
 
@@ -42,6 +46,12 @@ LOG_RECORD_BUILTIN_ATTRS = {
     "thread",
     "threadName",
     "taskName",
+}
+
+_LEVEL_STYLES = {
+    "WARNING": "yellow",
+    "ERROR": "bold red",
+    "CRITICAL": "bold reverse red",
 }
 
 
@@ -87,6 +97,15 @@ class JSONFormatter(logging.Formatter):
         return message
 
 
+class WarningBufferHandler(logging.Handler):
+    def __init__(self):
+        super().__init__(level=logging.WARNING)
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord):
+        self.records.append(record)
+
+
 class DependencyFilter(logging.Filter):
     """Filter to only keep third party logrecords above `param`.
 
@@ -94,6 +113,14 @@ class DependencyFilter(logging.Filter):
     logging levels: https://docs.python.org/3/library/logging.html
     custom level handling: https://docs.python.org/3/howto/logging-cookbook.html#custom-handling-of-levels
     custom filters: https://docs.python.org/3/howto/logging-cookbook.html#configuring-filters-with-dictconfig
+
+    level & numerical value mapping (https://docs.python.org/3/library/logging.html#logging-levels):
+    - NOTSET -> 0
+    - DEBUG -> 10
+    - INFO -> 20
+    - WARNING -> 30
+    - ERROR -> 40
+    - CRITICAL -> 50
     """
 
     def __init__(self, param: int):
@@ -101,12 +128,7 @@ class DependencyFilter(logging.Filter):
 
     @override
     def filter(self, record: logging.LogRecord) -> bool:
-        is_1st_party = (
-            record.name.startswith("apps")
-            or record.name.startswith("packages")
-            or record.name == "__main__"
-            or record.name.startswith("receipt")
-        )
+        is_1st_party = record.name.startswith("fintl") or record.name == "__main__"
         is_3rd_party = not is_1st_party
         if is_3rd_party:
             allow = record.levelno >= self.param
@@ -145,7 +167,7 @@ class Logging(BaseModel):
     third_party_filter_level: int = 20
     handlers_stdout_level: LevelsEnum = LevelsEnum.info
     handlers_file_json_level: LevelsEnum = LevelsEnum.debug
-    handlers_file_json_filename: str = "accounts-etl.log.jsonl"
+    handlers_file_json_filename: str = "fintl-etl.log.jsonl"
     handlers_file_json_maxbytes: int = 10_000_000
     handlers_file_json_backup_count: int = 3
     root_level: LevelsEnum = LevelsEnum.debug
@@ -209,10 +231,11 @@ class Logging(BaseModel):
                     "handlers": ["file_json"],
                     "respect_handler_level": True,
                 },
+                "warning_buffer": {"()": WarningBufferHandler},
             },
             "root": {
                 "level": self.root_level.value,
-                "handlers": ["stdout", "queue_handler"],
+                "handlers": ["stdout", "queue_handler", "warning_buffer"],
             },
             "loggers": {},
         }
@@ -235,3 +258,57 @@ def setup_logging(log_config: Logging):
         setup_logging_from_json(log_config.config_file)
     else:
         setup_logging_from_toml(log_config)
+
+
+def _build_table(
+    records: list[logging.LogRecord], strip_prefix: str | None = None
+) -> Table:
+    table = Table(
+        show_header=True, header_style="bold", show_edge=False, padding=(0, 1)
+    )
+    table.add_column("Level", no_wrap=True, width=9)
+    table.add_column("Logger", no_wrap=True, style="dim")
+    table.add_column("Message")
+    table.add_column("Location", no_wrap=True, style="dim")
+
+    for r in records:
+        logger_name = r.name
+        if strip_prefix and logger_name.startswith(strip_prefix):
+            logger_name = logger_name[len(strip_prefix) :]
+
+        message = r.getMessage()
+        if r.exc_info:
+            exc = r.exc_info[1]
+            message += f"\n  {type(exc).__name__}: {exc}"
+
+        table.add_row(
+            Text(r.levelname, style=_LEVEL_STYLES.get(r.levelname, "")),
+            logger_name,
+            message,
+            f"{r.filename}:{r.lineno}",
+        )
+
+    return table
+
+
+def print_warning_summary(records: list[logging.LogRecord], console: Console) -> None:
+    fintl = [r for r in records if r.name.startswith("fintl")]
+    third_p = [r for r in records if not r.name.startswith("fintl")]
+
+    if fintl:
+        console.print(
+            Panel(
+                _build_table(fintl, strip_prefix="fintl."),
+                title=f"[yellow]⚠ fintl warnings+  ({len(fintl)})[/yellow]",
+                border_style="yellow",
+            )
+        )
+
+    if third_p:
+        console.print(
+            Panel(
+                _build_table(third_p),
+                title=f"[red]⚠ third-party warnings+  ({len(third_p)})[/red]",
+                border_style="red",
+            )
+        )

@@ -1,13 +1,20 @@
+import io
 import json
 import logging
 import logging.config
 import logging.handlers
+import sys
 from pathlib import Path
+
+from rich.console import Console
 
 from fintl.fine_logging import (
     DependencyFilter,
     JSONFormatter,
     Logging,
+    WarningBufferHandler,
+    _build_table,
+    print_warning_summary,
     setup_logging_from_json,
     setup_logging_from_toml,
 )
@@ -132,10 +139,9 @@ def test_JSONFormatter_with_extra_attributes():
 
 
 def test_dependency_filter_allows_1st_party_logger():
-    """A logger whose name starts with 'apps', 'packages', '__main__', or
-    'receipt' must always be allowed regardless of level."""
+    """A logger whose name starts with 'fintl', or '__main__' must always be allowed regardless of level."""
     filter_ = DependencyFilter(param=logging.WARNING)
-    for name in ("apps.something", "packages.x", "__main__", "receipt.foo"):
+    for name in ("fintl.something", "__main__"):
         record = logging.LogRecord(
             name=name,
             level=logging.DEBUG,
@@ -229,3 +235,126 @@ def test_setup_logging_from_json_with_queue_handler():
         setup_logging_from_json(config_file)
 
     mock_handler.listener.start.assert_called_once()
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+
+def _make_record(name: str, level: int, msg: str, exc_info=None) -> logging.LogRecord:
+    return logging.LogRecord(
+        name=name,
+        level=level,
+        pathname="somefile.py",
+        lineno=42,
+        msg=msg,
+        args=(),
+        exc_info=exc_info,
+    )
+
+
+def _render(renderable) -> str:
+    buf = io.StringIO()
+    console = Console(file=buf, width=120, no_color=True)
+    console.print(renderable)
+    return buf.getvalue()
+
+
+def _summary_output(records: list[logging.LogRecord]) -> str:
+    buf = io.StringIO()
+    console = Console(file=buf, width=120, no_color=True)
+    print_warning_summary(records, console)
+    return buf.getvalue()
+
+
+# ── WarningBufferHandler ──────────────────────────────────────────────────────
+
+
+def test_warning_buffer_handler_emit():
+    handler = WarningBufferHandler()
+    record = _make_record("fintl.test", logging.WARNING, "watch out")
+    handler.emit(record)
+    assert len(handler.records) == 1
+    assert handler.records[0] is record
+
+
+def test_warning_buffer_handler_accumulates_multiple():
+    handler = WarningBufferHandler()
+    for i in range(3):
+        handler.emit(_make_record("fintl.test", logging.WARNING, f"msg {i}"))
+    assert len(handler.records) == 3
+
+
+# ── _build_table ──────────────────────────────────────────────────────────────
+
+
+def test_build_table_contains_message():
+    record = _make_record("fintl.runner", logging.WARNING, "something bad")
+    rendered = _render(_build_table([record]))
+    assert "something bad" in rendered
+
+
+def test_build_table_strip_prefix():
+    record = _make_record("fintl.runner", logging.WARNING, "msg")
+    rendered = _render(_build_table([record], strip_prefix="fintl."))
+    assert "runner" in rendered
+    assert "fintl.runner" not in rendered
+
+
+def test_build_table_no_strip_prefix_keeps_full_name():
+    record = _make_record("fintl.runner", logging.WARNING, "msg")
+    rendered = _render(_build_table([record]))
+    assert "fintl.runner" in rendered
+
+
+def test_build_table_exc_info_appended_to_message():
+    try:
+        raise ValueError("something exploded")
+    except ValueError:
+        exc_info = sys.exc_info()
+    record = _make_record("fintl.test", logging.ERROR, "error msg", exc_info=exc_info)
+    rendered = _render(_build_table([record]))
+    assert "ValueError" in rendered
+    assert "something exploded" in rendered
+
+
+def test_build_table_location_column():
+    record = _make_record("fintl.test", logging.WARNING, "msg")
+    rendered = _render(_build_table([record]))
+    assert "somefile.py:42" in rendered
+
+
+# ── print_warning_summary ─────────────────────────────────────────────────────
+
+
+def test_print_warning_summary_empty_produces_no_output():
+    assert _summary_output([]).strip() == ""
+
+
+def test_print_warning_summary_fintl_only_shows_fintl_panel():
+    record = _make_record("fintl.runner", logging.WARNING, "fintl problem")
+    output = _summary_output([record])
+    assert "fintl warnings+" in output
+    assert "third-party" not in output
+
+
+def test_print_warning_summary_third_party_only_shows_third_party_panel():
+    record = _make_record("some_lib", logging.WARNING, "http warning")
+    output = _summary_output([record])
+    assert "third-party warnings+" in output
+    assert "fintl warnings+" not in output
+
+
+def test_print_warning_summary_mixed_shows_both_panels():
+    records = [
+        _make_record("fintl.etl", logging.ERROR, "fintl error"),
+        _make_record("httpx", logging.WARNING, "http warning"),
+    ]
+    output = _summary_output(records)
+    assert "fintl warnings+" in output
+    assert "third-party warnings+" in output
+
+
+def test_print_warning_summary_count_in_title():
+    records = [_make_record("fintl.x", logging.WARNING, f"msg {i}") for i in range(3)]
+    output = _summary_output(records)
+    assert "(3)" in output

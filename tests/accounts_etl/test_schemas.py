@@ -146,7 +146,7 @@ def test_sources_at_least_one_source_raises_when_all_none():
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-_LOGGER_PATH = Path(__file__).parent.parent / "fine_logging" / "logger-config.json"
+_LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
 
 
 def _config(tmp_path: Path) -> Config:

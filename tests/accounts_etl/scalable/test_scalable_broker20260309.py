@@ -41,9 +41,7 @@ def test_main(tmp_path: Path, mock_lm_extraction):
     )
     assert broker_source_dir.exists()
 
-    logger_path = (
-        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
-    )
+    logger_path = Path(__file__).parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(
@@ -499,9 +497,7 @@ def test_main_no_ollama_png_files_exist(
     )
     assert broker_source_dir.exists()
 
-    logger_path = (
-        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
-    )
+    logger_path = Path(__file__).parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(

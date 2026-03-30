@@ -19,7 +19,7 @@ from fintl.accounts_etl.schemas import (
 _FILES = Path(__file__).parent / "files"
 _CSV = _FILES / "csv_files"
 _HTML = _FILES / "html_files"
-_LOGGER_PATH = Path(__file__).parent.parent / "fine_logging" / "logger-config.json"
+_LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
 
 _DKB_GIRO = _CSV / "DKB" / "kontoauszug"
 _DKB_TAGESGELD = _CSV / "DKB" / "tagesgeld"
@@ -70,7 +70,7 @@ def test_dkb_giro(tmp_path: Path):
     )
     assert giro_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent / "fine_logging" / "logger-config.json"
+    logger_path = Path(__file__).parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(
@@ -140,7 +140,7 @@ def test_all(tmp_path: Path):
     assert gls_giro_source_dir.exists()
     assert gls_credit_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent / "fine_logging" / "logger-config.json"
+    logger_path = Path(__file__).parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(

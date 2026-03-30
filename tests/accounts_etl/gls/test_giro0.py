@@ -33,9 +33,7 @@ def config(tmp_path: Path) -> Config:
     )
     assert giro_source_dir.exists()
 
-    logger_path = (
-        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
-    )
+    logger_path = Path(__file__).parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(

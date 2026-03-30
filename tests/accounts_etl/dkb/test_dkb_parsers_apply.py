@@ -24,9 +24,7 @@ def test_giro_parsers_apply(tmp_path: Path):
 
     assert dkb_giro_source_dir.exists()
 
-    logger_path = (
-        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
-    )
+    logger_path = Path(__file__).parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(
@@ -67,9 +65,7 @@ def test_tagesgeld_parsers_apply(tmp_path: Path):
 
     assert dkb_tagesgeld_source_dir.exists()
 
-    logger_path = (
-        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
-    )
+    logger_path = Path(__file__).parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(
@@ -108,9 +104,7 @@ def test_credit_parsers_apply(tmp_path: Path):
 
     assert dkb_credit_source_dir.exists()
 
-    logger_path = (
-        Path(__file__).parent.parent.parent / "fine_logging" / "logger-config.json"
-    )
+    logger_path = Path(__file__).parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(
