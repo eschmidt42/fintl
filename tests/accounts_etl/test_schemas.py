@@ -190,3 +190,48 @@ def test_config_get_logger_config_path_with_config_file(tmp_path: Path):
     )
     result = config.get_logger_config_path()
     assert result == config_file.resolve().absolute()
+
+
+def test_config_fintl_config_env_var_is_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """FINTL_CONFIG must override the default TOML path."""
+    giro = tmp_path / "giro"
+    giro.mkdir()
+    target = tmp_path / "target"
+    target.mkdir()
+    toml = tmp_path / "test.toml"
+    toml.write_text(f"""
+target_dir = "{target}"
+[sources.dkb]
+giro = "{giro}"
+""")
+    monkeypatch.setenv("FINTL_CONFIG", str(toml))
+    config = Config()
+    assert config.target_dir == target
+    assert config.sources.dkb is not None
+    assert config.sources.dkb.giro == giro
+
+
+def test_config_fintl_config_env_var_absent_uses_default(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """When FINTL_CONFIG is unset the default TOML path is passed to TomlConfigSettingsSource."""
+    from pydantic_settings import TomlConfigSettingsSource
+
+    monkeypatch.delenv("FINTL_CONFIG", raising=False)
+
+    captured: list[str | None] = []
+    original_init = TomlConfigSettingsSource.__init__
+
+    def capturing_init(self, settings_cls, toml_file=None, **kwargs):
+        captured.append(toml_file)
+        return original_init(self, settings_cls, toml_file=toml_file, **kwargs)
+
+    monkeypatch.setattr(TomlConfigSettingsSource, "__init__", capturing_init)
+    try:
+        Config()
+    except Exception:
+        pass
+
+    assert captured == ["~/.config/petprojects/fintl.toml"]

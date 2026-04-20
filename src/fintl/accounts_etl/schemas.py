@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 import typing as T
 from dataclasses import dataclass
 from enum import Enum
@@ -110,7 +111,7 @@ class Config(BaseSettings):
     label_rules: list[LabelRule] = Field(default_factory=list)
     ollama: OllamaConfig | None = None
 
-    model_config = SettingsConfigDict(toml_file="~/.config/petprojects/fintl.toml")
+    model_config = SettingsConfigDict()
 
     @field_validator("target_dir")
     @classmethod
@@ -128,9 +129,10 @@ class Config(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> T.Tuple[PydanticBaseSettingsSource, ...]:
+        toml_file = os.environ.get("FINTL_CONFIG", "~/.config/petprojects/fintl.toml")
         return (
             init_settings,
-            TomlConfigSettingsSource(settings_cls),
+            TomlConfigSettingsSource(settings_cls, toml_file=toml_file),
         )
 
     def __repr_rich__(self) -> rich.repr.Result:
