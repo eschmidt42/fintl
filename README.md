@@ -79,7 +79,7 @@ prek run --all-files
 
 Set the `FINTL_CONFIG` env var to point at any TOML file instead of `~/.config/petprojects/fintl.toml`. A `dev-config.toml` is included at the repo root and wires all CLI commands to the fixture files under `tests/`.
 
-To play with the cli CLI commands run
+To try the CLI commands, run:
 
 ```bash
 mkdir /tmp/fintl-dev
