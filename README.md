@@ -72,7 +72,29 @@ uv run ty check src
 Lint, format, type check, test and all the other good stuff:
 
 ```bash
-pre-commit run --all-files
+prek run --all-files
 ```
+
+### Simulating CLI usage without real financial data
+
+Set the `FINTL_CONFIG` env var to point at any TOML file instead of `~/.config/petprojects/fintl.toml`. A `dev-config.toml` is included at the repo root and wires all CLI commands to the fixture files under `tests/`.
+
+To play with the cli CLI commands run
+
+```bash
+mkdir /tmp/fintl-dev
+```
+
+Then you can run one of
+
+```bash
+FINTL_CONFIG=dev-config.toml fintl etl
+FINTL_CONFIG=dev-config.toml fintl plot
+FINTL_CONFIG=dev-config.toml fintl store --from-dir <dir> --yes
+```
+
+Output lands in `/tmp/fintl-dev`. Edit `dev-config.toml` locally to change providers, paths, or target directory.
+
+## Release
 
 For release steps see [here](./docs/releases.md).
