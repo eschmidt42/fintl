@@ -12,5 +12,8 @@ uv run ruff check path/to/file.py --fix
 # Run unit tests for a specific file
 uv run pytest path/to/file.py
 
+# Test coverage (only when explicitly needed)
+uv run pytest tests --cov --cov-branch --cov-report=xml
+
 # Full build (only when explicitly needed)
 uv run prek run --all-files
