@@ -82,10 +82,12 @@ def test_run_already_copied_file_is_not_duplicated(
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
 
-    # first run copies the file
-    cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
+    # first run copies the file (using --copy so source dir is preserved for the second run)
+    cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes", "--copy"])
     # second run: file already exists in raw dir → skipped, not duplicated
-    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
+    result = cli_runner.invoke(
+        app, ["store", "--from-dir", str(downloads), "--yes", "--copy"]
+    )
 
     assert result.exit_code == 0, result.output
     assert "Copied: 0" in result.output

@@ -7,7 +7,7 @@ from rich.text import Text
 
 from fintl.accounts_etl.registry import ALL_PARSERS
 from fintl.accounts_etl.schemas import Config, ParserSpec
-from fintl.accounts_etl.store import store_files
+from fintl.accounts_etl.store import FileOperation, store_files
 from fintl.fine_logging import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -36,26 +36,37 @@ def run(
         "-y",
         help="Auto-confirm all matches without prompting.",
     ),
+    copy: bool = typer.Option(
+        False,
+        "--copy",
+        help="Copy files instead of moving them.",
+    ),
 ) -> None:
-    """Scan a folder for downloaded bank files and copy them to the right ETL input directory.
+    """Scan a folder for downloaded bank files and copy/move them to the right ETL input directory.
 
     Each file is tested against all registered parser applicability predicates.
+    By default, matched files are moved. Pass --copy to retain the original files.
     For every match you are asked to confirm the proposed target directory before
-    the file is copied.  Pass --yes to confirm all matches automatically.
+    the operation occurs.  Pass --yes to confirm all matches automatically.
     """
     source_dir = from_dir or Path.cwd()
     config = Config()
     setup_logging(config.logging)
 
+    operation = FileOperation.COPYING if copy else FileOperation.MOVING
+    op_label = "Copied" if copy else "Moved"
+
     console.print(f"[bold]Scanning:[/bold] {source_dir}")
 
-    def confirm(prompt: str) -> bool:
+    def confirm(prompt: str, op: FileOperation) -> bool:
         if yes:
-            console.print(Text(f"✔ {prompt}", style="green"))
+            console.print(Text(f"✔ {op_label}d:", style="green", overflow="fold"))
+            console.print(f"  | {prompt}", style="green")
             return True
         console.print()
+        action_word = "Copy" if op == FileOperation.COPYING else "Move"
         console.print(Text(prompt, style="cyan"))
-        return typer.confirm("  Copy this file?", default=False)
+        return typer.confirm(f"  {action_word} this file?", default=(not copy))
 
     def choose(file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
         if yes:
@@ -92,14 +103,19 @@ def run(
             console.print(f"  Please enter a number between 0 and {len(specs)}.")
 
     counts = store_files(
-        source_dir, config, ALL_PARSERS, confirm=confirm, choose=choose
+        source_dir,
+        config,
+        ALL_PARSERS,
+        operation=operation,
+        confirm=confirm,
+        choose=choose,
     )
 
     console.print()
     console.print(
         f"[bold]Done.[/bold] "
         f"Files matched: {counts['matched']} | "
-        f"Copied: {counts['copied']} | "
+        f"{op_label}: {counts['copied']} | "
         f"Skipped: {counts['skipped']} | "
         f"Unmatched: {counts['unmatched']} | "
         f"Ambiguous: {counts['ambiguous']}"
