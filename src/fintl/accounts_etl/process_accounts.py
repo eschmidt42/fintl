@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 import polars as pl
+from rich.console import Console
 
 from fintl.accounts_etl import runner
 from fintl.accounts_etl.labels import assign_labels
@@ -88,9 +89,11 @@ def make_labels(config: Config):
 
 
 def main(config: Config):
+    console = Console()
     logger.info(f"Starting ETL pipeline")
 
-    runner.run_enabled_services(config)
+    runner.print_etl_overview(config, console)
+    runner.run_enabled_services(config, console)
 
     concatenate_all_providers(config)
 

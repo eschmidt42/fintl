@@ -32,11 +32,14 @@ a full ETL pipeline.
 import logging
 from pathlib import Path
 
+from rich.console import Console
+from rich.table import Table
+
 from fintl.accounts_etl.file_helper import (
     get_parser_source_files as csv_get_source_files,
 )
 from fintl.accounts_etl.files import error_if_overlap
-from fintl.accounts_etl.registry import ALL_PARSERS
+from fintl.accounts_etl.registry import ALL_PARSERS, ALL_PLUGINS
 from fintl.accounts_etl.schemas import Case, Config, ParserSpec
 
 logger = logging.getLogger(__name__)
@@ -60,6 +63,33 @@ def parsers_for(provider: str, service: str) -> list[ParserSpec]:
         ),
         key=lambda spec: spec.precedence,
     )
+
+
+def print_etl_overview(config: Config, console: Console | None = None) -> None:
+    """Print a Rich table summarising the enabled providers, services, and parsers."""
+    console = console or Console()
+    table = Table(title="ETL Plan", show_header=True, header_style="bold")
+    table.add_column("Provider", style="cyan", no_wrap=True)
+    table.add_column("Service", style="green", no_wrap=True)
+    table.add_column("Parsers (by precedence)")
+
+    for plugin in ALL_PLUGINS:
+        provider_sources = getattr(config.sources, plugin.name, None)
+        if provider_sources is None:
+            continue
+        for svc in plugin.services:
+            path = getattr(provider_sources, svc.name, None)
+            if path is None:
+                continue
+            specs = parsers_for(plugin.name, svc.name)
+            parser_names = (
+                ", ".join(s.case.parser for s in specs)
+                if specs
+                else "(no parsers registered)"
+            )
+            table.add_row(plugin.name, svc.name, parser_names)
+
+    console.print(table)
 
 
 def _get_source_files(spec: ParserSpec, config: Config) -> list[Path]:
@@ -144,7 +174,7 @@ def run_service(config: Config, provider: str, service: str) -> None:
         spec.run(config)
 
 
-def run_provider(config: Config, provider: str) -> None:
+def run_provider(config: Config, provider: str, console: Console | None = None) -> None:
     """Run all enabled services for a single provider.
 
     A service is considered enabled when its source path in ``config`` is not
@@ -155,8 +185,10 @@ def run_provider(config: Config, provider: str) -> None:
         config (Config): Shared ETL configuration supplying source directories
             and the output target directory.
         provider (str): Provider name (e.g. ``"dkb"``).
+        console (Console | None): Rich console for progress output.
     """
-    logger.info(f"Processing provider {provider=}")
+    console = console or Console()
+    console.rule(f"[bold cyan]{provider.upper()}[/bold cyan]")
     provider_sources = config.get_provider(provider)
     for service_name, path in provider_sources:
         logger.info(f"Selecting service={service_name!r}")
@@ -168,7 +200,7 @@ def run_provider(config: Config, provider: str) -> None:
     logger.info(f"Done processing {provider=}")
 
 
-def run_enabled_services(config: Config) -> None:
+def run_enabled_services(config: Config, console: Console | None = None) -> None:
     """Run all providers and services that have a configured source path.
 
     Iterates every provider in ``config.sources`` and delegates to
@@ -177,13 +209,14 @@ def run_enabled_services(config: Config) -> None:
     Args:
         config (Config): Shared ETL configuration supplying source directories
             and the output target directory.
+        console (Console | None): Rich console for progress output.
     """
     for provider_name, provider_sources in config.sources:
         logger.info(f"Selecting {provider_name=}.")
         if provider_sources is None:
             logger.info(f"Skipping {provider_name=} because no path given.")
             continue
-        run_provider(config, provider_name)
+        run_provider(config, provider_name, console)
 
 
 def all_cases(provider: str | None = None) -> list[Case]:

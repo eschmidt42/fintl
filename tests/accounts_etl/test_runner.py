@@ -289,7 +289,7 @@ def test_run_enabled_services_skips_unconfigured_providers(tmp_path: Path):
     with patch.object(runner, "run_provider") as mock_run_provider:
         runner.run_enabled_services(config)
 
-    mock_run_provider.assert_called_once_with(config, "dkb")
+    mock_run_provider.assert_called_once_with(config, "dkb", None)
 
 
 def test_run_enabled_services_calls_all_configured_providers(tmp_path: Path):

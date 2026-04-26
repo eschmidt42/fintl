@@ -165,7 +165,7 @@ class LevelsEnum(str, Enum):  # see logging._nameToLevel for available levels
 class Logging(BaseModel):
     config_file: Path | None = None
     third_party_filter_level: int = 20
-    handlers_stdout_level: LevelsEnum = LevelsEnum.info
+    handlers_stdout_level: LevelsEnum = LevelsEnum.warning
     handlers_file_json_level: LevelsEnum = LevelsEnum.debug
     handlers_file_json_filename: str = "fintl-etl.log.jsonl"
     handlers_file_json_maxbytes: int = 10_000_000
