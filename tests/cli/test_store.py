@@ -9,6 +9,16 @@ from fintl.cli.main import app
 from .conftest import make_config
 
 
+def _store_config_multi(tmp_path: Path):
+    giro_src = tmp_path / "sources" / "dkb" / "giro"
+    credit_src = tmp_path / "sources" / "dkb" / "credit"
+    giro_src.mkdir(parents=True)
+    credit_src.mkdir(parents=True)
+    return make_config(
+        tmp_path, Sources(dkb=Provider(giro=giro_src, credit=credit_src))
+    )
+
+
 def _spec(
     provider: str,
     service: str,
@@ -82,11 +92,147 @@ def test_run_already_copied_file_is_not_duplicated(
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
 
-    # first run copies the file
-    cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
+    # first run copies the file (using --copy so source dir is preserved for the second run)
+    cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes", "--copy"])
     # second run: file already exists in raw dir → skipped, not duplicated
-    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
+    result = cli_runner.invoke(
+        app, ["store", "--from-dir", str(downloads), "--yes", "--copy"]
+    )
 
     assert result.exit_code == 0, result.output
     assert "Copied: 0" in result.output
     assert "Skipped: 1" in result.output
+
+
+def test_run_interactive_confirm_accepts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+):
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    stub = downloads / "export.csv"
+    stub.write_text("date,amount\n2024-01-01,100\n")
+
+    config = _store_config(tmp_path)
+    spec = _spec("dkb", "giro", "giro0", applies=True)
+    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+
+    # No --yes; default prompt answer is "Move" with default=True, so Enter confirms.
+    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads)], input="\n")
+
+    assert result.exit_code == 0, result.output
+    dest_dir = config.get_source_dir_from_case(spec.case)
+    assert (dest_dir / "export.csv").exists()
+    assert "Move this file?" in result.output
+
+
+def test_run_interactive_confirm_declines(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+):
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    stub = downloads / "export.csv"
+    stub.write_text("date,amount\n2024-01-01,100\n")
+
+    config = _store_config(tmp_path)
+    spec = _spec("dkb", "giro", "giro0", applies=True)
+    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+
+    result = cli_runner.invoke(
+        app, ["store", "--from-dir", str(downloads)], input="n\n"
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Skipped: 1" in result.output
+    dest_dir = config.get_source_dir_from_case(spec.case)
+    assert not (dest_dir / "export.csv").exists()
+
+
+def test_run_interactive_confirm_copy_label(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+):
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    (downloads / "export.csv").write_text("data\n")
+
+    config = _store_config(tmp_path)
+    spec = _spec("dkb", "giro", "giro0", applies=True)
+    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+
+    # --copy changes the action label to "Copy" in the interactive prompt.
+    result = cli_runner.invoke(
+        app, ["store", "--from-dir", str(downloads), "--copy"], input="y\n"
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Copy this file?" in result.output
+
+
+def test_run_ambiguous_with_yes_skips(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+):
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    (downloads / "export.csv").write_text("data\n")
+
+    config = _store_config_multi(tmp_path)
+    spec_giro = _spec("dkb", "giro", "giro0", applies=True)
+    spec_credit = _spec("dkb", "credit", "credit0", applies=True)
+    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec_giro, spec_credit])
+
+    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
+
+    assert result.exit_code == 0, result.output
+    assert "Ambiguous: 1" in result.output
+    assert "ambiguous, skipping" in result.output
+    assert "Some files matched multiple parsers" in result.output
+
+
+def test_run_ambiguous_interactive_selects_parser(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+):
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    (downloads / "export.csv").write_text("data\n")
+
+    config = _store_config_multi(tmp_path)
+    spec_giro = _spec("dkb", "giro", "giro0", applies=True)
+    spec_credit = _spec("dkb", "credit", "credit0", applies=True)
+    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec_giro, spec_credit])
+
+    # Invalid input first (exercises ValueError retry), then select parser 1.
+    result = cli_runner.invoke(
+        app, ["store", "--from-dir", str(downloads)], input="x\n1\n"
+    )
+
+    assert result.exit_code == 0, result.output
+    giro_dir = config.get_source_dir_from_case(spec_giro.case)
+    assert (giro_dir / "export.csv").exists()
+
+
+def test_run_ambiguous_interactive_user_skips(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+):
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    (downloads / "export.csv").write_text("data\n")
+
+    config = _store_config_multi(tmp_path)
+    spec_giro = _spec("dkb", "giro", "giro0", applies=True)
+    spec_credit = _spec("dkb", "credit", "credit0", applies=True)
+    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec_giro, spec_credit])
+
+    # User enters 0 to skip the ambiguous file.
+    result = cli_runner.invoke(
+        app, ["store", "--from-dir", str(downloads)], input="0\n"
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Ambiguous: 1" in result.output
+    giro_dir = config.get_source_dir_from_case(spec_giro.case)
+    assert not (giro_dir / "export.csv").exists()

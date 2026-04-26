@@ -2,7 +2,7 @@
 
 Scans a source directory for downloaded bank files (CSV, HTM, HTML, PNG),
 matches each candidate against all registered parser applicability predicates,
-and copies confirmed files into the appropriate ETL raw input directory.
+and moves or copies confirmed files into the appropriate ETL raw input directory.
 
 A file that matches exactly one parser is confirmed via the *confirm* callback.
 A file that matches two or more parsers is treated as **ambiguous**: the caller
@@ -13,6 +13,7 @@ callers can surface the issue without silently duplicating data across parsers.
 
 import logging
 import shutil
+from enum import StrEnum
 from pathlib import Path
 from typing import Callable
 
@@ -21,6 +22,11 @@ from fintl.accounts_etl.schemas import Config, ParserSpec
 logger = logging.getLogger(__name__)
 
 _CANDIDATE_PATTERNS = ("*.csv", "*.htm", "*.html", "*.png")
+
+
+class FileOperation(StrEnum):
+    MOVING = "moving"
+    COPYING = "copying"
 
 
 def find_candidate_files(source_dir: Path) -> list[Path]:
@@ -96,23 +102,31 @@ def deduplicate_by_provider_service(matches: list[ParserSpec]) -> list[ParserSpe
     return list(deduplicated_matches.values())
 
 
-def _copy_file(file: Path, raw_dir: Path) -> bool:
-    """Copy *file* into *raw_dir*, skipping if already present.
+def _route_file(file: Path, raw_dir: Path, operation: FileOperation) -> bool:
+    """Route *file* into *raw_dir*, skipping if already present.
 
     Args:
-        file: Source file to copy.
+        file: Source file to copy or move.
         raw_dir: Destination directory (created if absent).
+        operation: The file operation to perform (moving or copying).
 
     Returns:
-        ``True`` if the file was copied, ``False`` if it was already present.
+        ``True`` if the file was routed, ``False`` if it was already present.
     """
     dest = raw_dir / file.name
     if dest.exists():
         logger.info("Already present, skipping: %s", dest)
         return False
     raw_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(file, dest)
-    logger.info("Copied %s → %s", file, dest)
+
+    match operation:
+        case FileOperation.MOVING:
+            shutil.move(file, dest)
+            logger.info("Moved %s → %s", file, dest)
+        case FileOperation.COPYING:
+            shutil.copy2(file, dest)
+            logger.info("Copied %s → %s", file, dest)
+
     return True
 
 
@@ -121,13 +135,14 @@ def store_files(
     config: Config,
     parsers: list[ParserSpec],
     *,
-    confirm: Callable[[str], bool],
+    operation: FileOperation,
+    confirm: Callable[[str, FileOperation], bool],
     choose: Callable[[Path, list[ParserSpec]], ParserSpec | None],
 ) -> dict[str, int]:
-    """Scan *source_dir*, match files to parsers, and copy on confirmation.
+    """Scan *source_dir*, match files to parsers, and route on confirmation.
 
     Files that match **exactly one** parser are presented to the caller via
-    *confirm* before being copied. Files that match **more than one provider-service** combination are
+    *confirm* before being copied or moved. Files that match **more than one provider-service** combination are
     treated as ambiguous: *choose* is called so the caller can select the single
     correct provider-service combination (or return ``None`` to skip the file entirely).  Copying the
     same source file multiple times is intentionally prevented.
@@ -136,8 +151,10 @@ def store_files(
         source_dir: Directory to scan for candidate files.
         config: Loaded ETL configuration (supplies target paths).
         parsers: All registered ``ParserSpec`` instances.
+        operation: The file operation to perform (moving or copying).
         confirm: Callable that receives a human-readable prompt string and
-            returns ``True`` when the file should be copied (single-match path).
+            the ``FileOperation`` and returns ``True`` when the file should be
+            routed (single-match path).
         choose: Callable that receives the candidate ``Path`` and the list of
             matching ``ParserSpec`` instances and returns the one spec the file
             should be routed to, or ``None`` to skip the file (multi-match path).
@@ -179,7 +196,9 @@ def store_files(
                 logger.debug("Ambiguous file skipped by user: %s", file.name)
                 continue
 
-            if _copy_file(file, config.get_source_dir_from_case(chosen.case)):
+            if _route_file(
+                file, config.get_source_dir_from_case(chosen.case), operation
+            ):
                 counts["copied"] += 1
             else:
                 counts["skipped"] += 1
@@ -194,8 +213,8 @@ def store_files(
             f"{file.name}  →  {spec.case.provider} / {spec.case.service} / {spec.case.parser}\n"
             f"    target: {raw_dir}"
         )
-        if confirm(prompt):
-            if _copy_file(file, raw_dir):
+        if confirm(prompt, operation):
+            if _route_file(file, raw_dir, operation):
                 counts["copied"] += 1
             else:
                 counts["skipped"] += 1

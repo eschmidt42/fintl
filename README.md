@@ -88,9 +88,10 @@ mkdir /tmp/fintl-dev
 Then you can run one of
 
 ```bash
+rm -fr /tmp/fintl-dev/*
 FINTL_CONFIG=dev-config.toml fintl etl
 FINTL_CONFIG=dev-config.toml fintl plot
-FINTL_CONFIG=dev-config.toml fintl store --from-dir <dir> --yes
+FINTL_CONFIG=dev-config.toml fintl store --from-dir <dir> --yes --copy
 ```
 
 Output lands in `/tmp/fintl-dev`. Edit `dev-config.toml` locally to change providers, paths, or target directory.

@@ -70,7 +70,7 @@ fintl [OPTIONS] COMMAND [ARGS]...
 Available commands:
 
 - `fintl etl` — run the accounts ETL pipeline
-- `fintl store` — copy downloaded bank files into the ETL input directories
+- `fintl store` — route downloaded bank files into the ETL input directories
 - `fintl search` — interactive transaction search
 - `fintl plot` — open a balances chart in your browser
 
@@ -119,7 +119,7 @@ Source: `src/fintl/cli/etl.py`
 
 ## `fintl store`
 
-Scans a directory for downloaded bank files and copies them into the correct ETL input directories.
+Scans a directory for downloaded bank files and routes them into the correct ETL input directories.
 
 ```bash
 fintl store
@@ -131,7 +131,13 @@ By default, the current working directory is scanned. To specify a different dir
 fintl store --from-dir ~/Downloads
 ```
 
-Each file is tested against all registered parser applicability predicates. For every match you are asked to confirm before the file is copied. To auto-confirm all matches:
+By default, matched files are **moved** (deleted from the source directory) into the ETL input directories. To keep a copy of each file in the source directory before routing:
+
+```bash
+fintl store --copy
+```
+
+When a file matches a parser, you are prompted to confirm the action. The prompt defaults to "yes" when moving, and "no" when copying. To auto-confirm all actions based on the current mode:
 
 ```bash
 fintl store --yes
@@ -142,7 +148,7 @@ When a file matches multiple parsers you are prompted to choose one (or skip). W
 A summary is printed at the end:
 
 ```
-Done. Files matched: 3 | Copied: 2 | Skipped: 1 | Unmatched: 0 | Ambiguous: 0
+Done. Files matched: 3 | Moved: 2 | Skipped: 1 | Unmatched: 0 | Ambiguous: 0
 ```
 
 Source: `src/fintl/cli/store.py`

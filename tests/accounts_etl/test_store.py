@@ -17,7 +17,8 @@ from fintl.accounts_etl.schemas import (
     Sources,
 )
 from fintl.accounts_etl.store import (
-    _copy_file,
+    FileOperation,
+    _route_file,
     deduplicate_by_provider_service,
     find_candidate_files,
     match_file_to_parsers,
@@ -192,37 +193,37 @@ def test_deduplicate_preserves_insertion_order():
 # ── _copy_file ────────────────────────────────────────────────────────────────
 
 
-def test_copy_file_copies_to_raw_dir(tmp_path: Path):
+def test_route_file_copies_to_raw_dir(tmp_path: Path):
     src = tmp_path / "src" / "file.csv"
     src.parent.mkdir()
     src.write_text("data")
     raw_dir = tmp_path / "raw"
 
-    copied = _copy_file(src, raw_dir)
+    copied = _route_file(src, raw_dir, FileOperation.COPYING)
 
     assert copied is True
     assert (raw_dir / "file.csv").read_text() == "data"
 
 
-def test_copy_file_skips_existing(tmp_path: Path):
+def test_route_file_skips_existing(tmp_path: Path):
     src = tmp_path / "file.csv"
     src.write_text("new")
     raw_dir = tmp_path / "raw"
     raw_dir.mkdir()
     (raw_dir / "file.csv").write_text("old")
 
-    copied = _copy_file(src, raw_dir)
+    copied = _route_file(src, raw_dir, FileOperation.COPYING)
 
     assert copied is False
     assert (raw_dir / "file.csv").read_text() == "old"
 
 
-def test_copy_file_creates_raw_dir(tmp_path: Path):
+def test_route_file_creates_raw_dir(tmp_path: Path):
     src = tmp_path / "file.csv"
     src.touch()
     raw_dir = tmp_path / "deep" / "nested" / "raw"
 
-    _copy_file(src, raw_dir)
+    _route_file(src, raw_dir, FileOperation.COPYING)
 
     assert raw_dir.exists()
     assert (raw_dir / "file.csv").exists()
@@ -243,7 +244,8 @@ def test_store_files_copies_confirmed(tmp_path: Path):
         tmp_path / "downloads",
         config,
         [spec],
-        confirm=lambda _: True,
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: True,
         choose=_NO_CHOOSE,
     )
 
@@ -266,7 +268,8 @@ def test_store_files_skips_on_rejection(tmp_path: Path):
         tmp_path / "downloads",
         config,
         [spec],
-        confirm=lambda _: False,
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: False,
         choose=_NO_CHOOSE,
     )
 
@@ -287,7 +290,8 @@ def test_store_files_counts_unmatched(tmp_path: Path):
         tmp_path / "downloads",
         config,
         [spec],
-        confirm=lambda _: True,
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: True,
         choose=_NO_CHOOSE,
     )
 
@@ -301,7 +305,12 @@ def test_store_files_no_candidates(tmp_path: Path):
     config = _config(tmp_path)
 
     counts = store_files(
-        source_dir, config, [], confirm=lambda _: True, choose=_NO_CHOOSE
+        source_dir,
+        config,
+        [],
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: True,
+        choose=_NO_CHOOSE,
     )
 
     assert counts == {
@@ -339,7 +348,8 @@ def test_store_files_ambiguous_counts_and_skips_when_choose_returns_none(
         tmp_path / "downloads",
         config,
         [spec_a, spec_b],
-        confirm=lambda _: True,
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: True,
         choose=choose,
     )
 
@@ -367,7 +377,8 @@ def test_store_files_ambiguous_choose_copies_selected_spec_only(tmp_path: Path):
         tmp_path / "downloads",
         config,
         [spec_a, spec_b],
-        confirm=lambda _: True,
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: True,
         choose=lambda _f, specs: specs[1],  # always pick second
     )
 
@@ -393,7 +404,8 @@ def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
         tmp_path / "downloads",
         config,
         [spec_a, spec_b],
-        confirm=lambda p: confirm_calls.append(p) or True,  # type: ignore[func-returns-value]
+        operation=FileOperation.COPYING,
+        confirm=lambda p, op: confirm_calls.append(p) or True,  # type: ignore[func-returns-value]
         choose=_NO_CHOOSE,
     )
 
@@ -420,7 +432,8 @@ def test_store_files_ambiguous_choose_skips_when_copy_already_exists(tmp_path: P
         tmp_path / "downloads",
         config,
         [spec_a, spec_b],
-        confirm=lambda _: True,
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: True,
         choose=lambda _f, specs: specs[1],
     )
 
@@ -448,7 +461,8 @@ def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path)
         tmp_path / "downloads",
         config,
         [spec],
-        confirm=lambda _: True,
+        operation=FileOperation.COPYING,
+        confirm=lambda _, op: True,
         choose=_NO_CHOOSE,
     )
 
