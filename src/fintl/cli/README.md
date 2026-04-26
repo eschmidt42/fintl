@@ -46,7 +46,7 @@ credit = "YOURPATH/GLS/credit"
 
 [logging]
 third_party_filter_level = 20
-handlers_stdout_level = "INFO"
+handlers_stdout_level = "WARNING"  # set to "INFO" to see detailed pipeline logs on stdout
 handlers_file_json_level = "DEBUG"
 handlers_file_json_filename = "YOURPATH/fintl-etl.log.jsonl"
 handlers_file_json_maxbytes = 10_000_000
@@ -99,6 +99,29 @@ This command produces the consolidated parquet files used by the other commands,
 - `all-transactions.parquet`
 
 If you have not run the ETL yet, run this command before using `fintl search` or `fintl plot`.
+
+### Output
+
+At startup, a table is printed showing every enabled provider, service, and the parsers that will run (in precedence order):
+
+```
+              ETL Plan
+┏━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Provider ┃ Service    ┃ Parsers (by precedence)              ┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dkb      │ giro       │ giro0, giro202307, giro202312        │
+│ dkb      │ tagesgeld  │ tagesgeld0, tagesgeld202307, ...     │
+│ postbank │ giro       │ giro0, giro202305                    │
+└──────────┴────────────┴─────────────────────────────────────┘
+```
+
+A section rule is printed to the terminal as each provider begins processing:
+
+```
+──────────────────── DKB ─────────────────────
+```
+
+Detailed pipeline logs (INFO level and below) are written only to `fintl-etl.log.jsonl` by default, keeping the terminal output minimal. Warnings and errors still surface on screen. To show INFO logs in the terminal, set `handlers_stdout_level = "INFO"` in the `[logging]` section of your `fintl.toml`.
 
 ### Ollama (PNG parsing)
 
