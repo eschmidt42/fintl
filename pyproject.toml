@@ -50,6 +50,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "inline-snapshot>=0.32.5",
+    "nbconvert>=7.17.1",
     "notebook>=7.5.5",
     "prek>=0.3.9",
     "pytest>=9.0.3",
