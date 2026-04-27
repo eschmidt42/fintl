@@ -1,5 +1,8 @@
 target_dir = "/tmp/fintl-dev"
 
+[ollama]
+model = "qwen3.5:27b"
+
 [sources.dkb]
 giro      = "tests/accounts_etl/files/csv_files/DKB/kontoauszug"
 tagesgeld = "tests/accounts_etl/files/csv_files/DKB/tagesgeld"
@@ -10,7 +13,8 @@ festgeld = "tests/accounts_etl/files/csv_files/DKB/festgeld"
 giro = "tests/accounts_etl/files/csv_files/Postbank"
 
 [sources.scalable]
-broker = "tests/accounts_etl/files/html_files/Scalable-Capital"
+# broker = "tests/accounts_etl/files/html_files/Scalable-Capital" # without ollama
+broker = "tests/accounts_etl/files/png_files/Scalable-Capital" # with ollama (slow)
 
 [sources.gls]
 giro   = "tests/accounts_etl/files/csv_files/GLS/giro"
