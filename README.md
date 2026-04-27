@@ -75,6 +75,16 @@ Lint, format, type check, test and all the other good stuff:
 prek run --all-files
 ```
 
+### Running Ollama integration tests
+
+Tests that require a live Ollama instance are marked `ollama` and skipped by default. To run them, set `FINTL_OLLAMA_MODEL` to the name of a multimodal model you have pulled (e.g. `qwen3.5:27b`) and pass `-m ollama`:
+
+```bash
+FINTL_OLLAMA_MODEL=qwen3.5:27b uv run pytest -m ollama tests/
+```
+
+`FINTL_OLLAMA_BASE_URL` can optionally override the default `http://localhost:11434/v1`.
+
 ### Simulating CLI usage without real financial data
 
 Set the `FINTL_CONFIG` env var to point at any TOML file instead of `~/.config/petprojects/fintl.toml`. A `dev-config.toml` is included at the repo root and wires all CLI commands to the fixture files under `tests/`.
