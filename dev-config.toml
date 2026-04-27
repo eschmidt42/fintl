@@ -4,6 +4,7 @@ target_dir = "/tmp/fintl-dev"
 giro      = "tests/accounts_etl/files/csv_files/DKB/kontoauszug"
 tagesgeld = "tests/accounts_etl/files/csv_files/DKB/tagesgeld"
 credit    = "tests/accounts_etl/files/csv_files/DKB/credit"
+festgeld = "tests/accounts_etl/files/csv_files/DKB/festgeld"
 
 [sources.postbank]
 giro = "tests/accounts_etl/files/csv_files/Postbank"
