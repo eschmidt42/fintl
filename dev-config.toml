@@ -13,8 +13,8 @@ festgeld = "tests/accounts_etl/files/csv_files/DKB/festgeld"
 giro = "tests/accounts_etl/files/csv_files/Postbank"
 
 [sources.scalable]
-# broker = "tests/accounts_etl/files/html_files/Scalable-Capital" # without ollama
-broker = "tests/accounts_etl/files/png_files/Scalable-Capital" # with ollama (slow)
+# broker = "tests/accounts_etl/files/artefacts/Scalable-Capital" # without ollama
+broker = "tests/accounts_etl/files/artefacts/Scalable-Capital" # with ollama (slow)
 
 [sources.gls]
 giro   = "tests/accounts_etl/files/csv_files/GLS/giro"

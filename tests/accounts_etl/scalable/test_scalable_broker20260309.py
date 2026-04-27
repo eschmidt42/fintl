@@ -37,7 +37,7 @@ def mock_lm_extraction():
 
 def test_main(tmp_path: Path, mock_lm_extraction):
     broker_source_dir = (
-        Path(__file__).parent.parent / "files" / "png_files" / "Scalable-Capital"
+        Path(__file__).parent.parent / "files" / "artefacts" / "Scalable-Capital"
     )
     assert broker_source_dir.exists()
 
@@ -493,7 +493,7 @@ def test_main_no_ollama_png_files_exist(
     import logging
 
     broker_source_dir = (
-        Path(__file__).parent.parent / "files" / "png_files" / "Scalable-Capital"
+        Path(__file__).parent.parent / "files" / "artefacts" / "Scalable-Capital"
     )
     assert broker_source_dir.exists()
 

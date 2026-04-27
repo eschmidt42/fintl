@@ -9,10 +9,10 @@ from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
 def test_broker_parsers_apply(tmp_path: Path):
     data_root_dir = Path(__file__).parent.parent / "files"
     assert data_root_dir.exists()
-    html_root_dir = data_root_dir / "html_files"
-    assert html_root_dir.exists()
+    artefacts_root_dir = data_root_dir / "artefacts"
+    assert artefacts_root_dir.exists()
 
-    scalable_broker_source_dir = html_root_dir / "Scalable-Capital"
+    scalable_broker_source_dir = artefacts_root_dir / "Scalable-Capital"
 
     assert scalable_broker_source_dir.exists()
 

@@ -9,7 +9,7 @@ from .conftest import _LOGGER_PATH
 
 _FILES = Path(__file__).parent.parent / "accounts_etl" / "files"
 _CSV = _FILES / "csv_files"
-_HTML = _FILES / "html_files"
+_ARTEFACTS = _FILES / "artefacts"
 
 
 def _write_config_toml(tmp_path: Path) -> Path:
@@ -28,7 +28,7 @@ credit    = "{_CSV / "DKB" / "credit"}"
 giro = "{_CSV / "Postbank"}"
 
 [sources.scalable]
-broker = "{_HTML / "Scalable-Capital"}"
+broker = "{_ARTEFACTS / "Scalable-Capital"}"
 
 [sources.gls]
 giro   = "{_CSV / "GLS" / "giro"}"

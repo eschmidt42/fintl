@@ -10,7 +10,7 @@ from fintl.accounts_etl.schemas import OllamaConfig
 _PNG_PATH = (
     Path(__file__).parent.parent
     / "files"
-    / "png_files"
+    / "artefacts"
     / "Scalable-Capital"
     / "Screenshot 2026-04-27 at 08.20.00.png"
 )
