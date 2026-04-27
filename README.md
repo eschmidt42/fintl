@@ -22,6 +22,28 @@ Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](ht
 
 ## How to install
 
+### As a cli tool
+
+```bash
+uv tool install fintl
+```
+
+### As a dependency
+
+From pypi
+
+```bash
+pip install fintl
+```
+
+or
+
+```bash
+uv add fintl
+```
+
+From a local repo
+
 ```bash
 git clone https://github.com/eschmidt42/fintl.git
 cd fintl
