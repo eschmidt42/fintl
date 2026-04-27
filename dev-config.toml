@@ -1,5 +1,6 @@
 target_dir = "/tmp/fintl-dev"
 
+# comment out the [ollama] section to prevent ollama usage for the scalable capital broker screenshots
 [ollama]
 model = "qwen3.5:27b"
 
@@ -13,8 +14,7 @@ festgeld = "tests/accounts_etl/files/csv_files/DKB/festgeld"
 giro = "tests/accounts_etl/files/csv_files/Postbank"
 
 [sources.scalable]
-# broker = "tests/accounts_etl/files/artefacts/Scalable-Capital" # without ollama
-broker = "tests/accounts_etl/files/artefacts/Scalable-Capital" # with ollama (slow)
+broker = "tests/accounts_etl/files/artefacts/Scalable-Capital"
 
 [sources.gls]
 giro   = "tests/accounts_etl/files/csv_files/GLS/giro"

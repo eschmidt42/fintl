@@ -172,7 +172,7 @@ def _get_lm_extraction(
         last = exc.failed_attempts[-1].exception if exc.failed_attempts else exc
         raise OllamaInferenceError(
             f"Ollama inference failed for {file_path.name}: {last}"
-        ) from None
+        ) from None  # explicitly cutting of the traceback here for readability. remove `from None` if you need to debug.
 
 
 def extract_balance(

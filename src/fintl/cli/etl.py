@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Optional
+from typing import Annotated
 
 import rich.logging
 import typer
@@ -19,7 +19,7 @@ app = typer.Typer(help="Run the accounts ETL pipeline.")
 @app.command()
 def run(
     summarize_warnings: Annotated[
-        Optional[bool],
+        bool,
         typer.Option("--summarize", help="Summarize warnings at the end"),
     ] = False,
 ):
