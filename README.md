@@ -106,6 +106,8 @@ FINTL_CONFIG=dev-config.toml fintl store --from-dir <dir> --yes --copy
 
 Output lands in `/tmp/fintl-dev`. Edit `dev-config.toml` locally to change providers, paths, or target directory.
 
+Note: `FINTL_CONFIG=dev-config.toml fintl etl` is expected to produce one warning, failing to parse `Screenshot 2026-03-09 at 14.30.54.png`, because it in fact is an insufficient png file to parse the requested information from.
+
 ## Release
 
 For release steps see [here](./docs/releases.md).

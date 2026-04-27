@@ -180,6 +180,38 @@ def test_get_lm_extraction_calls_client_create(tmp_path: Path):
     mock_client.create.assert_called_once()
 
 
+def test_get_lm_extraction_raises_ollama_inference_error_on_retry_exhausted(
+    tmp_path: Path,
+):
+    """_get_lm_extraction wraps InstructorRetryException as OllamaInferenceError."""
+    from unittest.mock import MagicMock
+
+    from instructor.core.exceptions import FailedAttempt, InstructorRetryException
+
+    from fintl.accounts_etl.scalable.broker20260309 import (
+        OllamaInferenceError,
+        _get_lm_extraction,
+    )
+
+    cause = RuntimeError("model runner has unexpectedly stopped")
+    retry_exc = InstructorRetryException(
+        str(cause),
+        n_attempts=3,
+        total_usage=0,
+        failed_attempts=[FailedAttempt(1, cause, None)],
+    )
+    mock_client = MagicMock()
+    mock_client.create.side_effect = retry_exc
+
+    dummy_file = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy_file.write_bytes(b"\x89PNG")
+
+    with pytest.raises(
+        OllamaInferenceError, match="model runner has unexpectedly stopped"
+    ):
+        _get_lm_extraction(dummy_file, mock_client)
+
+
 def test_check_ollama_availability_raises_on_connection_failure():
     """_check_ollama_availability raises OllamaUnavailableError when the server is unreachable."""
     from unittest.mock import patch

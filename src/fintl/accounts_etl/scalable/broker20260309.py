@@ -46,6 +46,10 @@ class OllamaModelUnavailableError(Exception):
     """Raised when the requested model is not present in the ollama instance."""
 
 
+class OllamaInferenceError(Exception):
+    """Raised when the ollama model runner fails during inference."""
+
+
 def check_if_parser_applies(file_path: Path) -> bool:
     "Example: Screenshot 2026-03-02 at 14.30.53.png"
     pattern_result = re.search(
@@ -148,19 +152,27 @@ _SYSTEM_PROMPT = (
 def _get_lm_extraction(
     file_path: Path, extraction_client: instructor.Instructor
 ) -> _BalanceInfoExtract:
-    return extraction_client.create(  # type: ignore
-        response_model=_BalanceInfoExtract,
-        messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": [
-                    "Please extract data from the following image",
-                    Image.from_path(file_path),
-                ],
-            },  # type: ignore[arg-type]
-        ],
-    )
+    from instructor.core.exceptions import InstructorRetryException
+
+    try:
+        return extraction_client.create(  # type: ignore
+            response_model=_BalanceInfoExtract,
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": [
+                        "Please extract data from the following image",
+                        Image.from_path(file_path),
+                    ],
+                },  # type: ignore[arg-type]
+            ],
+        )
+    except InstructorRetryException as exc:
+        last = exc.failed_attempts[-1].exception if exc.failed_attempts else exc
+        raise OllamaInferenceError(
+            f"Ollama inference failed for {file_path.name}: {last}"
+        ) from None
 
 
 def extract_balance(
