@@ -6,7 +6,7 @@ from pathlib import Path
 import chardet
 import polars as pl
 
-from fintl.accounts_etl.schemas import Case, Config
+from fintl.accounts_etl.schemas import Case, Config, ProviderEnum, ServiceEnum
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +37,17 @@ def concatenate_parquets(
             continue
 
         tmp = pl.read_parquet(path)
-
-        if len(tmp) == 0:
-            logger.warning(
-                f"{len(tmp)=} for {case.provider} / {case.service} / {case.parser}, skipping."
-            )
+        n_rows = len(tmp)
+        is_transactions = fname == "transactions.parquet"
+        is_scalable_broker = (
+            case.provider == ProviderEnum.scalable
+            and case.service == ServiceEnum.broker
+        )
+        if n_rows == 0:
+            if not (is_transactions and is_scalable_broker):
+                logger.warning(
+                    f"{n_rows=} for {case.provider} / {case.service} / {case.parser}, skipping {fname}."
+                )
             continue
         else:
             logger.info(f"Appending {len(tmp):_d} rows for {case=}")

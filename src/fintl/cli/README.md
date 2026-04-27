@@ -90,7 +90,7 @@ fintl search --help
 Loads configuration and runs the accounts ETL pipeline.
 
 ```bash
-fintl etl
+fintl etl [--summarize]
 ```
 
 This command produces the consolidated parquet files used by the other commands, including:
@@ -122,6 +122,12 @@ A section rule is printed to the terminal as each provider begins processing:
 ```
 
 Detailed pipeline logs (INFO level and below) are written only to `fintl-etl.log.jsonl` by default, keeping the terminal output minimal. Warnings and errors still surface on screen. To show INFO logs in the terminal, set `handlers_stdout_level = "INFO"` in the `[logging]` section of your `fintl.toml`.
+
+Pass `--summarize` to print a Rich panel summary of all warnings collected during the run after the pipeline finishes:
+
+```bash
+fintl etl --summarize
+```
 
 ### Ollama (PNG parsing)
 

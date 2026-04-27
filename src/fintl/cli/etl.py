@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 import rich.logging
 import typer
@@ -16,7 +17,12 @@ app = typer.Typer(help="Run the accounts ETL pipeline.")
 
 
 @app.command()
-def run():
+def run(
+    summarize_warnings: Annotated[
+        bool,
+        typer.Option("--summarize", help="Summarize warnings at the end"),
+    ] = False,
+):
     """Load configuration and run the accounts ETL pipeline."""
     config = Config()
     setup_logging(config.logging)
@@ -31,7 +37,8 @@ def run():
                 if isinstance(stdout_handler, rich.logging.RichHandler)
                 else Console()
             )
-            print_warning_summary(buf.records, console)
+            if summarize_warnings:
+                print_warning_summary(buf.records, console)
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ def get_time(path: Path) -> float:
 
 def test_main(tmp_path: Path):
     broker_source_dir = (
-        Path(__file__).parent.parent / "files" / "html_files" / "Scalable-Capital"
+        Path(__file__).parent.parent / "files" / "artefacts" / "Scalable-Capital"
     )
     assert broker_source_dir.exists()
 

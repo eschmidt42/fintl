@@ -18,7 +18,7 @@ from fintl.accounts_etl.schemas import (
 # ── Shared fixture paths ───────────────────────────────────────────────────────
 _FILES = Path(__file__).parent / "files"
 _CSV = _FILES / "csv_files"
-_HTML = _FILES / "html_files"
+_ARTEFACTS = _FILES / "artefacts"
 _LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
 
 _DKB_GIRO = _CSV / "DKB" / "kontoauszug"
@@ -26,8 +26,7 @@ _DKB_TAGESGELD = _CSV / "DKB" / "tagesgeld"
 _DKB_CREDIT = _CSV / "DKB" / "credit"
 _DKB_FESTGELD = _CSV / "DKB" / "festgeld"
 _POSTBANK = _CSV / "Postbank"
-_SCALABLE = _HTML / "Scalable-Capital"
-_SCALABLE_PNG = _FILES / "png_files" / "Scalable-Capital"
+_SCALABLE = _ARTEFACTS / "Scalable-Capital"
 _GLS_GIRO = _CSV / "GLS" / "giro"
 _GLS_CREDIT = _CSV / "GLS" / "credit"
 
@@ -118,8 +117,8 @@ def test_all(tmp_path: Path):
     assert data_root_dir.exists()
     csv_root_dir = data_root_dir / "csv_files"
     assert csv_root_dir.exists()
-    html_root_dir = data_root_dir / "html_files"
-    assert html_root_dir.exists()
+    artefacts_root_dir = data_root_dir / "artefacts"
+    assert artefacts_root_dir.exists()
 
     dkb_giro_source_dir = csv_root_dir / "DKB" / "kontoauszug"
     dkb_credit_source_dir = csv_root_dir / "DKB" / "credit"
@@ -127,7 +126,7 @@ def test_all(tmp_path: Path):
 
     postbank_giro_source_dir = csv_root_dir / "Postbank"
 
-    scalable_broker_source_dir = html_root_dir / "Scalable-Capital"
+    scalable_broker_source_dir = artefacts_root_dir / "Scalable-Capital"
 
     gls_giro_source_dir = csv_root_dir / "GLS" / "giro"
     gls_credit_source_dir = csv_root_dir / "GLS" / "credit"
@@ -156,6 +155,7 @@ def test_all(tmp_path: Path):
             gls=Provider(giro=gls_giro_source_dir, credit=gls_credit_source_dir),
         ),
         logging=Logging(config_file=logger_path),
+        ollama=None,  # keep this here - prevent s pydantic-settings to use the fallback
     )
 
     transactions_parquet_path = config.target_dir / "all-transactions.parquet"
@@ -219,8 +219,7 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
     broker20260309 uses an LLM to extract data from a PNG screenshot.
     The LLM call (extract_balance) is monkeypatched to avoid a real Ollama call.
-    The PNG fixture lives in png_files/, so a combined source dir is built from
-    both html_files/ and png_files/ Scalable-Capital directories.
+    All fixtures live in artefacts/Scalable-Capital/ (HTML + PNG merged).
 
     The HTML-based parsers (broker0, broker20231028) produce 0 transaction rows,
     so all-transactions.parquet is not written for this config.
@@ -249,8 +248,6 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     scalable_src = tmp_path / "scalable_src"
     scalable_src.mkdir()
     for f in _SCALABLE.iterdir():
-        shutil.copy(f, scalable_src / f.name)
-    for f in _SCALABLE_PNG.iterdir():
         shutil.copy(f, scalable_src / f.name)
 
     out_dir = tmp_path / "out"

@@ -1,15 +1,20 @@
 target_dir = "/tmp/fintl-dev"
 
+# comment out the [ollama] section to prevent ollama usage for the scalable capital broker screenshots
+[ollama]
+model = "qwen3.5:27b"
+
 [sources.dkb]
 giro      = "tests/accounts_etl/files/csv_files/DKB/kontoauszug"
 tagesgeld = "tests/accounts_etl/files/csv_files/DKB/tagesgeld"
 credit    = "tests/accounts_etl/files/csv_files/DKB/credit"
+festgeld = "tests/accounts_etl/files/csv_files/DKB/festgeld"
 
 [sources.postbank]
 giro = "tests/accounts_etl/files/csv_files/Postbank"
 
 [sources.scalable]
-broker = "tests/accounts_etl/files/html_files/Scalable-Capital"
+broker = "tests/accounts_etl/files/artefacts/Scalable-Capital"
 
 [sources.gls]
 giro   = "tests/accounts_etl/files/csv_files/GLS/giro"
