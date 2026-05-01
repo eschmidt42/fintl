@@ -1,6 +1,10 @@
 # https://docs.astral.sh/uv/guides/integration/github/#setting-up-python
 name: CI
 
+# Shared variables
+env:
+  UV_VERSION: "0.10.10"
+
 on:
   push:
   # pull_request:
@@ -18,12 +22,13 @@ jobs:
 
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.10.10"
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
