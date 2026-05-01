@@ -19,23 +19,24 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: false
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: ${{ env.UV_VERSION }}
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
 
-    - name: Build a binary wheel and a source tarball
-      run: uv build --sdist --wheel
+      - name: Build a binary wheel and a source tarball
+        run: uv build --sdist --wheel
 
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v6
-      with:
-        name: python-package-distributions
-        path: dist/
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: python-package-distributions
+          path: dist/
 
   # publish to test-pypi if pre-release tag
   publish-to-testpypi:
@@ -62,51 +63,51 @@ jobs:
 
     steps:
 
-    - name: Download all the dists
-      uses: actions/download-artifact@v7
-      with:
-        name: python-package-distributions
-        path: dist/
+      - name: Download all the dists
+        uses: actions/download-artifact@v7
+        with:
+          name: python-package-distributions
+          path: dist/
 
-    - name: Publish distribution 📦 to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
+      - name: Publish distribution 📦 to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
 
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: ${{ env.UV_VERSION }}
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
 
-    - name: Verify TestPyPI installation
-      run: |
-        # Install the package from TestPyPI. TestPyPI publication can take a
-        # short time to appear on the simple index, so retry with backoff.
-        VERSION="${GITHUB_REF_NAME#v}"
-        uv venv --python ${{ env.PYTHON_VERSION }}
-        for attempt in 1 2 3 4 5; do
-          if uv pip install \
-            --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple \
-            fintl==${VERSION}; then
-            break
-          fi
+      - name: Verify TestPyPI installation
+        run: |
+          # Install the package from TestPyPI. TestPyPI publication can take a
+          # short time to appear on the simple index, so retry with backoff.
+          VERSION="${GITHUB_REF_NAME#v}"
+          uv venv --python ${{ env.PYTHON_VERSION }}
+          for attempt in 1 2 3 4 5; do
+            if uv pip install \
+              --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple \
+              fintl==${VERSION}; then
+              break
+            fi
 
-          if [ "$attempt" -eq 5 ]; then
-            echo "Package fintl==${VERSION} was not available on TestPyPI after multiple attempts."
-            exit 1
-          fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Package fintl==${VERSION} was not available on TestPyPI after multiple attempts."
+              exit 1
+            fi
 
-          sleep $((attempt * 10))
-        done
+            sleep $((attempt * 10))
+          done
 
-        # Run a basic test using the venv interpreter so imports resolve to
-        # the package installed from TestPyPI rather than the local checkout.
-        .venv/bin/python scripts/check_import.py  || exit 1
+          # Run a basic test using the venv interpreter so imports resolve to
+          # the package installed from TestPyPI rather than the local checkout.
+          .venv/bin/python scripts/check_import.py  || exit 1
 
   publish-to-pypi:
 
@@ -133,11 +134,11 @@ jobs:
 
     steps:
 
-    - name: Download all the dists
-      uses: actions/download-artifact@v7
-      with:
-        name: python-package-distributions
-        path: dist/
+      - name: Download all the dists
+        uses: actions/download-artifact@v7
+        with:
+          name: python-package-distributions
+          path: dist/
 
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
