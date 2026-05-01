@@ -4,6 +4,7 @@ name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 # Shared variables
 env:
   UV_VERSION: "0.10.10"
+  PYTHON_VERSION: "3.13"
 
 # only push on tag creation
 on:
@@ -86,7 +87,7 @@ jobs:
         # Install the package from TestPyPI. TestPyPI publication can take a
         # short time to appear on the simple index, so retry with backoff.
         VERSION="${GITHUB_REF_NAME#v}"
-        uv venv --python 3.12
+        uv venv --python ${{ env.PYTHON_VERSION }}
         for attempt in 1 2 3 4 5; do
           if uv pip install \
             --index-url https://test.pypi.org/simple/ \
