@@ -1,6 +1,10 @@
 # https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 
+# Shared variables
+env:
+  UV_VERSION: "0.10.10"
+
 # only push on tag creation
 on:
   push:
@@ -13,15 +17,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
     - uses: actions/checkout@v6
       with:
         persist-credentials: false
+
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.10.10"
+        version: ${{ env.UV_VERSION }}
+
     - name: Build a binary wheel and a source tarball
       run: uv build --sdist --wheel
+
     - name: Store the distribution packages
       uses: actions/upload-artifact@v6
       with:
@@ -71,7 +79,7 @@ jobs:
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.10.10"
+        version: ${{ env.UV_VERSION }}
 
     - name: Verify TestPyPI installation
       run: |
