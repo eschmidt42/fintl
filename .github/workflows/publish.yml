@@ -30,7 +30,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
 
       - name: Build a binary wheel and a source tarball
-        run: uv build --sdist --wheel
+        run: |
+          # Extract the version from the Git tag (strip leading 'v')
+          VERSION="${GITHUB_REF_NAME#v}"
+          uv build --sdist --wheel --version "$VERSION"
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v6
