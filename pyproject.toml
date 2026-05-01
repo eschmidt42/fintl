@@ -1,6 +1,6 @@
 [project]
 name = "fintl"
-version = "0.1.2"
+version = "0.1.3"
 description = "Financial ETL CLI: parse, normalize, and explore your bank transaction data."
 readme = "README.md"
 license = { text = "MIT" }
