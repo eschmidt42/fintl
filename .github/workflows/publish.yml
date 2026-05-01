@@ -64,6 +64,10 @@ jobs:
       with:
         repository-url: https://test.pypi.org/legacy/
 
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -72,8 +76,8 @@ jobs:
     - name: Verify TestPyPI installation
       run: |
         # Install the package from TestPyPI. TestPyPI publication can take a
-        VERSION="${GITHUB_REF_NAME#v}"
         # short time to appear on the simple index, so retry with backoff.
+        VERSION="${GITHUB_REF_NAME#v}"
         uv venv --python 3.12
         for attempt in 1 2 3 4 5; do
           if uv pip install \
@@ -90,7 +94,6 @@ jobs:
 
           sleep $((attempt * 10))
         done
-          "fintl==${VERSION}"
 
         # Run a basic test
         uv run scripts/check_import.py || exit 1
