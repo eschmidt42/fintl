@@ -104,8 +104,9 @@ jobs:
           sleep $((attempt * 10))
         done
 
-        # Run a basic test
-        uv run scripts/check_import.py || exit 1
+        # Run a basic test using the venv interpreter so imports resolve to
+        # the package installed from TestPyPI rather than the local checkout.
+        .venv/bin/python scripts/check_import.py  || exit 1
 
   publish-to-pypi:
 
