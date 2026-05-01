@@ -64,6 +64,20 @@ jobs:
       with:
         repository-url: https://test.pypi.org/legacy/
 
+    - name: Verify TestPyPI installation
+      run: |
+        # Install the package from TestPyPI
+        uv pip install \
+          --index-url https://test.pypi.org/simple/ \
+          --extra-index-url https://pypi.org/simple \
+          fintl==${{ github.ref_name }}
+
+        # Run a basic test
+        uv run python -c "
+        import fintl
+        print(f'Successfully imported fintl v{fintl.__version__}')
+        " || exit 1
+
   publish-to-pypi:
 
     name: Publish Python 🐍 distribution 📦 to PyPI
