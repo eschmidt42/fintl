@@ -308,8 +308,8 @@ def postprocess_old_and_new_transactions(transactions: pl.DataFrame) -> pl.DataF
         The postprocessed DataFrame, sorted by date with unique hashes.
     """
 
+    transactions = transactions.unique(subset=["hash"], maintain_order=True)
     transactions = transactions.sort("date")
-    transactions = transactions.unique(subset=["hash"])
 
     return transactions
 
