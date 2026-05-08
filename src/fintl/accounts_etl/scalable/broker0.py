@@ -1,7 +1,6 @@
 import datetime
 import logging
 import re
-import typing as T
 from pathlib import Path
 
 import polars as pl
@@ -87,7 +86,7 @@ def extract_transactions() -> pl.DataFrame:
 def extract_balance(
     case: Case,
     file_path: Path,
-    lines: T.List[str],
+    lines: list[str],
 ) -> BalanceInfo:
     with file_path.open("r") as f:
         soup = BeautifulSoup(f, "html.parser")

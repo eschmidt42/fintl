@@ -1,6 +1,5 @@
 import logging
 import re
-import typing as T
 from pathlib import Path
 
 import chardet
@@ -121,9 +120,7 @@ def check_if_german_number(s: str) -> bool:
     return max_one_comma and ge_punctuation_order
 
 
-def german_string_numbers_to_floats(
-    s: T.Union[str, int, float], strip_currency: bool = False
-):
+def german_string_numbers_to_floats(s: str | int | float, strip_currency: bool = False):
     if isinstance(s, (int, float)):
         logger.debug(
             f"Skipping german_string_numbers_to_floats for {s} because it's not a string"
@@ -141,7 +138,7 @@ def german_string_numbers_to_floats(
 
 
 def hash_transactions(
-    transactions: pl.DataFrame, hash_columns: T.List[str]
+    transactions: pl.DataFrame, hash_columns: list[str]
 ) -> pl.DataFrame:
     transactions = transactions.with_columns(
         hash=transactions.select(hash_columns).hash_rows()

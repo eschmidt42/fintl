@@ -1,7 +1,6 @@
 import datetime
 import logging
 import re
-import typing as T
 from pathlib import Path
 
 import polars as pl
@@ -74,7 +73,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
 
 
 def extract_transactions(
-    case: Case, file_path: Path, lines: T.List[str], encoding: str
+    case: Case, file_path: Path, lines: list[str], encoding: str
 ) -> pl.DataFrame:
     transaction_pattern: str = (
         '^("?Buchungsdatum";"Wertstellung")'  # start of transactions
@@ -147,7 +146,7 @@ def extract_transactions(
     return transactions
 
 
-def extract_balance(case: Case, file_path: Path, lines: T.List[str]) -> BalanceInfo:
+def extract_balance(case: Case, file_path: Path, lines: list[str]) -> BalanceInfo:
     balance_info_pattern: str = '^("?Kontostand vom)'  # start of balance info
     ix_start_balance, balance_line = find_line_with_pattern(
         lines, pattern=balance_info_pattern

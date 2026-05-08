@@ -1,5 +1,4 @@
 import logging
-import typing as T
 from pathlib import Path
 
 import polars as pl
@@ -30,7 +29,7 @@ def error_if_overlap(
         raise ValueError(msg)
 
 
-def load_lines(path: Path, encoding: str) -> T.List[str]:
+def load_lines(path: Path, encoding: str) -> list[str]:
     """Reads a file and returns its content as a list of lines.
 
     Args:

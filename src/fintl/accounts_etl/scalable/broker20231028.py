@@ -1,7 +1,6 @@
 import datetime
 import logging
 import re
-import typing as T
 from pathlib import Path
 
 import polars as pl
@@ -66,7 +65,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
 def extract_balance(
     case: Case,
     file_path: Path,
-    lines: T.List[str],
+    lines: list[str],
 ) -> BalanceInfo:
     with file_path.open("r") as f:
         soup = BeautifulSoup(f, "html.parser")

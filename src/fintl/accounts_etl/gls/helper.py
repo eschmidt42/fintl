@@ -1,7 +1,6 @@
 import datetime
 import logging
 import re
-import typing as T
 from pathlib import Path
 
 import polars as pl
@@ -54,7 +53,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
 
 
 def extract_transactions(
-    case: Case, file_path: Path, lines: T.List[str], encoding: str
+    case: Case, file_path: Path, lines: list[str], encoding: str
 ) -> pl.DataFrame:
     transaction_pattern: str = (
         "^(Bezeichnung Auftragskonto;IBAN)"  # start of transactions

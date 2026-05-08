@@ -1,7 +1,6 @@
 import datetime
 import logging
 import os
-import typing as T
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -123,12 +122,12 @@ class Config(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: T.Type[BaseSettings],
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
-    ) -> T.Tuple[PydanticBaseSettingsSource, ...]:
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         toml_file = os.environ.get("FINTL_CONFIG", "~/.config/petprojects/fintl.toml")
         return (
             init_settings,
