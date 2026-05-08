@@ -11,6 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 def detect_encoding(path: Path, encoding_default: str = "utf-8") -> str:
+    """Detects the file encoding using chardet.
+
+    Args:
+        path: Path to the file to detect encoding for.
+        encoding_default: Fallback encoding if detection fails.
+
+    Returns:
+        The detected encoding string, or the default if detection fails.
+    """
     with open(path, "rb") as f:
         res = chardet.detect(f.read())
     logger.debug(f"detect encoding: {res}")
@@ -24,6 +33,20 @@ def detect_encoding(path: Path, encoding_default: str = "utf-8") -> str:
 def concatenate_parquets(
     fname: str, config: Config, cases: list[Case], columns: list[str]
 ) -> pl.DataFrame | None:
+    """Concatenates data from multiple parquet files for a list of cases.
+
+    Iterates through the provided cases, reads their parquet files, selects
+    the specified columns, and concatenates the resulting DataFrames.
+
+    Args:
+        fname: Filename of the parquet file to read (e.g., 'transactions.parquet').
+        config: Application configuration containing directory paths.
+        cases: List of Case objects representing providers/services/parsers.
+        columns: List of column names to select from each DataFrame.
+
+    Returns:
+        A concatenated DataFrame if data is found, otherwise None.
+    """
     dfs = []
     for case in cases:
         path = config.get_parser_dir(case) / fname
@@ -62,11 +85,31 @@ def concatenate_parquets(
 
 
 def is_match(pattern: str, x: str) -> bool:
+    """Checks if a string matches a given regex pattern.
+
+    Args:
+        pattern: The regex pattern to match against.
+        x: The string to test.
+
+    Returns:
+        True if the pattern matches the string, False otherwise.
+    """
     return re.search(pattern, x) is not None
 
 
 def find_line_with_pattern(lines: list[str], pattern: str) -> tuple[int, str]:
-    "Identifies the first relevant line in a csv"
+    """Finds the first line in a list that matches a given pattern.
+
+    Args:
+        lines: A list of strings to search through.
+        pattern: The regex pattern to match.
+
+    Returns:
+        A tuple containing the line index (0-based) and the matched line string.
+
+    Raises:
+        ValueError: If no line matches the pattern.
+    """
 
     ix_match = None
     matched_line = ""
@@ -88,10 +131,21 @@ def find_line_with_pattern(lines: list[str], pattern: str) -> tuple[int, str]:
 
 
 class GermanNumberParsingError(Exception):
-    "Raised if a number in a string is not in the expected German format"
+    """Raised when a string contains a number not in the expected German format."""
 
 
 def check_if_german_number(s: str) -> bool:
+    """Checks if a string contains a number formatted in the German style.
+
+    German format uses dots for thousands separators and commas for the decimal point
+    (e.g., "1.234,56").
+
+    Args:
+        s: The string to check for German number formatting.
+
+    Returns:
+        True if the string matches German number formatting rules, False otherwise.
+    """
     comma_count = s.count(",")
     dot_count = s.count(".")
 
@@ -121,6 +175,21 @@ def check_if_german_number(s: str) -> bool:
 
 
 def german_string_numbers_to_floats(s: str | int | float, strip_currency: bool = False):
+    """Converts a German-formatted string number to a Python float.
+
+    Converts German-style number formatting (dots for thousands, comma for decimals)
+    to a standard Python float.
+
+    Args:
+        s: The value to convert. Can be a string, int, or float.
+        strip_currency: If True, removes any currency symbols/words before parsing.
+
+    Returns:
+        A float representation of the number.
+
+    Raises:
+        GermanNumberParsingError: If the input string is not in German format.
+    """
     if isinstance(s, (int, float)):
         logger.debug(
             f"Skipping german_string_numbers_to_floats for {s} because it's not a string"
@@ -140,6 +209,15 @@ def german_string_numbers_to_floats(s: str | int | float, strip_currency: bool =
 def hash_transactions(
     transactions: pl.DataFrame, hash_columns: list[str]
 ) -> pl.DataFrame:
+    """Adds a hash column to a transactions DataFrame based on specific columns.
+
+    Args:
+        transactions: DataFrame containing transaction data.
+        hash_columns: List of column names to include in the hash calculation.
+
+    Returns:
+        The DataFrame with an added 'hash' column.
+    """
     transactions = transactions.with_columns(
         hash=transactions.select(hash_columns).hash_rows()
     )
@@ -149,6 +227,16 @@ def hash_transactions(
 def verify_transactions(
     transaction_columns: list[str], transactions: pl.DataFrame, file_path: Path
 ):
+    """Verifies that all expected columns exist in the transactions DataFrame.
+
+    Args:
+        transaction_columns: List of expected column names.
+        transactions: The DataFrame to verify.
+        file_path: Path to the source file (used for error messages).
+
+    Raises:
+        ValueError: If any expected column is missing from the DataFrame.
+    """
     for col in transaction_columns:
         if col not in transactions.columns:
             raise ValueError(
