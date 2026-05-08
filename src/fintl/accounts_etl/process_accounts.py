@@ -16,8 +16,20 @@ from fintl.accounts_etl.utils import concatenate_parquets
 logger = logging.getLogger(__name__)
 
 
-def concatenate_all_providers(config: Config):
-    "concatenate all providers"
+def concatenate_all_providers(config: Config) -> None:
+    """Concatenates transaction and balance data from all providers.
+
+    Iterates through all defined cases, loads their transaction and balance
+    parquet files, and merges them into consolidated 'all-transactions' and
+    'all-balances' output files in the target directory.
+
+    Args:
+        config: Application configuration containing directory paths and cases.
+
+    Returns:
+        None
+    """
+
     logger.info("Concatenating all providers")
 
     cases = runner.all_cases()
@@ -58,7 +70,19 @@ def concatenate_all_providers(config: Config):
     logger.info("Finished concatenating all providers")
 
 
-def make_labels(config: Config):
+def make_labels(config: Config) -> None:
+    """Reads unlabelled transactions and applies label rules to them.
+
+    Loads the consolidated 'all-transactions.parquet', assigns labels
+    based on the configuration rules, and saves the result as both
+    Parquet and Excel files with '-labelled' in the filename.
+
+    Args:
+        config: Application configuration containing target directory and label rules.
+
+    Returns:
+        None
+    """
     logger.info("Preparing to assigning labels")
 
     # load all-transactions.parquet
@@ -88,7 +112,18 @@ def make_labels(config: Config):
     logger.info("Labelling done")
 
 
-def main(config: Config):
+def main(config: Config) -> None:
+    """Executes the full ETL pipeline for account data.
+
+    Runs the enabled services, concatenates all provider data, and
+    applies transaction labelling according to the configuration.
+
+    Args:
+        config: Application configuration driving the ETL process.
+
+    Returns:
+        None
+    """
     console = Console()
     logger.info(f"Starting ETL pipeline")
 
