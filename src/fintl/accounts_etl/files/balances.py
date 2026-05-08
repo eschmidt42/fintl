@@ -3,7 +3,7 @@ from pathlib import Path
 
 import polars as pl
 
-from fintl.accounts_etl.files.utils import (
+from fintl.accounts_etl.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     balance_name_to_parquet,

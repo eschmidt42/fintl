@@ -7,6 +7,10 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+from fintl.accounts_etl.files.filenames import (
+    balance_name_to_parquet,
+    transaction_name_to_parquet,
+)
 from fintl.accounts_etl.files.transactions import (
     concatenate_new_transactions,
     concatenate_transactions_history,
@@ -16,9 +20,7 @@ from fintl.accounts_etl.files.transactions import (
     stack_old_and_new_transactions,
 )
 from fintl.accounts_etl.files.utils import (
-    balance_name_to_parquet,
     find_common_columns,
-    transaction_name_to_parquet,
 )
 from fintl.accounts_etl.schemas import TRANSACTION_COLUMNS
 

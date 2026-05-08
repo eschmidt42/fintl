@@ -5,7 +5,7 @@ import polars as pl
 import pytest
 from inline_snapshot import snapshot
 
-from fintl.accounts_etl.files.utils import (
+from fintl.accounts_etl.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,

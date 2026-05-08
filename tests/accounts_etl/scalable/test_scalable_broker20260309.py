@@ -4,7 +4,7 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
-from fintl.accounts_etl.files.utils import (
+from fintl.accounts_etl.files.filenames import (
     balance_htm_name_to_json,
     balance_htm_name_to_parquet,
     transaction_htm_name_to_parquet,
