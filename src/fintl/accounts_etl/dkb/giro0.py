@@ -27,21 +27,21 @@ from fintl.accounts_etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
-from fintl.accounts_etl.files.balances import store_balance
-from fintl.accounts_etl.files.copy import copy_new_files
-from fintl.accounts_etl.files.detect import (
+from fintl.accounts_etl.io.files.balances import store_balance
+from fintl.accounts_etl.io.files.copy import copy_new_files
+from fintl.accounts_etl.io.files.detect import (
     detect_encoding,
     detect_new_raw_files,
     detect_relevant_target_files,
     find_line_with_pattern,
 )
-from fintl.accounts_etl.files.orchestrator import (
+from fintl.accounts_etl.io.files.orchestrator import (
     concatenate_new_information_to_history,
     get_parser_source_files,
 )
-from fintl.accounts_etl.files.select import select_files_to_copy
-from fintl.accounts_etl.files.transactions import store_transactions
-from fintl.accounts_etl.files.utils import (
+from fintl.accounts_etl.io.files.select import select_files_to_copy
+from fintl.accounts_etl.io.files.transactions import store_transactions
+from fintl.accounts_etl.io.files.utils import (
     load_lines,
 )
 

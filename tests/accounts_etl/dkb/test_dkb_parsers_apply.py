@@ -11,7 +11,7 @@ from fintl.accounts_etl.dkb import (
     tagesgeld202312,
 )
 from fintl.accounts_etl.engine import runner
-from fintl.accounts_etl.files.orchestrator import get_parser_source_files
+from fintl.accounts_etl.io.files.orchestrator import get_parser_source_files
 
 
 def test_giro_parsers_apply(tmp_path: Path):

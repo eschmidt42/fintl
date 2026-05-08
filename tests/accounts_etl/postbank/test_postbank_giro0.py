@@ -9,7 +9,7 @@ from fintl.accounts_etl.common.exceptions import (
     ExtractTransactionsException,
 )
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
-from fintl.accounts_etl.files.filenames import (
+from fintl.accounts_etl.io.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,

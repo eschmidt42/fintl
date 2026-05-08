@@ -8,11 +8,11 @@ import polars as pl
 import pytest
 
 from fintl.accounts_etl.common.schemas import TRANSACTION_COLUMNS
-from fintl.accounts_etl.files.filenames import (
+from fintl.accounts_etl.io.files.filenames import (
     balance_name_to_parquet,
     transaction_name_to_parquet,
 )
-from fintl.accounts_etl.files.transactions import (
+from fintl.accounts_etl.io.files.transactions import (
     concatenate_new_transactions,
     concatenate_transactions_history,
     load_transactions,
@@ -20,7 +20,7 @@ from fintl.accounts_etl.files.transactions import (
     process_new_transactions,
     stack_old_and_new_transactions,
 )
-from fintl.accounts_etl.files.utils import (
+from fintl.accounts_etl.io.files.utils import (
     find_common_columns,
 )
 

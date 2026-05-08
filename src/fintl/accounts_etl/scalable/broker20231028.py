@@ -14,13 +14,13 @@ from fintl.accounts_etl.common.schemas import (
     ScalableBrokerParserEnum,
     ServiceEnum,
 )
-from fintl.accounts_etl.files.copy import copy_new_files
-from fintl.accounts_etl.files.detect import detect_encoding
-from fintl.accounts_etl.files.orchestrator import (
+from fintl.accounts_etl.io.files.copy import copy_new_files
+from fintl.accounts_etl.io.files.detect import detect_encoding
+from fintl.accounts_etl.io.files.orchestrator import (
     concatenate_new_information_to_history,
 )
-from fintl.accounts_etl.files.select import select_files_to_copy
-from fintl.accounts_etl.files.utils import (
+from fintl.accounts_etl.io.files.select import select_files_to_copy
+from fintl.accounts_etl.io.files.utils import (
     load_lines,
 )
 from fintl.accounts_etl.scalable.broker0 import extract_transactions

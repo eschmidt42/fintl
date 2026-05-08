@@ -8,22 +8,22 @@ from fintl.accounts_etl.common.schemas import (
     ProviderEnum,
     ServiceEnum,
 )
-from fintl.accounts_etl.files.balances import store_balance
-from fintl.accounts_etl.files.copy import (
+from fintl.accounts_etl.gls.helper import check_if_parser_applies, parse_csv_file
+from fintl.accounts_etl.io.files.balances import store_balance
+from fintl.accounts_etl.io.files.copy import (
     copy_new_files,
 )
-from fintl.accounts_etl.files.detect import (
+from fintl.accounts_etl.io.files.detect import (
     detect_new_parsed_files,
     detect_new_raw_files,
     detect_relevant_target_files,
 )
-from fintl.accounts_etl.files.orchestrator import (
+from fintl.accounts_etl.io.files.orchestrator import (
     concatenate_new_information_to_history,
     get_parser_source_files,
 )
-from fintl.accounts_etl.files.select import select_files_to_copy
-from fintl.accounts_etl.files.transactions import store_transactions
-from fintl.accounts_etl.gls.helper import check_if_parser_applies, parse_csv_file
+from fintl.accounts_etl.io.files.select import select_files_to_copy
+from fintl.accounts_etl.io.files.transactions import store_transactions
 
 logger = logging.getLogger(__name__)
 

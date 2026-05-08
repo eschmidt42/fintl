@@ -7,7 +7,7 @@ import chardet
 import polars as pl
 
 from fintl.accounts_etl.common.transactions import logger
-from fintl.accounts_etl.files.select import select_files_to_parse
+from fintl.accounts_etl.io.files.select import select_files_to_parse
 
 logger = logging.getLogger(__name__)
 

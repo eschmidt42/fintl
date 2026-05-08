@@ -16,7 +16,7 @@ from fintl.accounts_etl.common.schemas import (
     Provider,
     Sources,
 )
-from fintl.accounts_etl.store import (
+from fintl.accounts_etl.io.store import (
     FileOperation,
     _route_file,
     deduplicate_by_provider_service,

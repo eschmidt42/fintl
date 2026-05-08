@@ -16,8 +16,8 @@ from fintl.accounts_etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
-from fintl.accounts_etl.files.detect import detect_encoding, find_line_with_pattern
-from fintl.accounts_etl.files.utils import load_lines
+from fintl.accounts_etl.io.files.detect import detect_encoding, find_line_with_pattern
+from fintl.accounts_etl.io.files.utils import load_lines
 
 logger = logging.getLogger(__name__)
 

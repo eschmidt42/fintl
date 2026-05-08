@@ -11,7 +11,7 @@ from fintl.accounts_etl.common.schemas import (
     Config,
 )
 from fintl.accounts_etl.engine import runner
-from fintl.accounts_etl.parquets import concatenate_parquets
+from fintl.accounts_etl.io.parquets import concatenate_parquets
 
 logger = logging.getLogger(__name__)
 

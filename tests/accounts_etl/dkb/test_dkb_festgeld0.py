@@ -25,8 +25,8 @@ from fintl.accounts_etl.dkb.festgeld0 import (
     extract_transactions,
     load_lines,
 )
-from fintl.accounts_etl.files.detect import detect_encoding
-from fintl.accounts_etl.files.filenames import (
+from fintl.accounts_etl.io.files.detect import detect_encoding
+from fintl.accounts_etl.io.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,

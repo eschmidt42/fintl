@@ -7,12 +7,12 @@ from fintl.accounts_etl.common.schemas import (
     TRANSACTION_COLUMNS,
     TransactionColumnsEnum,
 )
-from fintl.accounts_etl.files.filenames import (
+from fintl.accounts_etl.io.files.filenames import (
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
     transaction_name_to_parquet,
 )
-from fintl.accounts_etl.files.utils import (
+from fintl.accounts_etl.io.files.utils import (
     find_common_columns,
 )
 

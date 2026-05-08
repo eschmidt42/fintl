@@ -8,7 +8,7 @@ from fintl.accounts_etl.common.schemas import (
     BalanceInfo,
     TransactionColumnsEnum,
 )
-from fintl.accounts_etl.files.filenames import (
+from fintl.accounts_etl.io.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     balance_name_to_parquet,
