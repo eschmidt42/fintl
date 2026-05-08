@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from fintl.accounts_etl import runner
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.accounts_etl.dkb import (
     credit0,
@@ -11,6 +10,7 @@ from fintl.accounts_etl.dkb import (
     tagesgeld202307,
     tagesgeld202312,
 )
+from fintl.accounts_etl.engine import runner
 from fintl.accounts_etl.files.orchestrator import get_parser_source_files
 
 

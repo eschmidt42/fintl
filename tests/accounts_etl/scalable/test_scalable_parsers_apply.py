@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from fintl.accounts_etl import runner
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
+from fintl.accounts_etl.engine import runner
 from fintl.accounts_etl.scalable import broker0, broker20231028
 from fintl.accounts_etl.scalable.files import get_parser_source_files
 

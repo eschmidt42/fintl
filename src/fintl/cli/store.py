@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.text import Text
 
 from fintl.accounts_etl.common.schemas import Config, ParserSpec
-from fintl.accounts_etl.registry import ALL_PARSERS
+from fintl.accounts_etl.engine.registry import ALL_PARSERS
 from fintl.accounts_etl.store import FileOperation, store_files
 from fintl.fine_logging import setup_logging
 

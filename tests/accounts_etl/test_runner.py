@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from fintl.accounts_etl import runner
 from fintl.accounts_etl.common.schemas import (
     Case,
     Config,
@@ -18,6 +17,7 @@ from fintl.accounts_etl.common.schemas import (
     Provider,
     Sources,
 )
+from fintl.accounts_etl.engine import runner
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
