@@ -7,6 +7,18 @@ logger = logging.getLogger(__name__)
 def select_files_to_copy(
     source_files: list[Path], target_files: list[Path]
 ) -> list[Path]:
+    """Selects source files that do not yet exist in the target directory.
+
+    Compares source files against already present target files by filename and returns
+    only those that are not already copied.
+
+    Args:
+        source_files: List of source file paths to check.
+        target_files: List of target file paths to compare against.
+
+    Returns:
+        A list of source file paths that need to be copied.
+    """
     target_names = [file_path.name for file_path in target_files]
     files_to_copy = [
         file_path for file_path in source_files if file_path.name not in target_names
