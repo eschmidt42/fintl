@@ -7,7 +7,7 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from fintl.accounts_etl.files.files_orchestrator import (
+from fintl.accounts_etl.files.orchestrator import (
     balance_name_to_parquet,
     concatenate_new_transactions,
     concatenate_transactions_history,

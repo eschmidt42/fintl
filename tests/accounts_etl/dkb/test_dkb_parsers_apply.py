@@ -10,7 +10,7 @@ from fintl.accounts_etl.dkb import (
     tagesgeld202307,
     tagesgeld202312,
 )
-from fintl.accounts_etl.files.files_orchestrator import get_parser_source_files
+from fintl.accounts_etl.files.orchestrator import get_parser_source_files
 from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
 
 
