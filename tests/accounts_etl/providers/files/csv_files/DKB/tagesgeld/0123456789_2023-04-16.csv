@@ -1,0 +1,8 @@
+"Kontonummer:";"DE123456 / Tagesgeld";
+
+"Von:";"17.03.2023";
+"Bis:";"16.04.2023";
+"Kontostand vom 16.04.2023:";"222.111,33 EUR";
+
+"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Beg�nstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gl�ubiger-ID";"Mandatsreferenz";"Kundenreferenz";
+"03.04.2023";"01.04.2023";"Abschluss";"";"Abrechnung";"123456";"12345";"11,22";"";"";"";

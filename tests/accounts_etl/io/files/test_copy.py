@@ -1,5 +1,3 @@
-"""Unit tests for fintl.accounts_etl.files."""
-
 from pathlib import Path
 
 from fintl.accounts_etl.io.files.copy import copy_new_files

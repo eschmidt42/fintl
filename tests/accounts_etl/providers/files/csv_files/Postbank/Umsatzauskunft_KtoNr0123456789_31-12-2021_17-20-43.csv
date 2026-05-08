@@ -1,0 +1,18 @@
+Umsatzauskunft;
+Name;blaaa;
+BLZ;123456;
+Kontonummer;123456;
+IBAN;DE123456;
+Aktueller Kontostand;123,45 €;
+Summe der Umsätze in den nächsten 14 Tagen;-12,12 €;
+
+Umsätze in den nä 14 Tagen;
+Buchungsdatum;Umsatzart;Buchungsdetails;Auftraggeber;Empfänger;Betrag (€);
+30.12.2021;Lastbuchung;Bezahlfunktion;bla;;-12,34 €;
+30.12.2021;Lastbuchung;Bezahlfunktion;blub;;-34,56 €;
+03.01.2022;Lastbuchung;Bezahlfunktion;bla;;-56,78 €;
+
+gebuchte Umsätze;
+Buchungsdatum;Wertstellung;Umsatzart;Buchungsdetails;Auftraggeber;Empfänger;Betrag (€);Saldo (€);
+30.12.2021;31.12.2021;Zinsen/Entgelt;;bla;;-12,34 €;123,45 €;
+29.12.2021;29.12.2021;Kartenzahlung;Referenz;bla;blub;-1,23 €;123,45 €;

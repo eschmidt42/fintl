@@ -29,7 +29,7 @@ _NO_CHOOSE: Callable[[Path, list[ParserSpec]], ParserSpec | None] = lambda _f, _
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-_LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
+_LOGGER_PATH = Path(__file__).parent.parent.parent / "logger-config.json"
 
 
 def _config(tmp_path: Path) -> Config:
