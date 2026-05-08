@@ -152,8 +152,9 @@ def concatenate_new_transactions(
     transactions = postprocess_old_and_new_transactions(transactions)
 
     n_new = len(transactions)
+    n_added = max(0, n_new - n_old)
 
-    return transactions, n_new - n_old
+    return transactions, n_added
 
 
 def concatenate_transactions_history(
