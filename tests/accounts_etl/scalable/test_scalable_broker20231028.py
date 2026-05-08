@@ -2,13 +2,13 @@ from pathlib import Path
 
 import polars as pl
 
-from fintl.accounts_etl.scalable import broker20231028 as broker
-from fintl.accounts_etl.scalable.files import (
+from fintl.accounts_etl.files.utils import (
     balance_htm_name_to_json,
     balance_htm_name_to_parquet,
     transaction_htm_name_to_parquet,
     transaction_htm_name_to_xlsx,
 )
+from fintl.accounts_etl.scalable import broker20231028 as broker
 from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
 
 

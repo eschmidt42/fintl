@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fintl.accounts_etl import runner
-from fintl.accounts_etl.files.orchestrator import get_parser_source_files
+from fintl.accounts_etl.files.utils import get_parser_source_files
 from fintl.accounts_etl.postbank import (
     giro0,
     giro202305,

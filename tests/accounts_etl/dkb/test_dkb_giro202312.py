@@ -20,7 +20,7 @@ from fintl.accounts_etl.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
-from fintl.accounts_etl.files.orchestrator import (
+from fintl.accounts_etl.files.utils import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,
