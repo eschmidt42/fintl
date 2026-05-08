@@ -9,7 +9,9 @@ import polars as pl
 from instructor.processing.multimodal import Image
 from pydantic import BaseModel
 
-from fintl.accounts_etl.files_orchestrator import concatenate_new_information_to_history
+from fintl.accounts_etl.files.files_orchestrator import (
+    concatenate_new_information_to_history,
+)
 from fintl.accounts_etl.files_utils import copy_new_files, select_files_to_copy
 from fintl.accounts_etl.scalable.broker0 import extract_transactions
 from fintl.accounts_etl.scalable.files import (

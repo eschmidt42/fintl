@@ -35,7 +35,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-from fintl.accounts_etl.files_orchestrator import (
+from fintl.accounts_etl.files.files_orchestrator import (
     get_parser_source_files as csv_get_source_files,
 )
 from fintl.accounts_etl.files_utils import error_if_overlap

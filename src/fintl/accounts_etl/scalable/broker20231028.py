@@ -7,7 +7,9 @@ from pathlib import Path
 import polars as pl
 from bs4 import BeautifulSoup, element
 
-from fintl.accounts_etl.files_orchestrator import concatenate_new_information_to_history
+from fintl.accounts_etl.files.files_orchestrator import (
+    concatenate_new_information_to_history,
+)
 from fintl.accounts_etl.files_utils import (
     copy_new_files,
     load_lines,

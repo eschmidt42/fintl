@@ -11,7 +11,7 @@ from fintl.accounts_etl.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
-from fintl.accounts_etl.files_orchestrator import (
+from fintl.accounts_etl.files.files_orchestrator import (
     concatenate_new_information_to_history,
     detect_new_parsed_files,
     detect_new_raw_files,
