@@ -66,7 +66,18 @@ def parsers_for(provider: str, service: str) -> list[ParserSpec]:
 
 
 def print_etl_overview(config: Config, console: Console | None = None) -> None:
-    """Print a Rich table summarising the enabled providers, services, and parsers."""
+    """Prints a Rich table summarizing the enabled providers, services, and parsers.
+
+    Creates a formatted table displaying the provider name, service name,
+    and the list of parsers (ordered by precedence) for each enabled configuration.
+
+    Args:
+        config: Application configuration containing the provider services.
+        console: Optional Rich Console for output. Defaults to creating a new instance.
+
+    Returns:
+        None
+    """
     console = console or Console()
     table = Table(title="ETL Plan", show_header=True, header_style="bold")
     table.add_column("Provider", style="cyan", no_wrap=True)
