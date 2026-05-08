@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from fintl.accounts_etl import runner
-from fintl.accounts_etl.schemas import (
+from fintl.accounts_etl.common.schemas import (
     Case,
     Config,
     Logging,

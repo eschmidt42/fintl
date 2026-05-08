@@ -5,16 +5,7 @@ import polars as pl
 import pytest
 from inline_snapshot import snapshot
 
-from fintl.accounts_etl.files.filenames import (
-    balance_csv_name_to_json,
-    balance_csv_name_to_parquet,
-    transaction_csv_name_to_parquet,
-    transaction_csv_name_to_xlsx,
-)
-from fintl.accounts_etl.gls import giro0 as credit
-from fintl.accounts_etl.gls import helper
-from fintl.accounts_etl.gls.giro0 import CASE
-from fintl.accounts_etl.schemas import (
+from fintl.accounts_etl.common.schemas import (
     BalanceInfo,
     Config,
     GLSGiroParserEnum,
@@ -24,6 +15,15 @@ from fintl.accounts_etl.schemas import (
     ServiceEnum,
     Sources,
 )
+from fintl.accounts_etl.files.filenames import (
+    balance_csv_name_to_json,
+    balance_csv_name_to_parquet,
+    transaction_csv_name_to_parquet,
+    transaction_csv_name_to_xlsx,
+)
+from fintl.accounts_etl.gls import giro0 as credit
+from fintl.accounts_etl.gls import helper
+from fintl.accounts_etl.gls.giro0 import CASE
 
 
 @pytest.fixture

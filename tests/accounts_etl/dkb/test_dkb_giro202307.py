@@ -5,12 +5,12 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
-from fintl.accounts_etl.dkb import giro202307 as giro
-from fintl.accounts_etl.exceptions import (
+from fintl.accounts_etl.common.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
-from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
+from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
+from fintl.accounts_etl.dkb import giro202307 as giro
 
 
 def test_extract_balance_with_non_breaking_space(tmp_path: Path):

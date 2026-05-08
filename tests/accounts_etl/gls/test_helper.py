@@ -6,7 +6,7 @@ import pytest
 
 import fintl.accounts_etl.gls.helper
 import fintl.accounts_etl.gls.helper as gls_helper
-from fintl.accounts_etl.schemas import Case
+from fintl.accounts_etl.common.schemas import Case
 
 _CASE = Case(provider="gls", service="giro", parser="giro0")
 

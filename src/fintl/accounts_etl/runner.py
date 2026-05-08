@@ -35,12 +35,12 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
+from fintl.accounts_etl.common.schemas import Case, Config, ParserSpec
 from fintl.accounts_etl.files.orchestrator import (
     get_parser_source_files as csv_get_source_files,
 )
 from fintl.accounts_etl.files.utils import error_if_overlap
 from fintl.accounts_etl.registry import ALL_PARSERS, ALL_PLUGINS
-from fintl.accounts_etl.schemas import Case, Config, ParserSpec
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ import logging
 
 import polars as pl
 
-from fintl.accounts_etl.schemas import LabelConditionOp, LabelRule
+from fintl.accounts_etl.common.schemas import LabelConditionOp, LabelRule
 
 logger = logging.getLogger(__name__)
 

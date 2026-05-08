@@ -2,10 +2,10 @@ import logging
 from pathlib import Path
 from typing import Callable
 
+from fintl.accounts_etl.common.schemas import Case, Config
 from fintl.accounts_etl.files.balances import concatenate_balances_history
 from fintl.accounts_etl.files.detect import detect_relevant_source_files
 from fintl.accounts_etl.files.transactions import concatenate_transactions_history
-from fintl.accounts_etl.schemas import Case, Config
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import ValidationError
 
-from fintl.accounts_etl.schemas import (
+from fintl.accounts_etl.common.schemas import (
     Case,
     Config,
     Logging,

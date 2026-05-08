@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock
 
-from fintl.accounts_etl.schemas import (
+from fintl.accounts_etl.common.schemas import (
     Case,
     Config,
     Logging,

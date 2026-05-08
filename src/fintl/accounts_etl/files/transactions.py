@@ -3,6 +3,10 @@ from pathlib import Path
 
 import polars as pl
 
+from fintl.accounts_etl.common.schemas import (
+    TRANSACTION_COLUMNS,
+    TransactionColumnsEnum,
+)
 from fintl.accounts_etl.files.filenames import (
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
@@ -11,7 +15,6 @@ from fintl.accounts_etl.files.filenames import (
 from fintl.accounts_etl.files.utils import (
     find_common_columns,
 )
-from fintl.accounts_etl.schemas import TRANSACTION_COLUMNS, TransactionColumnsEnum
 
 logger = logging.getLogger(__name__)
 

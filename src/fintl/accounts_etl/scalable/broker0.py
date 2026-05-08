@@ -6,6 +6,15 @@ from pathlib import Path
 import polars as pl
 from bs4 import BeautifulSoup, element
 
+from fintl.accounts_etl.common.schemas import (
+    TRANSACTION_COLUMNS,
+    BalanceInfo,
+    Case,
+    Config,
+    ProviderEnum,
+    ScalableBrokerParserEnum,
+    ServiceEnum,
+)
 from fintl.accounts_etl.files.copy import copy_new_files
 from fintl.accounts_etl.files.detect import detect_encoding
 from fintl.accounts_etl.files.orchestrator import (
@@ -21,15 +30,6 @@ from fintl.accounts_etl.scalable.files import (
     get_parser_source_files,
     store_balance,
     store_transactions,
-)
-from fintl.accounts_etl.schemas import (
-    TRANSACTION_COLUMNS,
-    BalanceInfo,
-    Case,
-    Config,
-    ProviderEnum,
-    ScalableBrokerParserEnum,
-    ServiceEnum,
 )
 
 logger = logging.getLogger(__name__)

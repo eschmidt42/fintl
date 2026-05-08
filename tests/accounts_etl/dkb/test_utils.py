@@ -3,16 +3,16 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from fintl.accounts_etl.files.detect import find_line_with_pattern, is_match
-from fintl.accounts_etl.number_conversion import (
+from fintl.accounts_etl.common.number_conversion import (
     GermanNumberParsingError,
     check_if_german_number,
     german_string_numbers_to_floats,
 )
-from fintl.accounts_etl.transactions import (
+from fintl.accounts_etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
+from fintl.accounts_etl.files.detect import find_line_with_pattern, is_match
 
 
 def test_is_match():

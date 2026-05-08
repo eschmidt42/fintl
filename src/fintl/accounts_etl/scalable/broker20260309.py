@@ -9,6 +9,15 @@ import polars as pl
 from instructor.processing.multimodal import Image
 from pydantic import BaseModel
 
+from fintl.accounts_etl.common.schemas import (
+    BalanceInfo,
+    Case,
+    Config,
+    OllamaConfig,
+    ProviderEnum,
+    ScalableBrokerParserEnum,
+    ServiceEnum,
+)
 from fintl.accounts_etl.files.copy import copy_new_files
 from fintl.accounts_etl.files.orchestrator import (
     concatenate_new_information_to_history,
@@ -21,15 +30,6 @@ from fintl.accounts_etl.scalable.files import (
     get_parser_source_files,
     store_balance,
     store_transactions,
-)
-from fintl.accounts_etl.schemas import (
-    BalanceInfo,
-    Case,
-    Config,
-    OllamaConfig,
-    ProviderEnum,
-    ScalableBrokerParserEnum,
-    ServiceEnum,
 )
 
 logger = logging.getLogger(__name__)

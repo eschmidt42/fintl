@@ -2,6 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
+from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.accounts_etl.files.filenames import (
     balance_htm_name_to_json,
     balance_htm_name_to_parquet,
@@ -9,7 +10,6 @@ from fintl.accounts_etl.files.filenames import (
     transaction_htm_name_to_xlsx,
 )
 from fintl.accounts_etl.scalable import broker20231028 as broker
-from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
 
 
 def get_time(path: Path) -> float:

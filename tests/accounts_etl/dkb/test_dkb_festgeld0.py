@@ -5,25 +5,11 @@ import polars as pl
 import pytest
 from inline_snapshot import snapshot
 
-from fintl.accounts_etl.dkb import festgeld0
-from fintl.accounts_etl.dkb.festgeld0 import (
-    CASE,
-    check_if_parser_applies,
-    extract_transactions,
-    load_lines,
-)
-from fintl.accounts_etl.exceptions import (
+from fintl.accounts_etl.common.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
-from fintl.accounts_etl.files.detect import detect_encoding
-from fintl.accounts_etl.files.filenames import (
-    balance_csv_name_to_json,
-    balance_csv_name_to_parquet,
-    transaction_csv_name_to_parquet,
-    transaction_csv_name_to_xlsx,
-)
-from fintl.accounts_etl.schemas import (
+from fintl.accounts_etl.common.schemas import (
     Config,
     DKBFestgeltParserEnum,
     Logging,
@@ -31,6 +17,20 @@ from fintl.accounts_etl.schemas import (
     ProviderEnum,
     ServiceEnum,
     Sources,
+)
+from fintl.accounts_etl.dkb import festgeld0
+from fintl.accounts_etl.dkb.festgeld0 import (
+    CASE,
+    check_if_parser_applies,
+    extract_transactions,
+    load_lines,
+)
+from fintl.accounts_etl.files.detect import detect_encoding
+from fintl.accounts_etl.files.filenames import (
+    balance_csv_name_to_json,
+    balance_csv_name_to_parquet,
+    transaction_csv_name_to_parquet,
+    transaction_csv_name_to_xlsx,
 )
 
 _FIXTURE_CSV = (

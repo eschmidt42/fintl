@@ -5,7 +5,7 @@ import polars as pl
 import pytest
 
 from fintl.accounts_etl import process_accounts
-from fintl.accounts_etl.schemas import (
+from fintl.accounts_etl.common.schemas import (
     BalanceInfo,
     Case,
     Config,

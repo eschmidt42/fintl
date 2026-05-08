@@ -1,8 +1,12 @@
 import polars as pl
 import pytest
 
-import fintl.accounts_etl.labels as fintl_labels
-from fintl.accounts_etl.schemas import LabelCondition, LabelConditionOp, LabelRule
+import fintl.accounts_etl.common.labels as fintl_labels
+from fintl.accounts_etl.common.schemas import (
+    LabelCondition,
+    LabelConditionOp,
+    LabelRule,
+)
 
 # Order matters: first matching rule wins.
 LABEL_RULES: list[LabelRule] = [
@@ -502,8 +506,8 @@ def test_condition_expr_no_case_matches_returns_none():
     This covers the unreachable match-exit branch of the last case."""
     from typing import cast
 
-    from fintl.accounts_etl.labels import _condition_expr
-    from fintl.accounts_etl.schemas import LabelConditionOp
+    from fintl.accounts_etl.common.labels import _condition_expr
+    from fintl.accounts_etl.common.schemas import LabelConditionOp
 
     with pytest.raises(NotImplementedError):
         result = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")

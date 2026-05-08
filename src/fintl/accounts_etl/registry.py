@@ -10,11 +10,11 @@ exports a ``PLUGIN: ProviderPlugin`` instance, then add it to ``ALL_PLUGINS``
 below.
 """
 
+from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin
 from fintl.accounts_etl.dkb.plugin import PLUGIN as DKB_PLUGIN
 from fintl.accounts_etl.gls.plugin import PLUGIN as GLS_PLUGIN
 from fintl.accounts_etl.postbank.plugin import PLUGIN as POSTBANK_PLUGIN
 from fintl.accounts_etl.scalable.plugin import PLUGIN as SCALABLE_PLUGIN
-from fintl.accounts_etl.schemas import ParserSpec, ProviderPlugin
 
 ALL_PLUGINS: list[ProviderPlugin] = [
     DKB_PLUGIN,

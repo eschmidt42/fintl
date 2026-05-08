@@ -1,6 +1,13 @@
 import logging
 from pathlib import Path
 
+from fintl.accounts_etl.common.schemas import (
+    Case,
+    Config,
+    GLSCreditParserEnum,
+    ProviderEnum,
+    ServiceEnum,
+)
 from fintl.accounts_etl.files.balances import store_balance
 from fintl.accounts_etl.files.copy import (
     copy_new_files,
@@ -19,13 +26,6 @@ from fintl.accounts_etl.files.transactions import store_transactions
 from fintl.accounts_etl.gls.helper import (
     check_if_parser_applies,
     parse_csv_file,
-)
-from fintl.accounts_etl.schemas import (
-    Case,
-    Config,
-    GLSCreditParserEnum,
-    ProviderEnum,
-    ServiceEnum,
 )
 
 logger = logging.getLogger(__name__)

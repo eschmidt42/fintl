@@ -5,8 +5,8 @@ specs.  Import ``PLUGIN`` in the central registry to register Postbank with
 the generic runner.
 """
 
+from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 from fintl.accounts_etl.postbank import giro0, giro202305
-from fintl.accounts_etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 
 GIRO = ServicePlugin(
     name="giro",

@@ -5,6 +5,7 @@ specs.  Import ``PLUGIN`` in the central registry to register DKB with the
 generic runner.
 """
 
+from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 from fintl.accounts_etl.dkb import (
     credit0,
     festgeld0,
@@ -15,7 +16,6 @@ from fintl.accounts_etl.dkb import (
     tagesgeld202307,
     tagesgeld202312,
 )
-from fintl.accounts_etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 
 GIRO = ServicePlugin(
     name="giro",

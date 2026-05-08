@@ -4,6 +4,13 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
+from fintl.accounts_etl.common.schemas import (
+    Config,
+    Logging,
+    OllamaConfig,
+    Provider,
+    Sources,
+)
 from fintl.accounts_etl.files.filenames import (
     balance_htm_name_to_json,
     balance_htm_name_to_parquet,
@@ -11,7 +18,6 @@ from fintl.accounts_etl.files.filenames import (
     transaction_htm_name_to_xlsx,
 )
 from fintl.accounts_etl.scalable import broker20260309 as broker
-from fintl.accounts_etl.schemas import Config, Logging, OllamaConfig, Provider, Sources
 
 PNG_FILENAME = "Screenshot 2026-03-09 at 14.30.53.png"
 MOCK_AMOUNT = 1234.56
@@ -343,8 +349,8 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     import logging
     from unittest.mock import patch
 
+    from fintl.accounts_etl.common.schemas import OllamaConfig
     from fintl.accounts_etl.scalable import broker20260309 as broker
-    from fintl.accounts_etl.schemas import OllamaConfig
 
     files = [
         tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",
@@ -377,8 +383,8 @@ def test_parse_new_files_aborts_on_model_unavailable(
     import logging
     from unittest.mock import patch
 
+    from fintl.accounts_etl.common.schemas import OllamaConfig
     from fintl.accounts_etl.scalable import broker20260309 as broker
-    from fintl.accounts_etl.schemas import OllamaConfig
 
     dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
     dummy.write_bytes(b"\x89PNG")
@@ -479,8 +485,8 @@ def test_parse_new_files_continues_on_generic_error(
     import logging
     from unittest.mock import patch
 
+    from fintl.accounts_etl.common.schemas import OllamaConfig
     from fintl.accounts_etl.scalable import broker20260309 as broker
-    from fintl.accounts_etl.schemas import OllamaConfig
 
     files = [
         tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",

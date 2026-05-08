@@ -6,6 +6,19 @@ import polars as pl
 import pytest
 from inline_snapshot import snapshot
 
+from fintl.accounts_etl.common.exceptions import (
+    ExtractBalanceException,
+    ExtractTransactionsException,
+)
+from fintl.accounts_etl.common.schemas import (
+    Config,
+    DKBGiroParserEnum,
+    Logging,
+    Provider,
+    ProviderEnum,
+    ServiceEnum,
+    Sources,
+)
 from fintl.accounts_etl.dkb import giro202312
 from fintl.accounts_etl.dkb import giro202312 as giro
 from fintl.accounts_etl.dkb.giro202312 import (
@@ -15,25 +28,12 @@ from fintl.accounts_etl.dkb.giro202312 import (
     extract_transactions,
     load_lines,
 )
-from fintl.accounts_etl.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
-)
 from fintl.accounts_etl.files.detect import detect_encoding
 from fintl.accounts_etl.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
-)
-from fintl.accounts_etl.schemas import (
-    Config,
-    DKBGiroParserEnum,
-    Logging,
-    Provider,
-    ProviderEnum,
-    ServiceEnum,
-    Sources,
 )
 
 _FIXTURE_CSV = (

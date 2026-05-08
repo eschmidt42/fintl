@@ -8,11 +8,11 @@ Import ``PLUGIN`` in the central registry to register Scalable with the
 generic runner.
 """
 
+from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 from fintl.accounts_etl.scalable import broker0, broker20231028, broker20260309
 from fintl.accounts_etl.scalable.files import (
     get_parser_source_files as scalable_get_source_files,
 )
-from fintl.accounts_etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 
 BROKER = ServicePlugin(
     name="broker",

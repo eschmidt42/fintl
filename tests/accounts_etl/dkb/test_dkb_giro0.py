@@ -4,12 +4,12 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
-from fintl.accounts_etl.dkb import giro0 as giro
-from fintl.accounts_etl.exceptions import (
+from fintl.accounts_etl.common.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
-from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
+from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
+from fintl.accounts_etl.dkb import giro0 as giro
 
 _FIXTURE_CSV = (
     Path(__file__).parent.parent

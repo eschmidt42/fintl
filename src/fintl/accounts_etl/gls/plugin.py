@@ -5,8 +5,8 @@ specs.  Import ``PLUGIN`` in the central registry to register GLS with the
 generic runner.
 """
 
+from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 from fintl.accounts_etl.gls import credit0, giro0
-from fintl.accounts_etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 
 GIRO = ServicePlugin(
     name="giro",

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from fintl.accounts_etl.schemas import Config, Logging, Sources
+from fintl.accounts_etl.common.schemas import Config, Logging, Sources
 
 _LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
 

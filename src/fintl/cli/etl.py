@@ -6,7 +6,7 @@ import typer
 from rich.console import Console
 
 from fintl.accounts_etl import process_accounts
-from fintl.accounts_etl.schemas import Config
+from fintl.accounts_etl.common.schemas import Config
 from fintl.fine_logging import (
     WarningBufferHandler,
     print_warning_summary,

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from fintl.accounts_etl.common.schemas import OllamaConfig
 from fintl.accounts_etl.scalable import broker20260309 as broker
-from fintl.accounts_etl.schemas import OllamaConfig
 
 _PNG_PATH = (
     Path(__file__).parent.parent
