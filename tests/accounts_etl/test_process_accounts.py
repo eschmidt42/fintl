@@ -5,7 +5,7 @@ import polars as pl
 import pytest
 
 from fintl.accounts_etl import process_accounts
-from fintl.accounts_etl.schemas import (
+from fintl.accounts_etl.common.schemas import (
     BalanceInfo,
     Case,
     Config,
@@ -16,7 +16,7 @@ from fintl.accounts_etl.schemas import (
 )
 
 # ── Shared fixture paths ───────────────────────────────────────────────────────
-_FILES = Path(__file__).parent / "files"
+_FILES = Path(__file__).parent / "providers" / "files"
 _CSV = _FILES / "csv_files"
 _ARTEFACTS = _FILES / "artefacts"
 _LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
@@ -65,7 +65,12 @@ def _assert_labelled_output(config: Config) -> None:
 def test_dkb_giro(tmp_path: Path):
     # setup
     giro_source_dir = (
-        Path(__file__).parent / "files" / "csv_files" / "DKB" / "kontoauszug"
+        Path(__file__).parent
+        / "providers"
+        / "files"
+        / "csv_files"
+        / "DKB"
+        / "kontoauszug"
     )
     assert giro_source_dir.exists()
 
@@ -113,7 +118,7 @@ def test_dkb_giro(tmp_path: Path):
 
 def test_all(tmp_path: Path):
     # setup
-    data_root_dir = Path(__file__).parent / "files"
+    data_root_dir = Path(__file__).parent / "providers" / "files"
     assert data_root_dir.exists()
     csv_root_dir = data_root_dir / "csv_files"
     assert csv_root_dir.exists()
@@ -224,7 +229,7 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     The HTML-based parsers (broker0, broker20231028) produce 0 transaction rows,
     so all-transactions.parquet is not written for this config.
     """
-    from fintl.accounts_etl.scalable import broker20260309
+    from fintl.accounts_etl.providers.scalable import broker20260309
 
     def _fake_extract_balance(
         case: Case, file_path: Path, *, ollama_config: OllamaConfig

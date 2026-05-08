@@ -7,7 +7,7 @@ from fintl.cli.main import app
 
 from .conftest import _LOGGER_PATH
 
-_FILES = Path(__file__).parent.parent / "accounts_etl" / "files"
+_FILES = Path(__file__).parent.parent / "accounts_etl" / "providers" / "files"
 _CSV = _FILES / "csv_files"
 _ARTEFACTS = _FILES / "artefacts"
 

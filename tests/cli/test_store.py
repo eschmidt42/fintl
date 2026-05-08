@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fintl.accounts_etl.schemas import Case, ParserSpec, Provider, Sources
+from fintl.accounts_etl.common.schemas import Case, ParserSpec, Provider, Sources
 from fintl.cli.main import app
 
 from .conftest import make_config
