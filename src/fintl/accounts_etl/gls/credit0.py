@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from fintl.accounts_etl.files.files_utils import copy_new_files, select_files_to_copy
 from fintl.accounts_etl.files.orchestrator import (
     concatenate_new_information_to_history,
     detect_new_parsed_files,
@@ -10,7 +11,6 @@ from fintl.accounts_etl.files.orchestrator import (
     store_balance,
     store_transactions,
 )
-from fintl.accounts_etl.files_utils import copy_new_files, select_files_to_copy
 from fintl.accounts_etl.gls.helper import (
     check_if_parser_applies,
     parse_csv_file,

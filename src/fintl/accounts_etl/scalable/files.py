@@ -4,7 +4,7 @@ from typing import Callable
 
 import polars as pl
 
-from fintl.accounts_etl.files_utils import detect_present_parsed_files
+from fintl.accounts_etl.files.files_utils import detect_present_parsed_files
 from fintl.accounts_etl.schemas import BalanceInfo, Case, Config
 
 logger = logging.getLogger(__name__)

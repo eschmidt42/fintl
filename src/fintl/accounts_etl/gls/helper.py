@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from fintl.accounts_etl.files_utils import load_lines
+from fintl.accounts_etl.files.files_utils import load_lines
 from fintl.accounts_etl.schemas import (
     HASH_COLUMNS,
     TRANSACTION_COLUMNS,
