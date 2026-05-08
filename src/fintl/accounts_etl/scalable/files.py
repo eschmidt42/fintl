@@ -4,14 +4,14 @@ from typing import Callable
 
 import polars as pl
 
+from fintl.accounts_etl.files.detect import (
+    detect_present_parsed_files,
+)
 from fintl.accounts_etl.files.filenames import (
     balance_htm_name_to_json,
     balance_htm_name_to_parquet,
     transaction_htm_name_to_parquet,
     transaction_htm_name_to_xlsx,
-)
-from fintl.accounts_etl.files.utils import (
-    detect_present_parsed_files,
 )
 from fintl.accounts_etl.schemas import BalanceInfo, Case, Config
 
