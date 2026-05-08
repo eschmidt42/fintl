@@ -17,6 +17,7 @@ from fintl.accounts_etl.files.detect import (
     detect_new_parsed_files,
     detect_new_raw_files,
     detect_relevant_target_files,
+    find_line_with_pattern,
 )
 from fintl.accounts_etl.files.orchestrator import (
     concatenate_new_information_to_history,
@@ -27,6 +28,7 @@ from fintl.accounts_etl.files.transactions import store_transactions
 from fintl.accounts_etl.files.utils import (
     load_lines,
 )
+from fintl.accounts_etl.number_conversion import german_string_numbers_to_floats
 from fintl.accounts_etl.schemas import (
     HASH_COLUMNS,
     TRANSACTION_COLUMNS,
@@ -38,8 +40,6 @@ from fintl.accounts_etl.schemas import (
     ServiceEnum,
 )
 from fintl.accounts_etl.utils import (
-    find_line_with_pattern,
-    german_string_numbers_to_floats,
     hash_transactions,
     verify_transactions,
 )

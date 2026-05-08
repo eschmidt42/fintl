@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 from typing import Callable
 
@@ -6,6 +7,7 @@ import chardet
 import polars as pl
 
 from fintl.accounts_etl.files.select import select_files_to_parse
+from fintl.accounts_etl.utils import logger
 
 logger = logging.getLogger(__name__)
 
@@ -181,3 +183,49 @@ def detect_encoding(path: Path, encoding_default: str = "utf-8") -> str:
         logger.warning(f"Failed to detect encoding, defaulting to {encoding_default}")
         enc = encoding_default
     return enc
+
+
+def is_match(pattern: str, x: str) -> bool:
+    """Checks if a string matches a given regex pattern.
+
+    Args:
+        pattern: The regex pattern to match against.
+        x: The string to test.
+
+    Returns:
+        True if the pattern matches the string, False otherwise.
+    """
+    return re.search(pattern, x) is not None
+
+
+def find_line_with_pattern(lines: list[str], pattern: str) -> tuple[int, str]:
+    """Finds the first line in a list that matches a given pattern.
+
+    Args:
+        lines: A list of strings to search through.
+        pattern: The regex pattern to match.
+
+    Returns:
+        A tuple containing the line index (0-based) and the matched line string.
+
+    Raises:
+        ValueError: If no line matches the pattern.
+    """
+
+    ix_match = None
+    matched_line = ""
+    for i, line in enumerate(lines):
+        if is_match(pattern, line):
+            ix_match = i
+            matched_line = line
+            break
+
+    if ix_match is None:
+        logger.warning(f"Could not find line matching {pattern=}")
+
+    if ix_match is None:
+        raise ValueError(
+            f"Unexpectedly failed to find the first index with {pattern=} in {lines[:10]=}"
+        )
+
+    return ix_match, matched_line
