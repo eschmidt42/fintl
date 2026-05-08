@@ -11,6 +11,7 @@ from fintl.accounts_etl.exceptions import (
     ExtractTransactionsException,
 )
 from fintl.accounts_etl.files.balances import store_balance
+from fintl.accounts_etl.files.copy import copy_new_files
 from fintl.accounts_etl.files.detect import (
     detect_new_parsed_files,
     detect_new_raw_files,
@@ -23,7 +24,6 @@ from fintl.accounts_etl.files.orchestrator import (
 from fintl.accounts_etl.files.select import select_files_to_copy
 from fintl.accounts_etl.files.transactions import store_transactions
 from fintl.accounts_etl.files.utils import (
-    copy_new_files,
     load_lines,
 )
 from fintl.accounts_etl.schemas import (
