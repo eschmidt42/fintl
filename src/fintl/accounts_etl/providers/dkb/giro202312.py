@@ -15,7 +15,7 @@ from fintl.accounts_etl.common.schemas import (
     BalanceInfo,
     Case,
     Config,
-    DKBFestgeltParserEnum,
+    DKBGiroParserEnum,
     ProviderEnum,
     ServiceEnum,
 )
@@ -23,8 +23,6 @@ from fintl.accounts_etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
-from fintl.accounts_etl.dkb.giro202307 import extract_balance
-from fintl.accounts_etl.dkb.giro202312 import detect_separator
 from fintl.accounts_etl.io.files.balances import store_balance
 from fintl.accounts_etl.io.files.copy import copy_new_files
 from fintl.accounts_etl.io.files.detect import (
@@ -43,14 +41,34 @@ from fintl.accounts_etl.io.files.transactions import store_transactions
 from fintl.accounts_etl.io.files.utils import (
     load_lines,
 )
+from fintl.accounts_etl.providers.dkb.giro202307 import extract_balance
 
 logger = logging.getLogger(__name__)
 
 CASE = Case(
     provider=ProviderEnum.dkb.value,
-    service=ServiceEnum.festgeld.value,
-    parser=DKBFestgeltParserEnum.festgeld0.value,
+    service=ServiceEnum.giro.value,
+    parser=DKBGiroParserEnum.giro202312.value,
 )
+
+
+def detect_separator(lines: list[str]) -> str | None:
+    separator = None
+    is_header_match_semicolon = any(
+        re.search(r'(yp";"IBAN";"Betrag \(€\)";"Glä)', line) for line in lines
+    )
+    logger.debug(f"{is_header_match_semicolon=}")
+    if is_header_match_semicolon:
+        separator = ";"
+
+    is_header_match_comma = any(
+        re.search(r'(yp","IBAN","Betrag \(€\)","Glä)', line) for line in lines
+    )
+    logger.debug(f"{is_header_match_comma=}")
+    if is_header_match_comma:
+        separator = ","
+
+    return separator
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
@@ -91,7 +109,7 @@ def extract_transactions(
         "Verwendungszweck": pl.Utf8,
         "Umsatztyp": pl.Utf8,
         "IBAN": pl.Utf8,
-        "Betrag (€)": pl.Utf8,
+        "Betrag": pl.Utf8,
         "Gläubiger-ID": pl.Utf8,
         "Mandatsreferenz": pl.Utf8,
         "Kundenreferenz": pl.Utf8,
@@ -133,19 +151,19 @@ def extract_transactions(
         raise ex
 
     transactions = transactions.with_columns(
-        pl.col("Betrag (€)")
+        pl.col("Betrag")
         .str.replace("€", "")
         .str.strip_chars_end()
         .map_elements(german_string_numbers_to_floats, return_dtype=pl.Float64),
     )
     transactions = transactions.with_columns(
-        amount=pl.col("Betrag (€)"),
+        amount=pl.col("Betrag"),
         description=pl.col("Verwendungszweck"),
         date=pl.col("Buchungsdatum"),
-        source=pl.when(pl.col("Betrag (€)") > 0)
+        source=pl.when(pl.col("Betrag") > 0)
         .then(pl.col("Zahlungspflichtige*r"))
         .otherwise(pl.lit("myself")),
-        recipient=pl.when(pl.col("Betrag (€)") < 0)
+        recipient=pl.when(pl.col("Betrag") < 0)
         .then(pl.col("Zahlungsempfänger*in"))
         .otherwise(pl.lit("myself")),
         provider=pl.lit(case.provider),

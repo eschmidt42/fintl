@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
-from fintl.accounts_etl.dkb import (
+from fintl.accounts_etl.engine import runner
+from fintl.accounts_etl.io.files.orchestrator import get_parser_source_files
+from fintl.accounts_etl.providers.dkb import (
     credit0,
     giro0,
     giro202307,
@@ -10,8 +12,6 @@ from fintl.accounts_etl.dkb import (
     tagesgeld202307,
     tagesgeld202312,
 )
-from fintl.accounts_etl.engine import runner
-from fintl.accounts_etl.io.files.orchestrator import get_parser_source_files
 
 
 def test_giro_parsers_apply(tmp_path: Path):

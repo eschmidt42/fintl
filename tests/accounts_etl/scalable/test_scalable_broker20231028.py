@@ -9,7 +9,7 @@ from fintl.accounts_etl.io.files.filenames import (
     transaction_htm_name_to_parquet,
     transaction_htm_name_to_xlsx,
 )
-from fintl.accounts_etl.scalable import broker20231028 as broker
+from fintl.accounts_etl.providers.scalable import broker20231028 as broker
 
 
 def get_time(path: Path) -> float:
@@ -133,7 +133,7 @@ def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
     file_path.write_text("€")
 
     outer_match = MagicMock()
-    with patch("fintl.accounts_etl.scalable.broker20231028.re") as mock_re:
+    with patch("fintl.accounts_etl.providers.scalable.broker20231028.re") as mock_re:
         mock_re.search.side_effect = [outer_match, None]
         with pytest.raises(ValueError, match="is None"):
             broker.check_if_parser_applies(file_path)

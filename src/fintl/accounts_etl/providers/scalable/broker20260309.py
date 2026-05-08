@@ -23,8 +23,8 @@ from fintl.accounts_etl.io.files.orchestrator import (
     concatenate_new_information_to_history,
 )
 from fintl.accounts_etl.io.files.select import select_files_to_copy
-from fintl.accounts_etl.scalable.broker0 import extract_transactions
-from fintl.accounts_etl.scalable.files import (
+from fintl.accounts_etl.providers.scalable.broker0 import extract_transactions
+from fintl.accounts_etl.providers.scalable.files import (
     detect_new_raw_files,
     detect_relevant_target_files,
     get_parser_source_files,

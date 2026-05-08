@@ -18,19 +18,19 @@ from fintl.accounts_etl.common.schemas import (
     ServiceEnum,
     Sources,
 )
-from fintl.accounts_etl.dkb import festgeld0
-from fintl.accounts_etl.dkb.festgeld0 import (
-    CASE,
-    check_if_parser_applies,
-    extract_transactions,
-    load_lines,
-)
 from fintl.accounts_etl.io.files.detect import detect_encoding
 from fintl.accounts_etl.io.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
+)
+from fintl.accounts_etl.providers.dkb import festgeld0
+from fintl.accounts_etl.providers.dkb.festgeld0 import (
+    CASE,
+    check_if_parser_applies,
+    extract_transactions,
+    load_lines,
 )
 
 _FIXTURE_CSV = (
@@ -285,7 +285,7 @@ def test_extract_transactions_raises_on_invalid_date(tmp_path: Path):
     with pytest.raises(pl.exceptions.InvalidOperationError):
         from unittest.mock import patch
 
-        from fintl.accounts_etl.dkb import festgeld0 as _f0
+        from fintl.accounts_etl.providers.dkb import festgeld0 as _f0
 
         with patch.object(_f0, "detect_separator", return_value=";"):
             extract_transactions(CASE, file_path, lines, "utf-8")
@@ -293,7 +293,7 @@ def test_extract_transactions_raises_on_invalid_date(tmp_path: Path):
 
 def test_parse_csv_file_raises_extract_transactions_exception():
     with patch(
-        "fintl.accounts_etl.dkb.festgeld0.extract_transactions",
+        "fintl.accounts_etl.providers.dkb.festgeld0.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
         with pytest.raises(ExtractTransactionsException) as exc_info:
@@ -303,7 +303,7 @@ def test_parse_csv_file_raises_extract_transactions_exception():
 
 def test_parse_csv_file_raises_extract_balance_exception():
     with patch(
-        "fintl.accounts_etl.dkb.festgeld0.extract_balance",
+        "fintl.accounts_etl.providers.dkb.festgeld0.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
         with pytest.raises(ExtractBalanceException) as exc_info:
@@ -328,11 +328,15 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
     with (
         patch(
-            "fintl.accounts_etl.dkb.festgeld0.parse_csv_file",
+            "fintl.accounts_etl.providers.dkb.festgeld0.parse_csv_file",
             side_effect=_parse_csv_file,
         ),
-        patch("fintl.accounts_etl.dkb.festgeld0.store_transactions") as mock_store_t,
-        patch("fintl.accounts_etl.dkb.festgeld0.store_balance") as mock_store_b,
+        patch(
+            "fintl.accounts_etl.providers.dkb.festgeld0.store_transactions"
+        ) as mock_store_t,
+        patch(
+            "fintl.accounts_etl.providers.dkb.festgeld0.store_balance"
+        ) as mock_store_b,
     ):
         festgeld0.parse_new_files(festgeld0.CASE, [bad_file, good_file], parsed_dir)
 

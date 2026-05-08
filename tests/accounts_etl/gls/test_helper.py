@@ -4,8 +4,8 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
-import fintl.accounts_etl.gls.helper
-import fintl.accounts_etl.gls.helper as gls_helper
+import fintl.accounts_etl.providers.gls.helper
+import fintl.accounts_etl.providers.gls.helper as gls_helper
 from fintl.accounts_etl.common.schemas import Case
 
 _CASE = Case(provider="gls", service="giro", parser="giro0")
@@ -13,27 +13,27 @@ _CASE = Case(provider="gls", service="giro", parser="giro0")
 
 def test_detect_separator_semicolon():
     lines = ["Bezeichnung Auftragskonto;IBAN Auftragskonto;..."]
-    assert fintl.accounts_etl.gls.helper.detect_separator(lines) == ";"
+    assert fintl.accounts_etl.providers.gls.helper.detect_separator(lines) == ";"
 
 
 def test_detect_separator_no_match():
     lines = ["Some other header"]
-    assert fintl.accounts_etl.gls.helper.detect_separator(lines) is None
+    assert fintl.accounts_etl.providers.gls.helper.detect_separator(lines) is None
 
 
 def test_detect_separator_empty_lines():
     lines = ["", ""]
-    assert fintl.accounts_etl.gls.helper.detect_separator(lines) is None
+    assert fintl.accounts_etl.providers.gls.helper.detect_separator(lines) is None
 
 
 def test_detect_separator_mixed_lines():
     lines = ["Some other header", "Bezeichnung Auftragskonto;IBAN Auftragskonto;..."]
-    assert fintl.accounts_etl.gls.helper.detect_separator(lines) == ";"
+    assert fintl.accounts_etl.providers.gls.helper.detect_separator(lines) == ";"
 
 
 def test_detect_separator_empty_file():
     lines: list[str] = []
-    assert fintl.accounts_etl.gls.helper.detect_separator(lines) is None
+    assert fintl.accounts_etl.providers.gls.helper.detect_separator(lines) is None
 
 
 def test_check_if_parser_applies_valid_file(tmp_path: Path):
@@ -43,7 +43,10 @@ def test_check_if_parser_applies_valid_file(tmp_path: Path):
         "Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);..."
     )
 
-    assert fintl.accounts_etl.gls.helper.check_if_parser_applies(file_path) is True
+    assert (
+        fintl.accounts_etl.providers.gls.helper.check_if_parser_applies(file_path)
+        is True
+    )
 
 
 def test_check_if_parser_applies_invalid_file_name(tmp_path: Path):
@@ -53,7 +56,10 @@ def test_check_if_parser_applies_invalid_file_name(tmp_path: Path):
         "Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);..."
     )
 
-    assert fintl.accounts_etl.gls.helper.check_if_parser_applies(file_path) is False
+    assert (
+        fintl.accounts_etl.providers.gls.helper.check_if_parser_applies(file_path)
+        is False
+    )
 
 
 def test_check_if_parser_applies_invalid_separator(tmp_path: Path):
@@ -63,7 +69,10 @@ def test_check_if_parser_applies_invalid_separator(tmp_path: Path):
         "Bezeichnung Auftragskonto,IBAN Auftragskonto,...\nBetrag (€),..."
     )
 
-    assert fintl.accounts_etl.gls.helper.check_if_parser_applies(file_path) is False
+    assert (
+        fintl.accounts_etl.providers.gls.helper.check_if_parser_applies(file_path)
+        is False
+    )
 
 
 def test_check_if_parser_applies_empty_file(tmp_path: Path):
@@ -71,7 +80,10 @@ def test_check_if_parser_applies_empty_file(tmp_path: Path):
     file_path = tmp_path / "DE12345678901234567890_2023.10.26.csv"
     file_path.write_text("")
 
-    assert fintl.accounts_etl.gls.helper.check_if_parser_applies(file_path) is False
+    assert (
+        fintl.accounts_etl.providers.gls.helper.check_if_parser_applies(file_path)
+        is False
+    )
 
 
 def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):

@@ -10,7 +10,7 @@ from fintl.accounts_etl.common.exceptions import (
     ExtractTransactionsException,
 )
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
-from fintl.accounts_etl.dkb import giro202307 as giro
+from fintl.accounts_etl.providers.dkb import giro202307 as giro
 
 
 def test_extract_balance_with_non_breaking_space(tmp_path: Path):
@@ -163,7 +163,7 @@ def test_extract_balance_raises_when_pattern_no_match(tmp_path: Path):
 
 def test_parse_csv_file_raises_extract_transactions_exception():
     with patch(
-        "fintl.accounts_etl.dkb.giro202307.extract_transactions",
+        "fintl.accounts_etl.providers.dkb.giro202307.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
         with pytest.raises(ExtractTransactionsException) as exc_info:
@@ -173,7 +173,7 @@ def test_parse_csv_file_raises_extract_transactions_exception():
 
 def test_parse_csv_file_raises_extract_balance_exception():
     with patch(
-        "fintl.accounts_etl.dkb.giro202307.extract_balance",
+        "fintl.accounts_etl.providers.dkb.giro202307.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
         with pytest.raises(ExtractBalanceException) as exc_info:
@@ -198,11 +198,15 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
     with (
         patch(
-            "fintl.accounts_etl.dkb.giro202307.parse_csv_file",
+            "fintl.accounts_etl.providers.dkb.giro202307.parse_csv_file",
             side_effect=_parse_csv_file,
         ),
-        patch("fintl.accounts_etl.dkb.giro202307.store_transactions") as mock_store_t,
-        patch("fintl.accounts_etl.dkb.giro202307.store_balance") as mock_store_b,
+        patch(
+            "fintl.accounts_etl.providers.dkb.giro202307.store_transactions"
+        ) as mock_store_t,
+        patch(
+            "fintl.accounts_etl.providers.dkb.giro202307.store_balance"
+        ) as mock_store_b,
     ):
         giro.parse_new_files(giro.CASE, [bad_file, good_file], parsed_dir)
 

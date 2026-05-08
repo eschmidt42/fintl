@@ -6,7 +6,7 @@ generic runner.
 """
 
 from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin, ServicePlugin
-from fintl.accounts_etl.dkb import (
+from fintl.accounts_etl.providers.dkb import (
     credit0,
     festgeld0,
     giro0,

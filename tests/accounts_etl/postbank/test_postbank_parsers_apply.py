@@ -3,7 +3,7 @@ from pathlib import Path
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.accounts_etl.engine import runner
 from fintl.accounts_etl.io.files.orchestrator import get_parser_source_files
-from fintl.accounts_etl.postbank import (
+from fintl.accounts_etl.providers.postbank import (
     giro0,
     giro202305,
 )

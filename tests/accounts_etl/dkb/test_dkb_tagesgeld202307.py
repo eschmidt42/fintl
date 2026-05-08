@@ -9,13 +9,13 @@ from fintl.accounts_etl.common.exceptions import (
     ExtractTransactionsException,
 )
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
-from fintl.accounts_etl.dkb import tagesgeld202307 as tagesgeld
 from fintl.accounts_etl.io.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
 )
+from fintl.accounts_etl.providers.dkb import tagesgeld202307 as tagesgeld
 
 _FIXTURE_CSV = (
     Path(__file__).parent.parent
@@ -136,7 +136,7 @@ def test_main(tmp_path: Path):
 
 def test_parse_csv_file_raises_extract_transactions_exception():
     with patch(
-        "fintl.accounts_etl.dkb.tagesgeld202307.extract_transactions",
+        "fintl.accounts_etl.providers.dkb.tagesgeld202307.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
         with pytest.raises(ExtractTransactionsException) as exc_info:
@@ -146,7 +146,7 @@ def test_parse_csv_file_raises_extract_transactions_exception():
 
 def test_parse_csv_file_raises_extract_balance_exception():
     with patch(
-        "fintl.accounts_etl.dkb.tagesgeld202307.extract_balance",
+        "fintl.accounts_etl.providers.dkb.tagesgeld202307.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
         with pytest.raises(ExtractBalanceException) as exc_info:
@@ -171,13 +171,15 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
     with (
         patch(
-            "fintl.accounts_etl.dkb.tagesgeld202307.parse_csv_file",
+            "fintl.accounts_etl.providers.dkb.tagesgeld202307.parse_csv_file",
             side_effect=_parse_csv_file,
         ),
         patch(
-            "fintl.accounts_etl.dkb.tagesgeld202307.store_transactions"
+            "fintl.accounts_etl.providers.dkb.tagesgeld202307.store_transactions"
         ) as mock_store_t,
-        patch("fintl.accounts_etl.dkb.tagesgeld202307.store_balance") as mock_store_b,
+        patch(
+            "fintl.accounts_etl.providers.dkb.tagesgeld202307.store_balance"
+        ) as mock_store_b,
     ):
         tagesgeld.parse_new_files(tagesgeld.CASE, [bad_file, good_file], parsed_dir)
 

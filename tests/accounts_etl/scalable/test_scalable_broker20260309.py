@@ -17,7 +17,7 @@ from fintl.accounts_etl.io.files.filenames import (
     transaction_htm_name_to_parquet,
     transaction_htm_name_to_xlsx,
 )
-from fintl.accounts_etl.scalable import broker20260309 as broker
+from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
 PNG_FILENAME = "Screenshot 2026-03-09 at 14.30.53.png"
 MOCK_AMOUNT = 1234.56
@@ -158,7 +158,9 @@ def test_get_date_from_string_raises_when_name_does_not_match(tmp_path: Path):
     match the expected 'Screenshot YYYY-MM-DD*.png' pattern."""
     import pytest
 
-    from fintl.accounts_etl.scalable.broker20260309 import get_date_from_string
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
+        get_date_from_string,
+    )
 
     with pytest.raises(ValueError, match="Could not extract date"):
         get_date_from_string("not_a_screenshot.txt")
@@ -168,7 +170,7 @@ def test_get_lm_extraction_calls_client_create(tmp_path: Path):
     """_get_lm_extraction must call extraction_client.create and return its result."""
     from unittest.mock import MagicMock
 
-    from fintl.accounts_etl.scalable.broker20260309 import (
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
         _BalanceInfoExtract,
         _get_lm_extraction,
     )
@@ -194,7 +196,7 @@ def test_get_lm_extraction_raises_ollama_inference_error_on_retry_exhausted(
 
     from instructor.core.exceptions import FailedAttempt, InstructorRetryException
 
-    from fintl.accounts_etl.scalable.broker20260309 import (
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
         OllamaInferenceError,
         _get_lm_extraction,
     )
@@ -224,7 +226,7 @@ def test_check_ollama_availability_raises_on_connection_failure():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import (
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
         OllamaUnavailableError,
         _check_ollama_availability,
     )
@@ -242,7 +244,7 @@ def test_parse_new_files_skips_when_ollama_not_configured(
     """parse_new_files logs a warning and returns early when ollama_config is None."""
     import logging
 
-    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
     dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
     dummy.write_bytes(b"\x89PNG")
@@ -265,7 +267,9 @@ def test_check_ollama_availability_strips_v1_suffix():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import _check_ollama_availability
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
+        _check_ollama_availability,
+    )
 
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
@@ -279,7 +283,7 @@ def test_get_ollama_client_propagates_provider_error():
     """_get_ollama_client lets exceptions from instructor.from_provider bubble up."""
     from unittest.mock import patch
 
-    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
     with patch.object(
         broker.instructor,
@@ -296,7 +300,9 @@ def test_check_ollama_availability_uses_base_url_as_is_without_v1_suffix():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import _check_ollama_availability
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
+        _check_ollama_availability,
+    )
 
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
@@ -312,7 +318,7 @@ def test_check_model_available_raises_when_bare_name_also_missing():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import (
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
         OllamaModelUnavailableError,
         _check_model_available,
     )
@@ -331,7 +337,9 @@ def test_check_model_available_uses_base_url_as_is_without_v1_suffix():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import _check_model_available
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
+        _check_model_available,
+    )
 
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
@@ -350,7 +358,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     from unittest.mock import patch
 
     from fintl.accounts_etl.common.schemas import OllamaConfig
-    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
     files = [
         tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",
@@ -384,7 +392,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
     from unittest.mock import patch
 
     from fintl.accounts_etl.common.schemas import OllamaConfig
-    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
     dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
     dummy.write_bytes(b"\x89PNG")
@@ -415,7 +423,9 @@ def test_check_model_available_passes_when_model_present():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import _check_model_available
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
+        _check_model_available,
+    )
 
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
@@ -432,7 +442,9 @@ def test_check_model_available_passes_on_bare_name_match():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import _check_model_available
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
+        _check_model_available,
+    )
 
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
@@ -447,7 +459,7 @@ def test_check_model_available_raises_when_model_missing():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import (
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
         OllamaModelUnavailableError,
         _check_model_available,
     )
@@ -466,7 +478,7 @@ def test_check_model_available_raises_on_http_error():
 
     import httpx
 
-    from fintl.accounts_etl.scalable.broker20260309 import (
+    from fintl.accounts_etl.providers.scalable.broker20260309 import (
         OllamaModelUnavailableError,
         _check_model_available,
     )
@@ -486,7 +498,7 @@ def test_parse_new_files_continues_on_generic_error(
     from unittest.mock import patch
 
     from fintl.accounts_etl.common.schemas import OllamaConfig
-    from fintl.accounts_etl.scalable import broker20260309 as broker
+    from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
     files = [
         tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",

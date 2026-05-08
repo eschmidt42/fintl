@@ -2,8 +2,8 @@ from pathlib import Path
 
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.accounts_etl.engine import runner
-from fintl.accounts_etl.scalable import broker0, broker20231028
-from fintl.accounts_etl.scalable.files import get_parser_source_files
+from fintl.accounts_etl.providers.scalable import broker0, broker20231028
+from fintl.accounts_etl.providers.scalable.files import get_parser_source_files
 
 
 def test_broker_parsers_apply(tmp_path: Path):

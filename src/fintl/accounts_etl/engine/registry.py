@@ -11,10 +11,10 @@ below.
 """
 
 from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin
-from fintl.accounts_etl.dkb.plugin import PLUGIN as DKB_PLUGIN
-from fintl.accounts_etl.gls.plugin import PLUGIN as GLS_PLUGIN
-from fintl.accounts_etl.postbank.plugin import PLUGIN as POSTBANK_PLUGIN
-from fintl.accounts_etl.scalable.plugin import PLUGIN as SCALABLE_PLUGIN
+from fintl.accounts_etl.providers.dkb.plugin import PLUGIN as DKB_PLUGIN
+from fintl.accounts_etl.providers.gls.plugin import PLUGIN as GLS_PLUGIN
+from fintl.accounts_etl.providers.postbank.plugin import PLUGIN as POSTBANK_PLUGIN
+from fintl.accounts_etl.providers.scalable.plugin import PLUGIN as SCALABLE_PLUGIN
 
 ALL_PLUGINS: list[ProviderPlugin] = [
     DKB_PLUGIN,

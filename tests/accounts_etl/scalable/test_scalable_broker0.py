@@ -10,7 +10,7 @@ from fintl.accounts_etl.io.files.filenames import (
     transaction_htm_name_to_parquet,
     transaction_htm_name_to_xlsx,
 )
-from fintl.accounts_etl.scalable import broker0 as broker
+from fintl.accounts_etl.providers.scalable import broker0 as broker
 
 
 def get_time(path: Path) -> float:
@@ -134,7 +134,7 @@ def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
 
     outer_match = MagicMock()  # truthy – outer pattern 'matches'
     # First call returns the outer match; second call returns None (inner date pattern)
-    with patch("fintl.accounts_etl.scalable.broker0.re") as mock_re:
+    with patch("fintl.accounts_etl.providers.scalable.broker0.re") as mock_re:
         mock_re.search.side_effect = [outer_match, None]
         with pytest.raises(ValueError, match="is None"):
             broker.check_if_parser_applies(file_path)

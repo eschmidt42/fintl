@@ -4,11 +4,10 @@ from pathlib import Path
 from fintl.accounts_etl.common.schemas import (
     Case,
     Config,
-    GLSGiroParserEnum,
+    GLSCreditParserEnum,
     ProviderEnum,
     ServiceEnum,
 )
-from fintl.accounts_etl.gls.helper import check_if_parser_applies, parse_csv_file
 from fintl.accounts_etl.io.files.balances import store_balance
 from fintl.accounts_etl.io.files.copy import (
     copy_new_files,
@@ -24,13 +23,17 @@ from fintl.accounts_etl.io.files.orchestrator import (
 )
 from fintl.accounts_etl.io.files.select import select_files_to_copy
 from fintl.accounts_etl.io.files.transactions import store_transactions
+from fintl.accounts_etl.providers.gls.helper import (
+    check_if_parser_applies,
+    parse_csv_file,
+)
 
 logger = logging.getLogger(__name__)
 
 CASE = Case(
     provider=ProviderEnum.gls.value,
-    service=ServiceEnum.giro.value,
-    parser=GLSGiroParserEnum.giro0.value,
+    service=ServiceEnum.credit.value,
+    parser=GLSCreditParserEnum.credit0.value,
 )
 
 

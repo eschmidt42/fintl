@@ -224,7 +224,7 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     The HTML-based parsers (broker0, broker20231028) produce 0 transaction rows,
     so all-transactions.parquet is not written for this config.
     """
-    from fintl.accounts_etl.scalable import broker20260309
+    from fintl.accounts_etl.providers.scalable import broker20260309
 
     def _fake_extract_balance(
         case: Case, file_path: Path, *, ollama_config: OllamaConfig

@@ -15,15 +15,15 @@ from fintl.accounts_etl.common.schemas import (
     ServiceEnum,
     Sources,
 )
-from fintl.accounts_etl.gls import credit0 as credit
-from fintl.accounts_etl.gls import helper
-from fintl.accounts_etl.gls.credit0 import CASE
 from fintl.accounts_etl.io.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
 )
+from fintl.accounts_etl.providers.gls import credit0 as credit
+from fintl.accounts_etl.providers.gls import helper
+from fintl.accounts_etl.providers.gls.credit0 import CASE
 
 
 @pytest.fixture

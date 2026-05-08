@@ -6,7 +6,7 @@ generic runner.
 """
 
 from fintl.accounts_etl.common.schemas import ParserSpec, ProviderPlugin, ServicePlugin
-from fintl.accounts_etl.gls import credit0, giro0
+from fintl.accounts_etl.providers.gls import credit0, giro0
 
 GIRO = ServicePlugin(
     name="giro",
