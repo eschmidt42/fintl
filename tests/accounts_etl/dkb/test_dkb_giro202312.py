@@ -8,12 +8,6 @@ from inline_snapshot import snapshot
 
 from fintl.accounts_etl.dkb import giro202312
 from fintl.accounts_etl.dkb import giro202312 as giro
-from fintl.accounts_etl.dkb.files import (
-    balance_csv_name_to_json,
-    balance_csv_name_to_parquet,
-    transaction_csv_name_to_parquet,
-    transaction_csv_name_to_xlsx,
-)
 from fintl.accounts_etl.dkb.giro202312 import (
     CASE,
     check_if_parser_applies,
@@ -25,6 +19,12 @@ from fintl.accounts_etl.dkb.giro202312 import (
 from fintl.accounts_etl.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
+)
+from fintl.accounts_etl.file_helper import (
+    balance_csv_name_to_json,
+    balance_csv_name_to_parquet,
+    transaction_csv_name_to_parquet,
+    transaction_csv_name_to_xlsx,
 )
 from fintl.accounts_etl.schemas import (
     Config,

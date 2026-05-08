@@ -5,15 +5,15 @@ import polars as pl
 import pytest
 
 from fintl.accounts_etl.dkb import credit0 as credit
-from fintl.accounts_etl.dkb.files import (
+from fintl.accounts_etl.exceptions import (
+    ExtractBalanceException,
+    ExtractTransactionsException,
+)
+from fintl.accounts_etl.file_helper import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
-)
-from fintl.accounts_etl.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
 )
 from fintl.accounts_etl.schemas import Config, Logging, Provider, Sources
 

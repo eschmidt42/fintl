@@ -13,15 +13,15 @@ from fintl.accounts_etl.dkb.festgeld0 import (
     extract_transactions,
     load_lines,
 )
-from fintl.accounts_etl.dkb.files import (
+from fintl.accounts_etl.exceptions import (
+    ExtractBalanceException,
+    ExtractTransactionsException,
+)
+from fintl.accounts_etl.file_helper import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
-)
-from fintl.accounts_etl.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
 )
 from fintl.accounts_etl.schemas import (
     Config,
