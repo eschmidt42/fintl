@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Callable
 
@@ -10,13 +11,14 @@ from fintl.accounts_etl.dkb.files import (
     concatenate_transactions_history,
     detect_raw_files,
     detect_relevant_source_files,
-    logger,
     select_files_to_parse,
     transaction_csv_name_to_parquet,
     transaction_csv_name_to_xlsx,
 )
 from fintl.accounts_etl.files import detect_present_parsed_files
 from fintl.accounts_etl.schemas import BALANCE_SCHEMA, BalanceInfo, Case, Config
+
+logger = logging.getLogger(__name__)
 
 
 def concatenate_new_information_to_history(
