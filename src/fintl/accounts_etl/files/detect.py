@@ -4,6 +4,8 @@ from typing import Callable
 
 import polars as pl
 
+from fintl.accounts_etl.files.select import select_files_to_parse
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,33 +71,6 @@ def detect_raw_files(raw_dir: Path, check_if_parser_applies: Callable) -> list[P
     ]
     logger.info(f"Detected {len(raw_files):_} raw files @ {raw_dir=}.")
     return raw_files
-
-
-def select_files_to_parse(
-    present_parsed_files: list[Path], raw_files: list[Path]
-) -> list[Path]:
-    """Selects raw files that have not yet been parsed.
-
-    Compares raw files against already present parsed files and returns only
-    those that do not have a corresponding parsed counterpart yet.
-
-    Args:
-        present_parsed_files: List of already parsed file paths.
-        raw_files: List of raw file paths to check against.
-
-    Returns:
-        A list of raw file paths that need to be parsed.
-    """
-    parsed_files = [file_path.name for file_path in present_parsed_files]
-    files_to_parse = [
-        file_path
-        for file_path in raw_files
-        if (file_path.name.replace(".csv", "-transactions.xlsx") not in parsed_files)
-    ]
-    logger.info(
-        f"Selecting {len(files_to_parse):_} files to parse after comparing {len(present_parsed_files):_} present parsed files and {len(raw_files):_} raw files."
-    )
-    return files_to_parse
 
 
 def detect_new_raw_files(

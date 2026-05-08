@@ -11,10 +11,10 @@ from fintl.accounts_etl.files.orchestrator import (
     concatenate_new_information_to_history,
     get_parser_source_files,
 )
+from fintl.accounts_etl.files.select import select_files_to_copy
 from fintl.accounts_etl.files.transactions import store_transactions
 from fintl.accounts_etl.files.utils import (
     copy_new_files,
-    select_files_to_copy,
 )
 from fintl.accounts_etl.gls.helper import check_if_parser_applies, parse_csv_file
 from fintl.accounts_etl.schemas import (

@@ -22,19 +22,6 @@ def load_lines(path: Path, encoding: str) -> T.List[str]:
     return lines
 
 
-def select_files_to_copy(
-    source_files: list[Path], target_files: list[Path]
-) -> list[Path]:
-    target_names = [file_path.name for file_path in target_files]
-    files_to_copy = [
-        file_path for file_path in source_files if file_path.name not in target_names
-    ]
-    logger.info(
-        f"Selecting {len(files_to_copy):_} files to copy comparing {len(source_files):_} source files and {len(target_files):_} target files."
-    )
-    return files_to_copy
-
-
 def copy_new_files(raw_dir: Path, new_files_to_copy: list[Path]):
     logger.info("Copying new files")
 

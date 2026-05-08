@@ -21,11 +21,11 @@ from fintl.accounts_etl.files.orchestrator import (
     concatenate_new_information_to_history,
     get_parser_source_files,
 )
+from fintl.accounts_etl.files.select import select_files_to_copy
 from fintl.accounts_etl.files.transactions import store_transactions
 from fintl.accounts_etl.files.utils import (
     copy_new_files,
     load_lines,
-    select_files_to_copy,
 )
 from fintl.accounts_etl.schemas import (
     HASH_COLUMNS,
