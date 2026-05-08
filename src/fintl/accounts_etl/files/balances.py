@@ -80,7 +80,19 @@ def concatenate_balances_history(
     balances.write_excel(excel_path)
 
 
-def store_balance(parsed_dir: Path, file_path: Path, balance: BalanceInfo | None):
+def store_balance(
+    parsed_dir: Path, file_path: Path, balance: BalanceInfo | None
+) -> None:
+    """Writes a balance record to JSON and Parquet formats.
+
+    Args:
+        parsed_dir: Directory to write the balance JSON and Parquet files.
+        file_path: Path to the source balance CSV file (used to generate output filenames).
+        balance: The BalanceInfo object to store, or None if no balance is available.
+
+    Returns:
+        None
+    """
     json_file = parsed_dir / balance_csv_name_to_json(file_path)
 
     logger.debug(f"Writing {json_file=}")

@@ -189,7 +189,19 @@ def concatenate_transactions_history(
     transactions.write_excel(excel_path)
 
 
-def store_transactions(parsed_dir: Path, file_path: Path, transactions: pl.DataFrame):
+def store_transactions(
+    parsed_dir: Path, file_path: Path, transactions: pl.DataFrame
+) -> None:
+    """Stores a transaction DataFrame to the parsed directory as Parquet and Excel.
+
+    Args:
+        parsed_dir: Directory to write the transaction output files.
+        file_path: Path to the original transaction CSV file.
+        transactions: A Polars DataFrame containing the transaction data.
+
+    Returns:
+        None
+    """
     excel_file = parsed_dir / transaction_csv_name_to_xlsx(file_path)
     logger.debug(f"Writing {excel_file=}")
     transactions.write_excel(excel_file)

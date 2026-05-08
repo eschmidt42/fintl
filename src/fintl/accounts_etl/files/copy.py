@@ -5,7 +5,16 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def copy_new_files(raw_dir: Path, new_files_to_copy: list[Path]):
+def copy_new_files(raw_dir: Path, new_files_to_copy: list[Path]) -> None:
+    """Copies new files from the parsed directory to the raw directory.
+
+    Args:
+        raw_dir: The target directory where files will be copied.
+        new_files_to_copy: List of file paths to copy.
+
+    Returns:
+        None
+    """
     logger.info("Copying new files")
 
     if len(new_files_to_copy) == 0:

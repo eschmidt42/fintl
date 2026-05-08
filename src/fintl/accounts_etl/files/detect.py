@@ -10,7 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 def detect_present_parsed_files(parsed_dir: Path) -> list[Path]:
-    """Detects relevant parsed files."""
+    """Detects existing parsed files by globbing the target directory for .xlsx files.
+
+    Args:
+        parsed_dir: The directory to search for parsed files.
+
+    Returns:
+        A list of paths to existing parsed .xlsx files.
+    """
     present_parsed_files = [file_path for file_path in parsed_dir.glob("**/*.xlsx")]
     logger.info(
         f"Detected {len(present_parsed_files):_} present parsed files @ {parsed_dir=}."
@@ -23,6 +30,19 @@ def detect_new_parsed_files(
     parser_dir: Path,
     parsed_dir: Path,
 ) -> list[Path]:
+    """Identifies newly parsed balance files that haven't been stored yet.
+
+    Compares parsed balance parquet files against the existing balance history
+    to determine which ones are new.
+
+    Args:
+        raw_dir: Directory containing the raw CSV files.
+        parser_dir: Directory containing the balance history parquet file.
+        parsed_dir: Directory containing the parsed parquet files.
+
+    Returns:
+        A list of paths to new balance CSV files corresponding to newly parsed data.
+    """
     logger.info(f"Detecting newly parsed files")
 
     available_parsed_balance_files = list(parsed_dir.glob("*-balance.parquet"))
@@ -32,9 +52,7 @@ def detect_new_parsed_files(
     if all_balances_parquet_path.exists():
         all_balances = pl.read_parquet(all_balances_parquet_path)
 
-        already_stored_files = (
-            all_balances["file"].unique().to_list()
-        )  # original name inlcuding .csv ending
+        already_stored_files = all_balances["file"].unique().to_list()
 
         already_stored_files = set([Path(f).stem for f in already_stored_files])
     else:
@@ -80,6 +98,22 @@ def detect_new_raw_files(
     provider: str,
     service: str,
 ) -> list[Path]:
+    """Identifies new raw CSV files that need to be parsed.
+
+    Finds CSV files in the raw directory that match the parser criteria and
+    are not yet represented in the parsed directory.
+
+    Args:
+        raw_dir: The directory to search for raw CSV files.
+        check_if_parser_applies: A callable that validates if a file matches
+            the parser's criteria.
+        parsed_dir: Directory containing already processed parsed files.
+        provider: The financial provider name.
+        service: The financial service name.
+
+    Returns:
+        A list of paths to new raw files that need to be parsed.
+    """
     logger.info(f"Detecting new raw files for {provider=} -> {service=}")
 
     raw_files = detect_raw_files(raw_dir, check_if_parser_applies)
