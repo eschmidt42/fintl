@@ -4,9 +4,6 @@ from typing import Callable
 
 import polars as pl
 
-from fintl.accounts_etl.dkb.files import (
-    logger,
-)
 from fintl.accounts_etl.files import detect_present_parsed_files
 from fintl.accounts_etl.scalable.files import (
     balance_htm_name_to_parquet,
