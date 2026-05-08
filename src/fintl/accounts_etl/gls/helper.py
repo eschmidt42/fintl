@@ -14,7 +14,7 @@ from fintl.accounts_etl.schemas import (
     BalanceInfo,
     Case,
 )
-from fintl.accounts_etl.utils import (
+from fintl.accounts_etl.transactions import (
     hash_transactions,
     verify_transactions,
 )

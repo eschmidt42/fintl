@@ -40,7 +40,7 @@ from fintl.accounts_etl.schemas import (
 from fintl.accounts_etl.schemas import (
     TransactionColumnsEnum as TransColEnum,
 )
-from fintl.accounts_etl.utils import (
+from fintl.accounts_etl.transactions import (
     hash_transactions,
     verify_transactions,
 )

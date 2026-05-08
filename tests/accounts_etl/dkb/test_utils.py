@@ -9,7 +9,7 @@ from fintl.accounts_etl.number_conversion import (
     check_if_german_number,
     german_string_numbers_to_floats,
 )
-from fintl.accounts_etl.utils import (
+from fintl.accounts_etl.transactions import (
     hash_transactions,
     verify_transactions,
 )
