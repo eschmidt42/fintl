@@ -79,7 +79,7 @@ def extract_transactions(
         "Buchungsdatum": pl.Utf8,
         "Wertstellung": pl.Utf8,
         "Umsatzart": pl.Utf8,
-        "Buchungsdetails": pl.Utf8,  # TODO: add to output
+        "Buchungsdetails": pl.Utf8,
         "Auftraggeber": pl.Utf8,
         "Empfänger": pl.Utf8,
         "Betrag (€)": pl.Utf8,
