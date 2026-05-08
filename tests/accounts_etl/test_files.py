@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from fintl.accounts_etl.files import copy_new_files
+from fintl.accounts_etl.files_utils import copy_new_files
 
 
 def test_copy_new_files_creates_raw_dir_when_missing(tmp_path: Path):

@@ -10,7 +10,6 @@ from fintl.accounts_etl.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
-from fintl.accounts_etl.files import copy_new_files, load_lines, select_files_to_copy
 from fintl.accounts_etl.files_orchestrator import (
     concatenate_new_information_to_history,
     detect_new_parsed_files,
@@ -19,6 +18,11 @@ from fintl.accounts_etl.files_orchestrator import (
     get_parser_source_files,
     store_balance,
     store_transactions,
+)
+from fintl.accounts_etl.files_utils import (
+    copy_new_files,
+    load_lines,
+    select_files_to_copy,
 )
 from fintl.accounts_etl.schemas import (
     HASH_COLUMNS,
