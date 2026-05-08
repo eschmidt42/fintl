@@ -11,7 +11,6 @@ from fintl.accounts_etl.dkb import giro202312 as giro
 from fintl.accounts_etl.dkb.giro202312 import (
     CASE,
     check_if_parser_applies,
-    detect_encoding,
     detect_separator,
     extract_transactions,
     load_lines,
@@ -20,6 +19,7 @@ from fintl.accounts_etl.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
+from fintl.accounts_etl.files.detect import detect_encoding
 from fintl.accounts_etl.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,

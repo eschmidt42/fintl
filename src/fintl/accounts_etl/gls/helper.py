@@ -5,6 +5,7 @@ from pathlib import Path
 
 import polars as pl
 
+from fintl.accounts_etl.files.detect import detect_encoding
 from fintl.accounts_etl.files.utils import load_lines
 from fintl.accounts_etl.schemas import (
     HASH_COLUMNS,
@@ -13,7 +14,6 @@ from fintl.accounts_etl.schemas import (
     Case,
 )
 from fintl.accounts_etl.utils import (
-    detect_encoding,
     find_line_with_pattern,
     german_string_numbers_to_floats,
     hash_transactions,

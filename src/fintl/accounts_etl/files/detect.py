@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from typing import Callable
 
+import chardet
 import polars as pl
 
 from fintl.accounts_etl.files.select import select_files_to_parse
@@ -160,3 +161,23 @@ def detect_relevant_source_files(
         f"Detected {len(relevant_source_files):_} relevant source files @ {source_dir=}."
     )
     return relevant_source_files
+
+
+def detect_encoding(path: Path, encoding_default: str = "utf-8") -> str:
+    """Detects the file encoding using chardet.
+
+    Args:
+        path: Path to the file to detect encoding for.
+        encoding_default: Fallback encoding if detection fails.
+
+    Returns:
+        The detected encoding string, or the default if detection fails.
+    """
+    with open(path, "rb") as f:
+        res = chardet.detect(f.read())
+    logger.debug(f"detect encoding: {res}")
+    enc = res["encoding"]
+    if enc is None:
+        logger.warning(f"Failed to detect encoding, defaulting to {encoding_default}")
+        enc = encoding_default
+    return enc

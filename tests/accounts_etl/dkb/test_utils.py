@@ -96,7 +96,7 @@ def test_detect_encoding_fallback_when_chardet_returns_none(tmp_path: Path):
     must fall back to the default encoding ('utf-8')."""
     from unittest.mock import patch
 
-    from fintl.accounts_etl.utils import detect_encoding
+    from fintl.accounts_etl.files.detect import detect_encoding
 
     dummy_file = tmp_path / "dummy.csv"
     dummy_file.write_bytes(b"some bytes")

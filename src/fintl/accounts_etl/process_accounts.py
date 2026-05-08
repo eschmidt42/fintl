@@ -6,12 +6,12 @@ from rich.console import Console
 
 from fintl.accounts_etl import runner
 from fintl.accounts_etl.labels import assign_labels
+from fintl.accounts_etl.parquets import concatenate_parquets
 from fintl.accounts_etl.schemas import (
     BALANCE_COLUMNS,
     TRANSACTION_COLUMNS,
     Config,
 )
-from fintl.accounts_etl.utils import concatenate_parquets
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,6 @@ from fintl.accounts_etl.dkb import festgeld0
 from fintl.accounts_etl.dkb.festgeld0 import (
     CASE,
     check_if_parser_applies,
-    detect_encoding,
     extract_transactions,
     load_lines,
 )
@@ -17,6 +16,7 @@ from fintl.accounts_etl.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
+from fintl.accounts_etl.files.detect import detect_encoding
 from fintl.accounts_etl.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,

@@ -7,6 +7,7 @@ import polars as pl
 from bs4 import BeautifulSoup, element
 
 from fintl.accounts_etl.files.copy import copy_new_files
+from fintl.accounts_etl.files.detect import detect_encoding
 from fintl.accounts_etl.files.orchestrator import (
     concatenate_new_information_to_history,
 )
@@ -30,7 +31,6 @@ from fintl.accounts_etl.schemas import (
     ScalableBrokerParserEnum,
     ServiceEnum,
 )
-from fintl.accounts_etl.utils import detect_encoding
 
 logger = logging.getLogger(__name__)
 

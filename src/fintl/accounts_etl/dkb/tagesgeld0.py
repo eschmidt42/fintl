@@ -12,6 +12,7 @@ from fintl.accounts_etl.exceptions import (
 from fintl.accounts_etl.files.balances import store_balance
 from fintl.accounts_etl.files.copy import copy_new_files
 from fintl.accounts_etl.files.detect import (
+    detect_encoding,
     detect_new_raw_files,
     detect_relevant_target_files,
 )
@@ -35,7 +36,6 @@ from fintl.accounts_etl.schemas import (
     ServiceEnum,
 )
 from fintl.accounts_etl.utils import (
-    detect_encoding,
     find_line_with_pattern,
     german_string_numbers_to_floats,
     hash_transactions,
