@@ -14,6 +14,14 @@ def balance_csv_name_to_parquet(file: Path) -> str:
 
 
 def balance_htm_name_to_parquet(file: Path) -> str:
+    """Converts a balance HTM/HTML/PNG file name to the corresponding Parquet name.
+
+    Args:
+        file: The input HTM/HTML/PNG file path.
+
+    Returns:
+        The name of the corresponding Parquet file.
+    """
     return file.name.replace(file.suffix, "-balance.parquet")
 
 
@@ -56,6 +64,14 @@ def transaction_csv_name_to_parquet(file: Path) -> str:
 
 
 def transaction_htm_name_to_parquet(file: Path) -> str:
+    """Converts a transaction HTM/HTML/PNG file name to the corresponding Parquet name.
+
+    Args:
+        file: The input HTM/HTML/PNG file path.
+
+    Returns:
+        The name of the corresponding Parquet file.
+    """
     return file.name.replace(file.suffix, "-transactions.parquet")
 
 
@@ -110,8 +126,24 @@ def transaction_csv_name_to_xlsx(file: Path) -> str:
 
 
 def transaction_htm_name_to_xlsx(file: Path) -> str:
+    """Converts a transaction HTM/HTML/PNG file name to the corresponding XLSX name.
+
+    Args:
+        file: The input HTM/HTML/PNG file path.
+
+    Returns:
+        The name of the corresponding XLSX file.
+    """
     return file.name.replace(file.suffix, "-transactions.xlsx")
 
 
 def balance_htm_name_to_json(file: Path) -> str:
+    """Converts a balance HTM/HTML/PNG file name to the corresponding JSON name.
+
+    Args:
+        file: The input HTM/HTML/PNG file path.
+
+    Returns:
+        The name of the corresponding JSON file.
+    """
     return file.name.replace(file.suffix, "-balance.json")
