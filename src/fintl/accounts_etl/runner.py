@@ -35,10 +35,10 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-from fintl.accounts_etl.file_helper import (
+from fintl.accounts_etl.files import error_if_overlap
+from fintl.accounts_etl.files_orchestrator import (
     get_parser_source_files as csv_get_source_files,
 )
-from fintl.accounts_etl.files import error_if_overlap
 from fintl.accounts_etl.registry import ALL_PARSERS, ALL_PLUGINS
 from fintl.accounts_etl.schemas import Case, Config, ParserSpec
 

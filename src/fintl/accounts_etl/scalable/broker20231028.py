@@ -7,8 +7,8 @@ from pathlib import Path
 import polars as pl
 from bs4 import BeautifulSoup, element
 
-from fintl.accounts_etl.file_helper import concatenate_new_information_to_history
 from fintl.accounts_etl.files import copy_new_files, load_lines, select_files_to_copy
+from fintl.accounts_etl.files_orchestrator import concatenate_new_information_to_history
 from fintl.accounts_etl.scalable.broker0 import extract_transactions
 from fintl.accounts_etl.scalable.files import (
     detect_new_raw_files,
