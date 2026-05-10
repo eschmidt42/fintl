@@ -2,6 +2,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from typer.testing import CliRunner
 
 from fintl.accounts_etl.common.schemas import Case, ParserSpec, Provider, Sources
 from fintl.cli.main import app
@@ -9,13 +10,15 @@ from fintl.cli.main import app
 from .conftest import make_config
 
 
-def _store_config_multi(tmp_path: Path):
+def _store_config_multi(tmp_path: Path, logger_config_path: Path):
     giro_src = tmp_path / "sources" / "dkb" / "giro"
     credit_src = tmp_path / "sources" / "dkb" / "credit"
     giro_src.mkdir(parents=True)
     credit_src.mkdir(parents=True)
     return make_config(
-        tmp_path, Sources(dkb=Provider(giro=giro_src, credit=credit_src))
+        tmp_path,
+        Sources(dkb=Provider(giro=giro_src, credit=credit_src)),
+        logger_config_path,
     )
 
 
@@ -35,21 +38,26 @@ def _spec(
     )
 
 
-def _store_config(tmp_path: Path):
+def _store_config(tmp_path: Path, logger_config_path: Path):
     giro_src = tmp_path / "sources" / "dkb" / "giro"
     giro_src.mkdir(parents=True)
-    return make_config(tmp_path, Sources(dkb=Provider(giro=giro_src)))
+    return make_config(
+        tmp_path, Sources(dkb=Provider(giro=giro_src)), logger_config_path
+    )
 
 
 def test_run_copies_matched_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
     stub.write_text("date,amount\n2024-01-01,100\n")
 
-    config = _store_config(tmp_path)
+    config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
@@ -62,13 +70,16 @@ def test_run_copies_matched_file(
 
 
 def test_run_skips_unmatched_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "unknown.csv").write_text("data\n")
 
-    config = _store_config(tmp_path)
+    config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=False)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
@@ -80,14 +91,17 @@ def test_run_skips_unmatched_file(
 
 
 def test_run_already_copied_file_is_not_duplicated(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
     stub.write_text("date,amount\n2024-01-01,100\n")
 
-    config = _store_config(tmp_path)
+    config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
@@ -105,14 +119,17 @@ def test_run_already_copied_file_is_not_duplicated(
 
 
 def test_run_interactive_confirm_accepts(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
     stub.write_text("date,amount\n2024-01-01,100\n")
 
-    config = _store_config(tmp_path)
+    config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
@@ -127,14 +144,17 @@ def test_run_interactive_confirm_accepts(
 
 
 def test_run_interactive_confirm_declines(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
     stub.write_text("date,amount\n2024-01-01,100\n")
 
-    config = _store_config(tmp_path)
+    config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
@@ -150,13 +170,16 @@ def test_run_interactive_confirm_declines(
 
 
 def test_run_interactive_confirm_copy_label(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")
 
-    config = _store_config(tmp_path)
+    config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
@@ -171,13 +194,16 @@ def test_run_interactive_confirm_copy_label(
 
 
 def test_run_ambiguous_with_yes_skips(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")
 
-    config = _store_config_multi(tmp_path)
+    config = _store_config_multi(tmp_path, logger_config_path)
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
@@ -192,13 +218,16 @@ def test_run_ambiguous_with_yes_skips(
 
 
 def test_run_ambiguous_interactive_selects_parser(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")
 
-    config = _store_config_multi(tmp_path)
+    config = _store_config_multi(tmp_path, logger_config_path)
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
@@ -215,13 +244,16 @@ def test_run_ambiguous_interactive_selects_parser(
 
 
 def test_run_ambiguous_interactive_user_skips(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")
 
-    config = _store_config_multi(tmp_path)
+    config = _store_config_multi(tmp_path, logger_config_path)
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
     monkeypatch.setattr("fintl.cli.store.Config", lambda: config)

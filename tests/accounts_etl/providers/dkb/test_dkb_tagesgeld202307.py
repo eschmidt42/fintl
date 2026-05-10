@@ -17,27 +17,31 @@ from fintl.accounts_etl.io.files.filenames import (
 )
 from fintl.accounts_etl.providers.dkb import tagesgeld202307 as tagesgeld
 
-_FIXTURE_CSV = (
-    Path(__file__).parent.parent
-    / "files"
-    / "csv_files"
-    / "DKB"
-    / "tagesgeld"
-    / "11-11-2023_Umsatzliste_Tagesgeld_DE01234567890123456789.csv"
-)
+
+@pytest.fixture
+def csv_fname() -> str:
+    return "11-11-2023_Umsatzliste_Tagesgeld_DE01234567890123456789.csv"
+
+
+@pytest.fixture
+def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    return files_root_path / "csv_files" / "DKB" / "tagesgeld" / csv_fname
+
+
+def test_files_exist(files_root_path: Path, csv_file: Path):
+    assert files_root_path.exists()
+    assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
     return path.stat().st_mtime
 
 
-def test_main(tmp_path: Path):
-    tagesgeld_source_dir = (
-        Path(__file__).parent.parent / "files" / "csv_files" / "DKB" / "tagesgeld"
-    )
+def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
+    tagesgeld_source_dir = csv_file.parent
     assert tagesgeld_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
@@ -48,7 +52,7 @@ def test_main(tmp_path: Path):
 
     # paths
     raw_dir = config.get_raw_dir(tagesgeld.CASE)
-    file = Path("11-11-2023_Umsatzliste_Tagesgeld_DE01234567890123456789.csv")
+    file = Path(csv_file.name)
     copied_file_path = raw_dir / file
 
     parsed_dir = config.get_parsed_dir(tagesgeld.CASE)
@@ -134,23 +138,23 @@ def test_main(tmp_path: Path):
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
 
 
-def test_parse_csv_file_raises_extract_transactions_exception():
+def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.tagesgeld202307.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
         with pytest.raises(ExtractTransactionsException) as exc_info:
-            tagesgeld.parse_csv_file(tagesgeld.CASE, _FIXTURE_CSV)
+            tagesgeld.parse_csv_file(tagesgeld.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
-def test_parse_csv_file_raises_extract_balance_exception():
+def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.tagesgeld202307.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
         with pytest.raises(ExtractBalanceException) as exc_info:
-            tagesgeld.parse_csv_file(tagesgeld.CASE, _FIXTURE_CSV)
+            tagesgeld.parse_csv_file(tagesgeld.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 

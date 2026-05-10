@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import polars as pl
 import pytest
+from typer.testing import CliRunner
 
 from fintl.accounts_etl.common.schemas import BALANCE_SCHEMA, Provider, Sources
 from fintl.cli.main import app
@@ -27,18 +28,21 @@ def _write_balances(target_dir: Path) -> None:
     df.write_parquet(target_dir / "all-balances.parquet")
 
 
-def _plot_config(tmp_path: Path):
+def _plot_config(tmp_path: Path, logger_config_path: Path):
     src = tmp_path / "sources" / "dkb" / "giro"
     src.mkdir(parents=True)
-    config = make_config(tmp_path, Sources(dkb=Provider(giro=src)))
+    config = make_config(tmp_path, Sources(dkb=Provider(giro=src)), logger_config_path)
     _write_balances(config.target_dir)
     return config
 
 
 def test_run_save_writes_html(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
-    config = _plot_config(tmp_path)
+    config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.plot.Config", lambda: config)
     mock_open = MagicMock()
     monkeypatch.setattr("fintl.cli.plot.webbrowser.open", mock_open)
@@ -52,9 +56,12 @@ def test_run_save_writes_html(
 
 
 def test_run_without_save_opens_browser(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
 ):
-    config = _plot_config(tmp_path)
+    config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.plot.Config", lambda: config)
     mock_open = MagicMock()
     monkeypatch.setattr("fintl.cli.plot.webbrowser.open", mock_open)

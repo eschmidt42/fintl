@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.accounts_etl.engine import runner
 from fintl.accounts_etl.io.files.orchestrator import get_parser_source_files
@@ -9,17 +11,28 @@ from fintl.accounts_etl.providers.postbank import (
 )
 
 
-def test_giro_parsers_apply(tmp_path: Path):
-    data_root_dir = Path(__file__).parent.parent / "files"
-    assert data_root_dir.exists()
-    csv_root_dir = data_root_dir / "csv_files"
-    assert csv_root_dir.exists()
+@pytest.fixture
+def csv_file(files_root_path: Path) -> Path:
+    return (
+        files_root_path
+        / "csv_files"
+        / "Postbank"
+        / "Kontoumsaetze_123_1234567_12_20231028_083011.csv"
+    )
 
-    postbank_giro_source_dir = csv_root_dir / "Postbank"
+
+def test_files_exist(files_root_path: Path, csv_file: Path):
+    assert files_root_path.exists()
+    assert csv_file.exists()
+
+
+def test_giro_parsers_apply(tmp_path: Path, csv_file: Path, logger_config_path: Path):
+
+    postbank_giro_source_dir = csv_file.parent
 
     assert postbank_giro_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(

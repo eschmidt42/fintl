@@ -1,5 +1,6 @@
 import shutil
 from pathlib import Path
+from typing import TypedDict
 
 import polars as pl
 import pytest
@@ -15,31 +16,72 @@ from fintl.accounts_etl.common.schemas import (
     Sources,
 )
 
-# ── Shared fixture paths ───────────────────────────────────────────────────────
-_FILES = Path(__file__).parent / "providers" / "files"
-_CSV = _FILES / "csv_files"
-_ARTEFACTS = _FILES / "artefacts"
-_LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
 
-_DKB_GIRO = _CSV / "DKB" / "kontoauszug"
-_DKB_TAGESGELD = _CSV / "DKB" / "tagesgeld"
-_DKB_CREDIT = _CSV / "DKB" / "credit"
-_DKB_FESTGELD = _CSV / "DKB" / "festgeld"
-_POSTBANK = _CSV / "Postbank"
-_SCALABLE = _ARTEFACTS / "Scalable-Capital"
-_GLS_GIRO = _CSV / "GLS" / "giro"
-_GLS_CREDIT = _CSV / "GLS" / "credit"
+# ── Shared fixture paths ───────────────────────────────────────────────────────
+@pytest.fixture
+def csv_dir(files_root_path: Path) -> Path:
+    return files_root_path / "csv_files"
+
+
+@pytest.fixture
+def artefact_dir(files_root_path: Path) -> Path:
+    return files_root_path / "artefacts"
+
+
+class Dirs(TypedDict):
+    dkb_giro: Path
+    dkb_tagesgeld: Path
+    dkb_credit: Path
+    dkb_festgeld: Path
+    postbank: Path
+    scalable: Path
+    gls_giro: Path
+    gls_credit: Path
+
+
+@pytest.fixture
+def dirs(csv_dir: Path, artefact_dir: Path) -> Dirs:
+    return {
+        "dkb_giro": csv_dir / "DKB" / "kontoauszug",
+        "dkb_tagesgeld": csv_dir / "DKB" / "tagesgeld",
+        "dkb_credit": csv_dir / "DKB" / "credit",
+        "dkb_festgeld": csv_dir / "DKB" / "festgeld",
+        "postbank": csv_dir / "Postbank",
+        "scalable": artefact_dir / "Scalable-Capital",
+        "gls_giro": csv_dir / "GLS" / "giro",
+        "gls_credit": csv_dir / "GLS" / "credit",
+    }
+
+
+@pytest.fixture
+def dkb_giro0_file() -> str:
+    return "0123456789_2022-09-15_to_2022-10-15.csv"
+
+
+# _FILES = Path(__file__).parent / "providers" / "files"
+# _CSV = _FILES / "csv_files"
+# _ARTEFACTS = _FILES / "artefacts"
+# _LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
+
+# _DKB_GIRO = _CSV / "DKB" / "kontoauszug"
+# _DKB_TAGESGELD = _CSV / "DKB" / "tagesgeld"
+# _DKB_CREDIT = _CSV / "DKB" / "credit"
+# _DKB_FESTGELD = _CSV / "DKB" / "festgeld"
+# _POSTBANK = _CSV / "Postbank"
+# _SCALABLE = _ARTEFACTS / "Scalable-Capital"
+# _GLS_GIRO = _CSV / "GLS" / "giro"
+# _GLS_CREDIT = _CSV / "GLS" / "credit"
 
 # Only the giro0 parser handles files whose name starts with 10 digits (e.g. "0123456789_...")
-_DKB_GIRO0_FILE = "0123456789_2022-09-15_to_2022-10-15.csv"
+# _DKB_GIRO0_FILE = "0123456789_2022-09-15_to_2022-10-15.csv"
 
 
 # ── Shared helpers ─────────────────────────────────────────────────────────────
-def _config(target_dir: Path, sources: Sources) -> Config:
+def _config(target_dir: Path, sources: Sources, logger_config_path: Path) -> Config:
     return Config(
         target_dir=target_dir,
         sources=sources,
-        logging=Logging(config_file=_LOGGER_PATH),
+        logging=Logging(config_file=logger_config_path),
     )
 
 
@@ -62,24 +104,20 @@ def _assert_labelled_output(config: Config) -> None:
     assert len(df) == len(all_tx)
 
 
-def test_dkb_giro(tmp_path: Path):
-    # setup
-    giro_source_dir = (
-        Path(__file__).parent
-        / "providers"
-        / "files"
-        / "csv_files"
-        / "DKB"
-        / "kontoauszug"
-    )
-    assert giro_source_dir.exists()
+def test_dirs_exist(dirs: Dirs):
+    for p in dirs.values():
+        assert isinstance(p, Path)
+        assert p.exists()
 
-    logger_path = Path(__file__).parent.parent / "logger-config.json"
+
+def test_dkb_giro(tmp_path: Path, dirs: Dirs, logger_config_path: Path):
+
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
         target_dir=tmp_path,
-        sources=Sources(dkb=Provider(giro=giro_source_dir)),
+        sources=Sources(dkb=Provider(giro=dirs["dkb_giro"])),
         logging=Logging(config_file=logger_path),
     )
 
@@ -116,48 +154,22 @@ def test_dkb_giro(tmp_path: Path):
     assert balances.equals(new_balances)
 
 
-def test_all(tmp_path: Path):
-    # setup
-    data_root_dir = Path(__file__).parent / "providers" / "files"
-    assert data_root_dir.exists()
-    csv_root_dir = data_root_dir / "csv_files"
-    assert csv_root_dir.exists()
-    artefacts_root_dir = data_root_dir / "artefacts"
-    assert artefacts_root_dir.exists()
+def test_all(tmp_path: Path, dirs: Dirs, logger_config_path: Path):
 
-    dkb_giro_source_dir = csv_root_dir / "DKB" / "kontoauszug"
-    dkb_credit_source_dir = csv_root_dir / "DKB" / "credit"
-    dkb_tagesgeld_source_dir = csv_root_dir / "DKB" / "tagesgeld"
-
-    postbank_giro_source_dir = csv_root_dir / "Postbank"
-
-    scalable_broker_source_dir = artefacts_root_dir / "Scalable-Capital"
-
-    gls_giro_source_dir = csv_root_dir / "GLS" / "giro"
-    gls_credit_source_dir = csv_root_dir / "GLS" / "credit"
-
-    assert dkb_giro_source_dir.exists()
-    assert dkb_credit_source_dir.exists()
-    assert dkb_tagesgeld_source_dir.exists()
-    assert postbank_giro_source_dir.exists()
-    assert scalable_broker_source_dir.exists()
-    assert gls_giro_source_dir.exists()
-    assert gls_credit_source_dir.exists()
-
-    logger_path = Path(__file__).parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
         target_dir=tmp_path,
         sources=Sources(
             dkb=Provider(
-                giro=dkb_giro_source_dir,
-                tagesgeld=dkb_tagesgeld_source_dir,
-                credit=dkb_credit_source_dir,
+                giro=dirs["dkb_giro"],
+                tagesgeld=dirs["dkb_tagesgeld"],
+                credit=dirs["dkb_credit"],
             ),
-            postbank=Provider(giro=postbank_giro_source_dir),
-            scalable=Provider(broker=scalable_broker_source_dir),
-            gls=Provider(giro=gls_giro_source_dir, credit=gls_credit_source_dir),
+            postbank=Provider(giro=dirs["postbank"]),
+            scalable=Provider(broker=dirs["scalable"]),
+            gls=Provider(giro=dirs["gls_giro"], credit=dirs["gls_credit"]),
         ),
         logging=Logging(config_file=logger_path),
         ollama=None,  # keep this here - prevent s pydantic-settings to use the fallback
@@ -199,9 +211,11 @@ def test_all(tmp_path: Path):
 # ── New orchestration test matrix ─────────────────────────────────────────────
 
 
-def test_postbank_giro_only(tmp_path: Path):
+def test_postbank_giro_only(tmp_path: Path, logger_config_path: Path, dirs: Dirs):
     """Postbank-only config: verifies provider/service/parser membership and labelled output."""
-    config = _config(tmp_path, Sources(postbank=Provider(giro=_POSTBANK)))
+    config = _config(
+        tmp_path, Sources(postbank=Provider(giro=dirs["postbank"])), logger_config_path
+    )
     process_accounts.main(config)
 
     tx_path = config.target_dir / "all-transactions.parquet"
@@ -219,7 +233,12 @@ def test_postbank_giro_only(tmp_path: Path):
     _assert_labelled_output(config)
 
 
-def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_scalable_broker_only(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    logger_config_path: Path,
+    dirs: Dirs,
+):
     """Scalable-only config: all three broker parsers produce balances.
 
     broker20260309 uses an LLM to extract data from a PNG screenshot.
@@ -252,12 +271,14 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(broker20260309, "extract_balance", _fake_extract_balance)
     scalable_src = tmp_path / "scalable_src"
     scalable_src.mkdir()
-    for f in _SCALABLE.iterdir():
+    for f in dirs["scalable"].iterdir():
         shutil.copy(f, scalable_src / f.name)
 
     out_dir = tmp_path / "out"
     out_dir.mkdir()
-    config = _config(out_dir, Sources(scalable=Provider(broker=scalable_src)))
+    config = _config(
+        out_dir, Sources(scalable=Provider(broker=scalable_src)), logger_config_path
+    )
     config = config.model_copy(update={"ollama": OllamaConfig(model="fake-model")})
     process_accounts.main(config)
 
@@ -274,11 +295,12 @@ def test_scalable_broker_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     assert not (config.target_dir / "all-transactions.parquet").exists()
 
 
-def test_gls_giro_and_credit(tmp_path: Path):
+def test_gls_giro_and_credit(tmp_path: Path, logger_config_path: Path, dirs: Dirs):
     """GLS with both giro and credit: both services appear in parquet output."""
     config = _config(
         tmp_path,
-        Sources(gls=Provider(giro=_GLS_GIRO, credit=_GLS_CREDIT)),
+        Sources(gls=Provider(giro=dirs["gls_giro"], credit=dirs["gls_credit"])),
+        logger_config_path,
     )
     process_accounts.main(config)
 
@@ -294,11 +316,12 @@ def test_gls_giro_and_credit(tmp_path: Path):
     _assert_labelled_output(config)
 
 
-def test_dkb_selective_services(tmp_path: Path):
+def test_dkb_selective_services(tmp_path: Path, logger_config_path: Path, dirs: Dirs):
     """DKB with giro+tagesgeld only: credit and festgeld must not appear in output."""
     config = _config(
         tmp_path,
-        Sources(dkb=Provider(giro=_DKB_GIRO, tagesgeld=_DKB_TAGESGELD)),
+        Sources(dkb=Provider(giro=dirs["dkb_giro"], tagesgeld=dirs["dkb_tagesgeld"])),
+        logger_config_path,
     )
     process_accounts.main(config)
 
@@ -321,14 +344,15 @@ def test_dkb_selective_services(tmp_path: Path):
     _assert_labelled_output(config)
 
 
-def test_dkb_and_postbank(tmp_path: Path):
+def test_dkb_and_postbank(tmp_path: Path, logger_config_path: Path, dirs: Dirs):
     """Two providers (DKB giro + Postbank giro): both appear in concatenated output."""
     config = _config(
         tmp_path,
         Sources(
-            dkb=Provider(giro=_DKB_GIRO),
-            postbank=Provider(giro=_POSTBANK),
+            dkb=Provider(giro=dirs["dkb_giro"]),
+            postbank=Provider(giro=dirs["postbank"]),
         ),
+        logger_config_path,
     )
     process_accounts.main(config)
 
@@ -350,15 +374,19 @@ def test_dkb_and_postbank(tmp_path: Path):
     _assert_labelled_output(config)
 
 
-def test_partial_giro_file_subset(tmp_path: Path):
+def test_partial_giro_file_subset(
+    tmp_path: Path, logger_config_path: Path, dirs: Dirs, dkb_giro0_file: str
+):
     """Only the giro0-format file in the source dir: only the giro0 parser should run."""
     giro_source = tmp_path / "giro_source"
     giro_source.mkdir()
-    shutil.copy(_DKB_GIRO / _DKB_GIRO0_FILE, giro_source / _DKB_GIRO0_FILE)
+    shutil.copy(dirs["dkb_giro"] / dkb_giro0_file, giro_source / dkb_giro0_file)
 
     out_dir = tmp_path / "out"
     out_dir.mkdir()
-    config = _config(out_dir, Sources(dkb=Provider(giro=giro_source)))
+    config = _config(
+        out_dir, Sources(dkb=Provider(giro=giro_source)), logger_config_path
+    )
     process_accounts.main(config)
 
     tx_path = config.target_dir / "all-transactions.parquet"
@@ -369,9 +397,11 @@ def test_partial_giro_file_subset(tmp_path: Path):
     _assert_labelled_output(config)
 
 
-def test_mixed_dkb_giro_versions(tmp_path: Path):
+def test_mixed_dkb_giro_versions(tmp_path: Path, logger_config_path: Path, dirs: Dirs):
     """Full DKB giro dir (4 files, 3 parser versions): all versions appear, no duplicate hashes."""
-    config = _config(tmp_path, Sources(dkb=Provider(giro=_DKB_GIRO)))
+    config = _config(
+        tmp_path, Sources(dkb=Provider(giro=dirs["dkb_giro"])), logger_config_path
+    )
     process_accounts.main(config)
 
     tx_path = config.target_dir / "all-transactions.parquet"
@@ -395,7 +425,9 @@ def test_mixed_dkb_giro_versions(tmp_path: Path):
 # ── concatenate_all_providers: balances=None branch ───────────────────────────
 
 
-def test_concatenate_all_providers_balances_none(tmp_path: Path):
+def test_concatenate_all_providers_balances_none(
+    tmp_path: Path, logger_config_path: Path, dirs: Dirs
+):
     """When concatenate_parquets returns None for balances the warning branch is
     exercised and no balances parquet/xlsx files are written."""
     from unittest.mock import patch
@@ -404,7 +436,8 @@ def test_concatenate_all_providers_balances_none(tmp_path: Path):
 
     config = _config(
         tmp_path,
-        sources=Sources(dkb=Provider(giro=_DKB_GIRO)),
+        sources=Sources(dkb=Provider(giro=dirs["dkb_giro"])),
+        logger_config_path=logger_config_path,
     )
 
     dummy_transactions = pl.DataFrame(

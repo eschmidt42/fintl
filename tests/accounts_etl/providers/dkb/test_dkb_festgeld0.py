@@ -33,14 +33,21 @@ from fintl.accounts_etl.providers.dkb.festgeld0 import (
     load_lines,
 )
 
-_FIXTURE_CSV = (
-    Path(__file__).parent.parent
-    / "files"
-    / "csv_files"
-    / "DKB"
-    / "festgeld"
-    / "07-06-2025_Umsatzliste_DKB Festzins_DE01234567890123456789.csv"
-)
+
+@pytest.fixture
+def csv_file(files_root_path: Path) -> Path:
+    return (
+        files_root_path
+        / "csv_files"
+        / "DKB"
+        / "festgeld"
+        / "07-06-2025_Umsatzliste_DKB Festzins_DE01234567890123456789.csv"
+    )
+
+
+def test_files_exist(files_root_path: Path, csv_file: Path):
+    assert files_root_path.exists()
+    assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
@@ -48,36 +55,33 @@ def get_time(path: Path) -> float:
 
 
 @pytest.fixture
-def config(tmp_path: Path) -> Config:
-    source_dir = (
-        Path(__file__).parent.parent / "files" / "csv_files" / "DKB" / "festgeld"
-    )
-    assert source_dir.exists()
+def config(tmp_path: Path, csv_file: Path) -> Config:
 
     logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
     assert logger_path.exists()
 
     config = Config(
         target_dir=tmp_path,
-        sources=Sources(dkb=Provider(festgeld=source_dir)),
+        sources=Sources(dkb=Provider(festgeld=csv_file.parent)),
         logging=Logging(config_file=logger_path),
     )
     return config
 
 
-def get_files() -> list[Path]:
-    files = [
-        Path("07-06-2025_Umsatzliste_DKB Festzins_DE01234567890123456789.csv"),
-    ]
-    return files
+@pytest.fixture
+def csv_fname() -> str:
+    return "07-06-2025_Umsatzliste_DKB Festzins_DE01234567890123456789.csv"
 
 
-def test_main(config: Config):
+def get_files(csv_fname: str) -> list[Path]:
+    return [Path(csv_fname)]
+
+
+def test_main(config: Config, csv_fname: str):
     raw_dir = config.get_raw_dir(festgeld0.CASE)
 
-    files = get_files()
-
-    copied_file_paths = [raw_dir / f for f in files]
+    files = get_files(csv_fname)
+    copied_file_paths = [raw_dir / csv_fname]
 
     parsed_dir = config.get_parsed_dir(festgeld0.CASE)
 
@@ -207,10 +211,8 @@ def test_main(config: Config):
         assert ts_transactions_xlsx_single[i] < get_time(f_trans_xlsx)
 
 
-def test_check_if_parser_applies_true(tmp_path: Path):
-    file_path = (
-        tmp_path / "07-06-2025_Umsatzliste_DKB Festzins_DE01234567890123456789.csv"
-    )
+def test_check_if_parser_applies_true(tmp_path: Path, csv_fname: str):
+    file_path = tmp_path / csv_fname
     file_path.write_text('"yp";"IBAN";"Betrag (€)";"Glä"')
     assert check_if_parser_applies(file_path) is True
 
@@ -221,16 +223,14 @@ def test_check_if_parser_applies_false_filename(tmp_path: Path):
     assert check_if_parser_applies(file_path) is False
 
 
-def test_check_if_parser_applies_false_content(tmp_path: Path):
-    file_path = (
-        tmp_path / "07-06-2025_Umsatzliste_DKB Festzins_DE01234567890123456789.csv"
-    )
+def test_check_if_parser_applies_false_content(tmp_path: Path, csv_fname: str):
+    file_path = tmp_path / csv_fname
     file_path.write_text("some random content")
     assert check_if_parser_applies(file_path) is False
 
 
-def test_extract_transactions(config: Config):
-    files = get_files()
+def test_extract_transactions(config: Config, csv_fname: str):
+    files = get_files(csv_fname)
     file_path = config.get_source_dir("dkb", "festgeld") / files[0]
 
     encoding = detect_encoding(file_path)
@@ -291,23 +291,23 @@ def test_extract_transactions_raises_on_invalid_date(tmp_path: Path):
             extract_transactions(CASE, file_path, lines, "utf-8")
 
 
-def test_parse_csv_file_raises_extract_transactions_exception():
+def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.festgeld0.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
         with pytest.raises(ExtractTransactionsException) as exc_info:
-            festgeld0.parse_csv_file(festgeld0.CASE, _FIXTURE_CSV)
+            festgeld0.parse_csv_file(festgeld0.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
-def test_parse_csv_file_raises_extract_balance_exception():
+def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.festgeld0.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
         with pytest.raises(ExtractBalanceException) as exc_info:
-            festgeld0.parse_csv_file(festgeld0.CASE, _FIXTURE_CSV)
+            festgeld0.parse_csv_file(festgeld0.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
