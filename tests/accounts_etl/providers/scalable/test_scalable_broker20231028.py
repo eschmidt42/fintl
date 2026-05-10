@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.accounts_etl.io.files.filenames import (
@@ -12,17 +13,30 @@ from fintl.accounts_etl.io.files.filenames import (
 from fintl.accounts_etl.providers.scalable import broker20231028 as broker
 
 
+@pytest.fixture
+def html_fname() -> str:
+    return "2023-10-28.htm"
+
+
+@pytest.fixture
+def html_file(files_root_path: Path, html_fname: str) -> Path:
+    return files_root_path / "artefacts" / "Scalable-Capital" / html_fname
+
+
+def test_files_exist(files_root_path: Path, html_file: Path):
+    assert files_root_path.exists()
+    assert html_file.exists()
+
+
 def get_time(path: Path) -> float:
     return path.stat().st_mtime
 
 
-def test_main(tmp_path: Path):
-    broker_source_dir = (
-        Path(__file__).parent.parent / "files" / "artefacts" / "Scalable-Capital"
-    )
+def test_main(tmp_path: Path, html_file: Path, logger_config_path: Path):
+    broker_source_dir = html_file.parent
     assert broker_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
@@ -33,7 +47,7 @@ def test_main(tmp_path: Path):
 
     # paths
     raw_dir = config.get_raw_dir(broker.CASE)
-    file = Path("2023-10-28.htm")
+    file = Path(html_file.name)
     copied_file_path = raw_dir / file
 
     parsed_dir = config.get_parsed_dir(broker.CASE)
@@ -122,14 +136,14 @@ def test_main(tmp_path: Path):
 # ── Edge case / error path tests ──────────────────────────────────────────────
 
 
-def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
+def test_check_if_parser_applies_date_none_raises(tmp_path: Path, html_fname: str):
     """check_if_parser_applies must raise ValueError when the inner date regex
     returns None (defensive branch)."""
     from unittest.mock import MagicMock, patch
 
     import pytest
 
-    file_path = tmp_path / "2023-10-28.html"
+    file_path = tmp_path / html_fname
     file_path.write_text("€")
 
     outer_match = MagicMock()
@@ -139,12 +153,14 @@ def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
             broker.check_if_parser_applies(file_path)
 
 
-def test_extract_balance_raises_when_product_list_item_missing(tmp_path: Path):
+def test_extract_balance_raises_when_product_list_item_missing(
+    tmp_path: Path, html_fname: str
+):
     """extract_balance must raise ValueError when product-list-item div is absent."""
     import pytest
 
     html = "<html><body><div>no product list here</div></body></html>"
-    file_path = tmp_path / "2023-10-28.html"
+    file_path = tmp_path / html_fname
     file_path.write_text(html)
     with pytest.raises(ValueError):
         broker.extract_balance(broker.CASE, file_path, [])

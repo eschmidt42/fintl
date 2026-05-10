@@ -7,13 +7,20 @@ import pytest
 from fintl.accounts_etl.common.schemas import OllamaConfig
 from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
-_PNG_PATH = (
-    Path(__file__).parent.parent
-    / "files"
-    / "artefacts"
-    / "Scalable-Capital"
-    / "Screenshot 2026-04-27 at 08.20.00.png"
-)
+
+@pytest.fixture
+def png_fname() -> str:
+    return "Screenshot 2026-04-27 at 08.20.00.png"
+
+
+@pytest.fixture
+def png_file(files_root_path: Path, png_fname: str) -> Path:
+    return files_root_path / "artefacts" / "Scalable-Capital" / png_fname
+
+
+def test_files_exist(files_root_path: Path, png_file: Path):
+    assert files_root_path.exists()
+    assert png_file.exists()
 
 
 @pytest.fixture
@@ -26,12 +33,13 @@ def real_ollama_config() -> OllamaConfig:
 
 
 @pytest.mark.ollama
-def test_extract_balance_with_real_ollama(real_ollama_config: OllamaConfig) -> None:
+def test_extract_balance_with_real_ollama(
+    real_ollama_config: OllamaConfig, png_file
+) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""
-    assert _PNG_PATH.exists(), f"fixture PNG missing: {_PNG_PATH}"
 
     result = broker.extract_balance(
-        broker.CASE, _PNG_PATH, ollama_config=real_ollama_config
+        broker.CASE, png_file, ollama_config=real_ollama_config
     )
 
     assert result.date == datetime.date(2026, 4, 27)

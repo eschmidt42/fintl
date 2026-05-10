@@ -36,14 +36,20 @@ from fintl.accounts_etl.providers.dkb.giro202312 import (
     load_lines,
 )
 
-_FIXTURE_CSV = (
-    Path(__file__).parent.parent
-    / "files"
-    / "csv_files"
-    / "DKB"
-    / "kontoauszug"
-    / "09-12-2023_Umsatzliste_Girokonto_DE01234567890123456789.csv"
-)
+
+@pytest.fixture
+def csv_fname() -> str:
+    return "09-12-2023_Umsatzliste_Girokonto_DE01234567890123456789.csv"
+
+
+@pytest.fixture
+def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    return files_root_path / "csv_files" / "DKB" / "kontoauszug" / csv_fname
+
+
+def test_files_exist(files_root_path: Path, csv_file: Path):
+    assert files_root_path.exists()
+    assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
@@ -51,13 +57,11 @@ def get_time(path: Path) -> float:
 
 
 @pytest.fixture
-def config(tmp_path: Path) -> Config:
-    giro_source_dir = (
-        Path(__file__).parent.parent / "files" / "csv_files" / "DKB" / "kontoauszug"
-    )
+def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
+    giro_source_dir = csv_file.parent
     assert giro_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
@@ -303,23 +307,23 @@ def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
             extract_transactions(CASE, file_path, lines, "utf-8")
 
 
-def test_parse_csv_file_raises_extract_transactions_exception():
+def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.giro202312.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
         with pytest.raises(ExtractTransactionsException) as exc_info:
-            giro.parse_csv_file(giro.CASE, _FIXTURE_CSV)
+            giro.parse_csv_file(giro.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
-def test_parse_csv_file_raises_extract_balance_exception():
+def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.giro202312.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
         with pytest.raises(ExtractBalanceException) as exc_info:
-            giro.parse_csv_file(giro.CASE, _FIXTURE_CSV)
+            giro.parse_csv_file(giro.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 

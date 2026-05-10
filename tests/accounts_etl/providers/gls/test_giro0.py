@@ -27,13 +27,27 @@ from fintl.accounts_etl.providers.gls.giro0 import CASE
 
 
 @pytest.fixture
-def config(tmp_path: Path) -> Config:
-    giro_source_dir = (
-        Path(__file__).parent.parent / "files" / "csv_files" / "GLS" / "giro"
+def csv_file(files_root_path: Path) -> Path:
+    return (
+        files_root_path
+        / "csv_files"
+        / "GLS"
+        / "giro"
+        / "Umsaetze_DE01234567890123456789_2024.03.23.csv"
     )
+
+
+def test_files_exist(files_root_path: Path, csv_file: Path):
+    assert files_root_path.exists()
+    assert csv_file.exists()
+
+
+@pytest.fixture
+def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
+    giro_source_dir = csv_file.parent
     assert giro_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(

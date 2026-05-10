@@ -2,40 +2,44 @@ from pathlib import Path
 
 import polars as pl
 import pytest
+from typer.testing import CliRunner
 
 from fintl.cli.main import app
 
-from .conftest import _LOGGER_PATH
 
-_FILES = Path(__file__).parent.parent / "accounts_etl" / "providers" / "files"
-_CSV = _FILES / "csv_files"
-_ARTEFACTS = _FILES / "artefacts"
-
-
-def _write_config_toml(tmp_path: Path) -> Path:
+def _write_config_toml(
+    tmp_path: Path, files_root_path: Path, logger_path: Path
+) -> Path:
     target = tmp_path / "target"
     target.mkdir(parents=True, exist_ok=True)
     toml_path = tmp_path / "fintl.toml"
+
+    csv_dir = files_root_path / "csv_files"
+    assert csv_dir.exists()
+
+    artefacts_dir = files_root_path / "artefacts"
+    assert artefacts_dir.exists()
+
     toml_path.write_text(f"""\
 target_dir = "{target}"
 
 [sources.dkb]
-giro      = "{_CSV / "DKB" / "kontoauszug"}"
-tagesgeld = "{_CSV / "DKB" / "tagesgeld"}"
-credit    = "{_CSV / "DKB" / "credit"}"
+giro      = "{csv_dir / "DKB" / "kontoauszug"}"
+tagesgeld = "{csv_dir / "DKB" / "tagesgeld"}"
+credit    = "{csv_dir / "DKB" / "credit"}"
 
 [sources.postbank]
-giro = "{_CSV / "Postbank"}"
+giro = "{csv_dir / "Postbank"}"
 
 [sources.scalable]
-broker = "{_ARTEFACTS / "Scalable-Capital"}"
+broker = "{artefacts_dir / "Scalable-Capital"}"
 
 [sources.gls]
-giro   = "{_CSV / "GLS" / "giro"}"
-credit = "{_CSV / "GLS" / "credit"}"
+giro   = "{csv_dir / "GLS" / "giro"}"
+credit = "{csv_dir / "GLS" / "credit"}"
 
 [logging]
-config_file = "{_LOGGER_PATH}"
+config_file = "{logger_path}"
 """)
     return toml_path
 
@@ -45,17 +49,27 @@ def _provider_services(path: Path) -> set[tuple[str, str]]:
     return set(df.select(["provider", "service"]).rows())
 
 
-def test_run_exits_zero(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner):
-    toml_path = _write_config_toml(tmp_path)
+def test_run_exits_zero(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    files_root_path: Path,
+    logger_config_path: Path,
+):
+    toml_path = _write_config_toml(tmp_path, files_root_path, logger_config_path)
     monkeypatch.setenv("FINTL_CONFIG", str(toml_path))
     result = cli_runner.invoke(app, ["etl"])
     assert result.exit_code == 0, result.output
 
 
 def test_run_writes_parquet_outputs(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cli_runner
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    files_root_path: Path,
+    logger_config_path: Path,
 ):
-    toml_path = _write_config_toml(tmp_path)
+    toml_path = _write_config_toml(tmp_path, files_root_path, logger_config_path)
     monkeypatch.setenv("FINTL_CONFIG", str(toml_path))
     cli_runner.invoke(app, ["etl"])
 

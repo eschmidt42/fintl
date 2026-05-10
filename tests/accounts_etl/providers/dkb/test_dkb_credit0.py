@@ -17,24 +17,28 @@ from fintl.accounts_etl.io.files.filenames import (
 )
 from fintl.accounts_etl.providers.dkb import credit0 as credit
 
-_FIXTURE_CSV = (
-    Path(__file__).parent.parent
-    / "files"
-    / "csv_files"
-    / "DKB"
-    / "credit"
-    / "2022-03-15_to_2022-04-15_1234________5678.csv"
-)
+
+@pytest.fixture
+def csv_fname() -> str:
+    return "2022-03-15_to_2022-04-15_1234________5678.csv"
+
+
+@pytest.fixture
+def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    return files_root_path / "csv_files" / "DKB" / "credit" / csv_fname
+
+
+def test_files_exist(files_root_path: Path, csv_file: Path):
+    assert files_root_path.exists()
+    assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
     return path.stat().st_mtime
 
 
-def test_main(tmp_path: Path):
-    credit_source_dir = (
-        Path(__file__).parent.parent / "files" / "csv_files" / "DKB" / "credit"
-    )
+def test_main(tmp_path: Path, csv_file: Path):
+    credit_source_dir = csv_file.parent
     assert credit_source_dir.exists()
 
     logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
@@ -48,7 +52,7 @@ def test_main(tmp_path: Path):
 
     # paths
     raw_dir = config.get_raw_dir(credit.CASE)
-    file = Path("2022-03-15_to_2022-04-15_1234________5678.csv")
+    file = Path(csv_file.name)
     copied_file_path = raw_dir / file
 
     parsed_dir = config.get_parsed_dir(credit.CASE)
@@ -134,23 +138,23 @@ def test_main(tmp_path: Path):
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
 
 
-def test_parse_csv_file_raises_extract_transactions_exception():
+def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.credit0.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
         with pytest.raises(ExtractTransactionsException) as exc_info:
-            credit.parse_csv_file(credit.CASE, _FIXTURE_CSV)
+            credit.parse_csv_file(credit.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
-def test_parse_csv_file_raises_extract_balance_exception():
+def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
     with patch(
         "fintl.accounts_etl.providers.dkb.credit0.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
         with pytest.raises(ExtractBalanceException) as exc_info:
-            credit.parse_csv_file(credit.CASE, _FIXTURE_CSV)
+            credit.parse_csv_file(credit.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 

@@ -24,6 +24,21 @@ MOCK_AMOUNT = 1234.56
 MOCK_CURRENCY = "EUR"
 
 
+@pytest.fixture
+def png_fname() -> str:
+    return "Screenshot 2026-04-27 at 08.20.00.png"
+
+
+@pytest.fixture
+def png_file(files_root_path: Path, png_fname: str) -> Path:
+    return files_root_path / "artefacts" / "Scalable-Capital" / png_fname
+
+
+def test_files_exist(files_root_path: Path, png_file: Path):
+    assert files_root_path.exists()
+    assert png_file.exists()
+
+
 def get_time(path: Path) -> float:
     return path.stat().st_mtime
 
@@ -41,13 +56,13 @@ def mock_lm_extraction():
         yield
 
 
-def test_main(tmp_path: Path, mock_lm_extraction):
-    broker_source_dir = (
-        Path(__file__).parent.parent / "files" / "artefacts" / "Scalable-Capital"
-    )
+def test_main(
+    tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path
+):
+    broker_source_dir = png_file.parent
     assert broker_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
@@ -153,7 +168,7 @@ def test_main(tmp_path: Path, mock_lm_extraction):
 # ── Edge case / error path tests ──────────────────────────────────────────────
 
 
-def test_get_date_from_string_raises_when_name_does_not_match(tmp_path: Path):
+def test_get_date_from_string_raises_when_name_does_not_match():
     """get_date_from_string must raise ValueError for a filename that does not
     match the expected 'Screenshot YYYY-MM-DD*.png' pattern."""
     import pytest
@@ -166,7 +181,7 @@ def test_get_date_from_string_raises_when_name_does_not_match(tmp_path: Path):
         get_date_from_string("not_a_screenshot.txt")
 
 
-def test_get_lm_extraction_calls_client_create(tmp_path: Path):
+def test_get_lm_extraction_calls_client_create(tmp_path: Path, png_fname: str):
     """_get_lm_extraction must call extraction_client.create and return its result."""
     from unittest.mock import MagicMock
 
@@ -179,7 +194,7 @@ def test_get_lm_extraction_calls_client_create(tmp_path: Path):
     mock_client = MagicMock()
     mock_client.create.return_value = expected
 
-    dummy_file = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy_file = tmp_path / png_fname
     dummy_file.write_bytes(b"\x89PNG")  # minimal non-empty file
 
     result = _get_lm_extraction(dummy_file, mock_client)
@@ -189,7 +204,7 @@ def test_get_lm_extraction_calls_client_create(tmp_path: Path):
 
 
 def test_get_lm_extraction_raises_ollama_inference_error_on_retry_exhausted(
-    tmp_path: Path,
+    tmp_path: Path, png_fname: str
 ):
     """_get_lm_extraction wraps InstructorRetryException as OllamaInferenceError."""
     from unittest.mock import MagicMock
@@ -211,7 +226,7 @@ def test_get_lm_extraction_raises_ollama_inference_error_on_retry_exhausted(
     mock_client = MagicMock()
     mock_client.create.side_effect = retry_exc
 
-    dummy_file = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy_file = tmp_path / png_fname
     dummy_file.write_bytes(b"\x89PNG")
 
     with pytest.raises(
@@ -239,14 +254,14 @@ def test_check_ollama_availability_raises_on_connection_failure():
 
 
 def test_parse_new_files_skips_when_ollama_not_configured(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, png_fname: str
 ):
     """parse_new_files logs a warning and returns early when ollama_config is None."""
     import logging
 
     from fintl.accounts_etl.providers.scalable import broker20260309 as broker
 
-    dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    dummy = tmp_path / png_fname
     dummy.write_bytes(b"\x89PNG")
 
     with caplog.at_level(
@@ -533,7 +548,10 @@ def test_parse_new_files_continues_on_generic_error(
 
 
 def test_main_no_ollama_png_files_exist(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+    png_file: Path,
+    logger_config_path: Path,
 ):
     """main() completes without error when PNG files exist but ollama is not configured.
 
@@ -542,12 +560,10 @@ def test_main_no_ollama_png_files_exist(
     """
     import logging
 
-    broker_source_dir = (
-        Path(__file__).parent.parent / "files" / "artefacts" / "Scalable-Capital"
-    )
+    broker_source_dir = png_file.parent
     assert broker_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(

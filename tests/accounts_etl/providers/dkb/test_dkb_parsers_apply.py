@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from fintl.accounts_etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.accounts_etl.engine import runner
 from fintl.accounts_etl.io.files.orchestrator import get_parser_source_files
@@ -14,17 +16,25 @@ from fintl.accounts_etl.providers.dkb import (
 )
 
 
-def test_giro_parsers_apply(tmp_path: Path):
-    data_root_dir = Path(__file__).parent.parent / "files"
-    assert data_root_dir.exists()
-    csv_root_dir = data_root_dir / "csv_files"
+@pytest.fixture
+def csv_root_dir(files_root_path: Path) -> Path:
+    return files_root_path / "csv_files"
+
+
+def test_files_exist(files_root_path: Path, csv_root_dir: Path):
+    assert files_root_path.exists()
     assert csv_root_dir.exists()
+
+
+def test_giro_parsers_apply(
+    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
+):
 
     dkb_giro_source_dir = csv_root_dir / "DKB" / "kontoauszug"
 
     assert dkb_giro_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
@@ -55,17 +65,15 @@ def test_giro_parsers_apply(tmp_path: Path):
     runner.check_service_overlap(config, "dkb", "giro")
 
 
-def test_tagesgeld_parsers_apply(tmp_path: Path):
-    data_root_dir = Path(__file__).parent.parent / "files"
-    assert data_root_dir.exists()
-    csv_root_dir = data_root_dir / "csv_files"
-    assert csv_root_dir.exists()
+def test_tagesgeld_parsers_apply(
+    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
+):
 
     dkb_tagesgeld_source_dir = csv_root_dir / "DKB" / "tagesgeld"
 
     assert dkb_tagesgeld_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
@@ -94,17 +102,15 @@ def test_tagesgeld_parsers_apply(tmp_path: Path):
     runner.check_service_overlap(config, "dkb", "tagesgeld")
 
 
-def test_credit_parsers_apply(tmp_path: Path):
-    data_root_dir = Path(__file__).parent.parent / "files"
-    assert data_root_dir.exists()
-    csv_root_dir = data_root_dir / "csv_files"
-    assert csv_root_dir.exists()
+def test_credit_parsers_apply(
+    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
+):
 
     dkb_credit_source_dir = csv_root_dir / "DKB" / "credit"
 
     assert dkb_credit_source_dir.exists()
 
-    logger_path = Path(__file__).parent.parent.parent.parent / "logger-config.json"
+    logger_path = logger_config_path
     assert logger_path.exists()
 
     config = Config(
