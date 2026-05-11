@@ -7,15 +7,12 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import ValidationError
 
+from fintl.common.config import Case, Config, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.common.schemas import (
-    Case,
-    Config,
-    Logging,
     ParserSpec,
-    Provider,
     ProviderPlugin,
     ServicePlugin,
-    Sources,
 )
 
 

@@ -2,7 +2,7 @@ import polars as pl
 import pytest
 
 import fintl.etl.common.labels as fintl_labels
-from fintl.etl.common.schemas import (
+from fintl.etl.common.labels import (
     LabelCondition,
     LabelConditionOp,
     LabelRule,
@@ -506,8 +506,7 @@ def test_condition_expr_no_case_matches_returns_none():
     This covers the unreachable match-exit branch of the last case."""
     from typing import cast
 
-    from fintl.etl.common.labels import _condition_expr
-    from fintl.etl.common.schemas import LabelConditionOp
+    from fintl.etl.common.labels import LabelConditionOp, _condition_expr
 
     with pytest.raises(NotImplementedError):
         result = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")

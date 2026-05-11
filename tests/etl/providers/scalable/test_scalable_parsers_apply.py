@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from fintl.etl.common.schemas import Config, Logging, Provider, Sources
+from fintl.common.config import Config, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.engine import runner
 from fintl.etl.providers.scalable import broker0, broker20231028
 from fintl.etl.providers.scalable.files import get_parser_source_files

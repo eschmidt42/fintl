@@ -3,7 +3,8 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from fintl.etl.common.schemas import Config, Logging, Provider, Sources
+from fintl.common.config import Config, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.io.files.filenames import (
     balance_htm_name_to_json,
     balance_htm_name_to_parquet,

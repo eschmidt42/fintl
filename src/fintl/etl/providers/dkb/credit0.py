@@ -5,6 +5,7 @@ from pathlib import Path
 
 import polars as pl
 
+from fintl.common.config import Case, Config
 from fintl.etl.common.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
@@ -14,8 +15,6 @@ from fintl.etl.common.schemas import (
     HASH_COLUMNS,
     TRANSACTION_COLUMNS,
     BalanceInfo,
-    Case,
-    Config,
     DKBCreditParserEnum,
     ProviderEnum,
     ServiceEnum,

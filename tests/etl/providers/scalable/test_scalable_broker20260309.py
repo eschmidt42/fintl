@@ -4,13 +4,8 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
-from fintl.etl.common.schemas import (
-    Config,
-    Logging,
-    OllamaConfig,
-    Provider,
-    Sources,
-)
+from fintl.common.config import Config, OllamaConfig, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.io.files.filenames import (
     balance_htm_name_to_json,
     balance_htm_name_to_parquet,
@@ -370,7 +365,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     import logging
     from unittest.mock import patch
 
-    from fintl.etl.common.schemas import OllamaConfig
+    from fintl.common.config import OllamaConfig
     from fintl.etl.providers.scalable import broker20260309 as broker
 
     files = [
@@ -404,7 +399,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
     import logging
     from unittest.mock import patch
 
-    from fintl.etl.common.schemas import OllamaConfig
+    from fintl.common.config import OllamaConfig
     from fintl.etl.providers.scalable import broker20260309 as broker
 
     dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
@@ -510,7 +505,7 @@ def test_parse_new_files_continues_on_generic_error(
     import logging
     from unittest.mock import patch
 
-    from fintl.etl.common.schemas import OllamaConfig
+    from fintl.common.config import OllamaConfig
     from fintl.etl.providers.scalable import broker20260309 as broker
 
     files = [

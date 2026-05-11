@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Callable
 
-from fintl.etl.common.schemas import Case, Config
+from fintl.common.config import Case, Config
 from fintl.etl.io.files.balances import concatenate_balances_history
 from fintl.etl.io.files.detect import detect_relevant_source_files
 from fintl.etl.io.files.transactions import concatenate_transactions_history

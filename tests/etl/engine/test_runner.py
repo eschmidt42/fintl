@@ -9,13 +9,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from fintl.common.config import Case, Config, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.common.schemas import (
-    Case,
-    Config,
-    Logging,
     ParserSpec,
-    Provider,
-    Sources,
 )
 from fintl.etl.engine import runner
 

@@ -2,7 +2,8 @@ import logging
 
 import polars as pl
 
-from fintl.etl.common.schemas import Case, Config, ProviderEnum, ServiceEnum
+from fintl.common.config import Case, Config
+from fintl.etl.common.schemas import ProviderEnum, ServiceEnum
 
 logger = logging.getLogger(__name__)
 

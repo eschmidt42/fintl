@@ -4,11 +4,12 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
+from fintl.common.config import Config, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.common.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,
 )
-from fintl.etl.common.schemas import Config, Logging, Provider, Sources
 from fintl.etl.io.files.filenames import (
     balance_csv_name_to_json,
     balance_csv_name_to_parquet,

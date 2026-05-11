@@ -6,11 +6,10 @@ from pathlib import Path
 import polars as pl
 from bs4 import BeautifulSoup, element
 
+from fintl.common.config import Case, Config
 from fintl.etl.common.schemas import (
     TRANSACTION_COLUMNS,
     BalanceInfo,
-    Case,
-    Config,
     ProviderEnum,
     ScalableBrokerParserEnum,
     ServiceEnum,
