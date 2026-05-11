@@ -5,17 +5,17 @@ target_dir = "/tmp/fintl-dev"
 model = "qwen3.5:27b"
 
 [sources.dkb]
-giro      = "tests/accounts_etl/files/csv_files/DKB/kontoauszug"
-tagesgeld = "tests/accounts_etl/files/csv_files/DKB/tagesgeld"
-credit    = "tests/accounts_etl/files/csv_files/DKB/credit"
-festgeld = "tests/accounts_etl/files/csv_files/DKB/festgeld"
+giro      = "tests/files/csv_files/DKB/kontoauszug"
+tagesgeld = "tests/files/csv_files/DKB/tagesgeld"
+credit    = "tests/files/csv_files/DKB/credit"
+festgeld = "tests/files/csv_files/DKB/festgeld"
 
 [sources.postbank]
-giro = "tests/accounts_etl/files/csv_files/Postbank"
+giro = "tests/files/csv_files/Postbank"
 
 [sources.scalable]
-broker = "tests/accounts_etl/files/artefacts/Scalable-Capital"
+broker = "tests/files/artefacts/Scalable-Capital"
 
 [sources.gls]
-giro   = "tests/accounts_etl/files/csv_files/GLS/giro"
-credit = "tests/accounts_etl/files/csv_files/GLS/credit"
+giro   = "tests/files/csv_files/GLS/giro"
+credit = "tests/files/csv_files/GLS/credit"
