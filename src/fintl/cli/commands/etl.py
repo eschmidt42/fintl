@@ -13,10 +13,7 @@ from fintl.common.logging import (
 )
 from fintl.etl import process_accounts
 
-app = typer.Typer(help="Run the accounts ETL pipeline.")
 
-
-@app.command()
 def run(
     summarize_warnings: Annotated[
         bool,
@@ -39,7 +36,3 @@ def run(
             )
             if summarize_warnings:
                 print_warning_summary(buf.records, console)
-
-
-if __name__ == "__main__":
-    app()
