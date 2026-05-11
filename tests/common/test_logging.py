@@ -44,13 +44,12 @@ def test_JSONFormatter():
     assert "timestamp" in parsed_message
 
 
-def test_setup_logging_with_json():
+def test_setup_logging_with_json(logger_config_path: Path):
     # https://pytest-with-eric.com/fixtures/built-in/pytest-caplog/#Pytest-Caplog-Example
 
     logger = logging.getLogger("test")
 
-    path_file = Path(__file__)
-    config_file = path_file.parent / "logger-config.json"
+    config_file = logger_config_path
     assert config_file.exists()
     setup_logging_from_json(config_file)
 
@@ -181,13 +180,13 @@ def test_logging_path_valid_none_returns_none():
 # ── setup_logging ─────────────────────────────────────────────────────────────
 
 
-def test_setup_logging_with_config_file_calls_from_json():
+def test_setup_logging_with_config_file_calls_from_json(logger_config_path: Path):
     """setup_logging must delegate to setup_logging_from_json when config_file is set."""
     from unittest.mock import patch
 
     from fintl.common.logging import setup_logging
 
-    config_file = Path(__file__).parent / "logger-config.json"
+    config_file = logger_config_path
     log_cfg = Logging(config_file=config_file)
 
     with patch("fintl.common.logging.setup_logging_from_json") as mock_json:
@@ -221,12 +220,11 @@ def test_setup_logging_from_toml_no_queue_handler():
         setup_logging_from_toml(log_cfg)  # must not raise
 
 
-def test_setup_logging_from_json_with_queue_handler():
+def test_setup_logging_from_json_with_queue_handler(logger_config_path: Path):
     """setup_logging_from_json must start the queue_handler listener when present."""
-    from pathlib import Path
     from unittest.mock import MagicMock, patch
 
-    config_file = Path(__file__).parent / "logger-config.json"
+    config_file = logger_config_path
 
     mock_handler = MagicMock(spec=logging.handlers.QueueHandler)
     mock_handler.listener = MagicMock()
