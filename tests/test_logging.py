@@ -8,7 +8,7 @@ from pathlib import Path
 
 from rich.console import Console
 
-from fintl.logging import (
+from fintl.common.logging import (
     DependencyFilter,
     JSONFormatter,
     Logging,
@@ -185,12 +185,12 @@ def test_setup_logging_with_config_file_calls_from_json():
     """setup_logging must delegate to setup_logging_from_json when config_file is set."""
     from unittest.mock import patch
 
-    from fintl.logging import setup_logging
+    from fintl.common.logging import setup_logging
 
     config_file = Path(__file__).parent / "logger-config.json"
     log_cfg = Logging(config_file=config_file)
 
-    with patch("fintl.logging.setup_logging_from_json") as mock_json:
+    with patch("fintl.common.logging.setup_logging_from_json") as mock_json:
         setup_logging(log_cfg)
 
     mock_json.assert_called_once_with(config_file)
@@ -200,11 +200,11 @@ def test_setup_logging_without_config_file_calls_from_toml():
     """setup_logging must delegate to setup_logging_from_toml when config_file is None."""
     from unittest.mock import patch
 
-    from fintl.logging import setup_logging
+    from fintl.common.logging import setup_logging
 
     log_cfg = Logging()  # config_file defaults to None
 
-    with patch("fintl.logging.setup_logging_from_toml") as mock_toml:
+    with patch("fintl.common.logging.setup_logging_from_toml") as mock_toml:
         setup_logging(log_cfg)
 
     mock_toml.assert_called_once_with(log_cfg)
