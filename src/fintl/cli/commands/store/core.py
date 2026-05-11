@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Callable
 
 import typer
 from rich.console import Console
@@ -15,29 +14,29 @@ logger = logging.getLogger(__name__)
 console = Console()
 
 
-def confirm_wrapper(
-    yes: bool, copy: bool, op_label: str
-) -> Callable[[str, FileOperation], bool]:
+class Prompter:
+    def __init__(self, *, yes: bool, copy: bool, op_label: str, config: Config):
+        self.yes = yes
+        self.copy = copy
+        self.op_label = op_label
+        self.config = config
 
-    def confirm(prompt: str, op: FileOperation) -> bool:
-        if yes:
-            console.print(Text(f"✔ {op_label}d:", style="green", overflow="fold"))
+    def confirm(self, prompt: str, op: FileOperation) -> bool:
+
+        if self.yes:
+            console.print(Text(f"✔ {self.op_label}d:", style="green", overflow="fold"))
             console.print(f"  | {prompt}", style="green")
             return True
+
         console.print()
         action_word = "Copy" if op == FileOperation.COPYING else "Move"
         console.print(Text(prompt, style="cyan"))
-        return typer.confirm(f"  {action_word} this file?", default=(not copy))
 
-    return confirm
+        return typer.confirm(f"  {action_word} this file?", default=(not self.copy))
 
+    def choose(self, file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
 
-def choose_wrapper(
-    yes: bool, config: Config
-) -> Callable[[Path, list[ParserSpec]], ParserSpec | None]:
-
-    def choose(file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
-        if yes:
+        if self.yes:
             console.print(
                 Text(
                     f"⚠ {file.name}  matched {len(specs)} parsers — ambiguous, skipping.",
@@ -45,32 +44,37 @@ def choose_wrapper(
                 )
             )
             return None
+
         console.print()
         console.print(
             Text(
                 f"⚠ {file.name} matched multiple parsers — select one:", style="yellow"
             )
         )
+
         for i, spec in enumerate(specs, 1):
-            source_dir_for_case = config.get_source_dir_from_case(spec.case)
+            source_dir_for_case = self.config.get_source_dir_from_case(spec.case)
             console.print(
                 f"  [{i}] {spec.case.provider} / {spec.case.service} / {spec.case.parser}"
                 f"  →  {source_dir_for_case}"
             )
+
         console.print("  [0] Skip this file")
+
         while True:
             raw = typer.prompt(f"Select parser (0–{len(specs)})", default="0")
             try:
                 idx = int(raw)
             except ValueError:
                 idx = -1
+
             if idx == 0:
                 return None
+
             if 1 <= idx <= len(specs):
                 return specs[idx - 1]
-            console.print(f"  Please enter a number between 0 and {len(specs)}.")
 
-    return choose
+            console.print(f"  Please enter a number between 0 and {len(specs)}.")
 
 
 def run(
@@ -110,17 +114,15 @@ def run(
     operation, op_label = get_operation(copy)
 
     console.print(f"[bold]Scanning:[/bold] {source_dir}")
-
-    confirm = confirm_wrapper(yes, copy, op_label)
-    choose = choose_wrapper(yes, config)
+    prompter = Prompter(yes=yes, copy=copy, op_label=op_label, config=config)
 
     counts = store_files(
         source_dir,
         config,
         ALL_PARSERS,
         operation=operation,
-        confirm=confirm,
-        choose=choose,
+        confirm=prompter.confirm,
+        choose=prompter.choose,
     )
 
     display_results_to_console(op_label, counts)
@@ -150,6 +152,6 @@ def display_results_to_console(op_label: str, counts: dict[str, int]):
 
 
 def get_operation(copy: bool) -> tuple[FileOperation, str]:
-    operation = FileOperation.COPYING if copy else FileOperation.MOVING
-    op_label = "Copied" if copy else "Moved"
-    return operation, op_label
+    if copy:
+        return FileOperation.COPYING, "Copied"
+    return FileOperation.MOVING, "Moved"
