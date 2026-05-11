@@ -3,78 +3,15 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
-from rich.text import Text
 
-from fintl.common import Config, setup_logging
-from fintl.etl.common.schemas import ParserSpec
-from fintl.etl.engine.registry import ALL_PARSERS
-from fintl.etl.io.store import FileOperation, store_files
+from fintl.cli.commands.store.helper import (
+    Prompter,
+    display_results_to_console,
+    get_operation,
+)
+from fintl.common import ALL_PARSERS, Config, setup_logging, store_files
 
 logger = logging.getLogger(__name__)
-console = Console()
-
-
-class Prompter:
-    def __init__(self, *, yes: bool, copy: bool, op_label: str, config: Config):
-        self.yes = yes
-        self.copy = copy
-        self.op_label = op_label
-        self.config = config
-
-    def confirm(self, prompt: str, op: FileOperation) -> bool:
-
-        if self.yes:
-            console.print(Text(f"✔ {self.op_label}d:", style="green", overflow="fold"))
-            console.print(f"  | {prompt}", style="green")
-            return True
-
-        console.print()
-        action_word = "Copy" if op == FileOperation.COPYING else "Move"
-        console.print(Text(prompt, style="cyan"))
-
-        return typer.confirm(f"  {action_word} this file?", default=(not self.copy))
-
-    def choose(self, file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
-
-        if self.yes:
-            console.print(
-                Text(
-                    f"⚠ {file.name}  matched {len(specs)} parsers — ambiguous, skipping.",
-                    style="yellow",
-                )
-            )
-            return None
-
-        console.print()
-        console.print(
-            Text(
-                f"⚠ {file.name} matched multiple parsers — select one:", style="yellow"
-            )
-        )
-
-        for i, spec in enumerate(specs, 1):
-            source_dir_for_case = self.config.get_source_dir_from_case(spec.case)
-            console.print(
-                f"  [{i}] {spec.case.provider} / {spec.case.service} / {spec.case.parser}"
-                f"  →  {source_dir_for_case}"
-            )
-
-        console.print("  [0] Skip this file")
-
-        while True:
-            raw = typer.prompt(f"Select parser (0–{len(specs)})", default="0")
-            try:
-                idx = int(raw)
-            except ValueError:
-                idx = -1
-
-            if idx == 0:
-                return None
-
-            if 1 <= idx <= len(specs):
-                return specs[idx - 1]
-
-            console.print(f"  Please enter a number between 0 and {len(specs)}.")
 
 
 def run(
@@ -113,8 +50,11 @@ def run(
 
     operation, op_label = get_operation(copy)
 
+    console = Console()
     console.print(f"[bold]Scanning:[/bold] {source_dir}")
-    prompter = Prompter(yes=yes, copy=copy, op_label=op_label, config=config)
+    prompter = Prompter(
+        yes=yes, copy=copy, op_label=op_label, config=config, console=console
+    )
 
     counts = store_files(
         source_dir,
@@ -125,33 +65,4 @@ def run(
         choose=prompter.choose,
     )
 
-    display_results_to_console(op_label, counts)
-
-
-def display_results_to_console(op_label: str, counts: dict[str, int]):
-    console.print()
-    console.print(
-        f"[bold]Done.[/bold] "
-        f"Files matched: {counts['matched']} | "
-        f"{op_label}: {counts['copied']} | "
-        f"Skipped: {counts['skipped']} | "
-        f"Unmatched: {counts['unmatched']} | "
-        f"Ambiguous: {counts['ambiguous']}"
-    )
-
-    if counts["unmatched"] > 0:
-        console.print(
-            "[yellow]Some files were not recognised by any parser. "
-            "Check the filenames or add new parser definitions.[/yellow]"
-        )
-    if counts["ambiguous"] > 0:
-        console.print(
-            "[yellow]Some files matched multiple parsers and were skipped. "
-            "Review your parser applicability predicates.[/yellow]"
-        )
-
-
-def get_operation(copy: bool) -> tuple[FileOperation, str]:
-    if copy:
-        return FileOperation.COPYING, "Copied"
-    return FileOperation.MOVING, "Moved"
+    display_results_to_console(op_label, counts, console)
