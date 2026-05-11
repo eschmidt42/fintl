@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Callable
 
 import typer
 from rich.console import Console
@@ -14,7 +15,9 @@ logger = logging.getLogger(__name__)
 console = Console()
 
 
-def confirm_wrapper(yes: bool, copy: bool, op_label: str):
+def confirm_wrapper(
+    yes: bool, copy: bool, op_label: str
+) -> Callable[[str, FileOperation], bool]:
 
     def confirm(prompt: str, op: FileOperation) -> bool:
         if yes:
@@ -29,7 +32,9 @@ def confirm_wrapper(yes: bool, copy: bool, op_label: str):
     return confirm
 
 
-def choose_wrapper(yes: bool, config: Config):
+def choose_wrapper(
+    yes: bool, config: Config
+) -> Callable[[Path, list[ParserSpec]], ParserSpec | None]:
 
     def choose(file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
         if yes:
