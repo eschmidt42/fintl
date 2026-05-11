@@ -17,7 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Callable
 
-from fintl.common.config import Config
+from fintl.common import Config
 from fintl.etl.common.schemas import ParserSpec
 
 logger = logging.getLogger(__name__)

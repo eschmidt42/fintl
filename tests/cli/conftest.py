@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from fintl.common.config import Config, Sources
+from fintl.common import Config, Sources
 from fintl.common.logging import Logging
 
 

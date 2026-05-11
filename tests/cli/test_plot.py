@@ -7,7 +7,7 @@ import pytest
 from typer.testing import CliRunner
 
 from fintl.cli.main import app
-from fintl.common.config import Provider, Sources
+from fintl.common import Provider, Sources
 from fintl.etl.common.schemas import BALANCE_SCHEMA
 
 from .conftest import make_config

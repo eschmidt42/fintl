@@ -35,7 +35,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 
-from fintl.common.config import Case, Config
+from fintl.common import Case, Config
 from fintl.etl.common.schemas import ParserSpec
 from fintl.etl.engine.registry import ALL_PARSERS, ALL_PLUGINS
 from fintl.etl.io.files.orchestrator import (

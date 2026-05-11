@@ -5,7 +5,7 @@ import rich.logging
 import typer
 from rich.console import Console
 
-from fintl.common.config import Config
+from fintl.common import Config
 from fintl.common.logging import (
     WarningBufferHandler,
     print_warning_summary,

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import polars as pl
 
-from fintl.common.config import Case, Config
+from fintl.common import Case, Config
 from fintl.etl.common.exceptions import (
     ExtractBalanceException,
     ExtractTransactionsException,

@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from fintl.common.config import Case, Config
+from fintl.common import Case, Config
 from fintl.etl.common.schemas import (
     GLSGiroParserEnum,
     ProviderEnum,

@@ -5,7 +5,7 @@ from typing import TypedDict
 import polars as pl
 import pytest
 
-from fintl.common.config import Case, Config, OllamaConfig, Provider, Sources
+from fintl.common import Case, Config, OllamaConfig, Provider, Sources
 from fintl.common.logging import Logging
 from fintl.etl import process_accounts
 from fintl.etl.common.schemas import (

@@ -8,7 +8,7 @@ from typing import Callable
 import polars as pl
 from pydantic import BaseModel
 
-from fintl.common.config import Case, Config
+from fintl.common import Case, Config
 
 logger = logging.getLogger(__name__)
 

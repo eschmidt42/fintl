@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 import polars as pl
 import typer
 
-from fintl.common.config import Config
+from fintl.common import Config
 
 app = typer.Typer(help="Plot bank account balances.")
 

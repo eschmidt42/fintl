@@ -4,7 +4,7 @@ from pathlib import Path
 import polars as pl
 from rich.console import Console
 
-from fintl.common.config import Config
+from fintl.common import Config
 from fintl.etl.common.labels import assign_labels
 from fintl.etl.common.schemas import (
     BALANCE_COLUMNS,

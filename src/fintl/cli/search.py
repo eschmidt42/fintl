@@ -34,7 +34,7 @@ from textual.screen import ModalScreen
 from textual.validation import ValidationResult, Validator
 from textual.widgets import Collapsible, DataTable, Footer, Header, Input, Static
 
-from fintl.common.config import Config
+from fintl.common import Config
 
 WAIT_TIME = 1  # seconds
 

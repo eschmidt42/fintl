@@ -5,7 +5,7 @@ import typer
 from rich.console import Console
 from rich.text import Text
 
-from fintl.common.config import Config
+from fintl.common import Config
 from fintl.common.logging import setup_logging
 from fintl.etl.common.schemas import ParserSpec
 from fintl.etl.engine.registry import ALL_PARSERS
