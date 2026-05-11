@@ -382,7 +382,3 @@ class TableApp(App):
 def main():
     app = TableApp()
     app.run()
-
-
-if __name__ == "__main__":
-    main()

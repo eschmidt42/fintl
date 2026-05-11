@@ -8,10 +8,7 @@ import typer
 
 from fintl.common import Config
 
-app = typer.Typer(help="Plot bank account balances.")
 
-
-@app.command()
 def run(
     save: Annotated[
         Optional[pathlib.Path],
@@ -40,7 +37,3 @@ def run(
             tmp = pathlib.Path(f.name)
         chart.save(str(tmp))
         webbrowser.open(tmp.resolve().as_uri())
-
-
-if __name__ == "__main__":
-    app()

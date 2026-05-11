@@ -13,12 +13,7 @@ from fintl.etl.io.store import FileOperation, store_files
 logger = logging.getLogger(__name__)
 console = Console()
 
-app = typer.Typer(
-    help="Store downloaded bank files into the correct ETL input directories."
-)
 
-
-@app.command()
 def run(
     from_dir: Path | None = typer.Option(
         None,
@@ -131,7 +126,3 @@ def run(
             "[yellow]Some files matched multiple parsers and were skipped. "
             "Review your parser applicability predicates.[/yellow]"
         )
-
-
-if __name__ == "__main__":
-    app()
