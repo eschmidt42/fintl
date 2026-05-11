@@ -9,6 +9,7 @@ import json
 import logging
 import logging.config
 import logging.handlers
+from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
 from typing import override
@@ -312,3 +313,28 @@ def print_warning_summary(records: list[logging.LogRecord], console: Console) ->
                 border_style="red",
             )
         )
+
+
+def flush_warning_summary(enabled: bool):
+    if not enabled:
+        return
+
+    buf = logging.getHandlerByName("warning_buffer")
+
+    if isinstance(buf, WarningBufferHandler) and buf.records:
+        stdout_handler = logging.getHandlerByName("stdout")
+        console = (
+            stdout_handler.console
+            if isinstance(stdout_handler, rich.logging.RichHandler)
+            else Console()
+        )
+        if enabled:
+            print_warning_summary(buf.records, console)
+
+
+@contextmanager
+def warning_summary_scope(enabled: bool):
+    try:
+        yield
+    finally:
+        flush_warning_summary(enabled)
