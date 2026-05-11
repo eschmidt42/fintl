@@ -1,7 +1,6 @@
 import typer
 
-from fintl.cli.commands import run_etl, run_plot, run_search
-from fintl.cli.commands.store import run as store
+from fintl.cli.commands import run_etl, run_plot, run_search, run_store
 
 app = typer.Typer()
 
@@ -10,7 +9,7 @@ app.command(name="plot", help="Plot bank account balances.")(run_plot)
 app.command(
     name="store",
     help="Store downloaded bank files into the correct ETL input directories.",
-)(store)
+)(run_store)
 app.command(name="search", help="Interactively search bank transactions.")(run_search)
 
 
