@@ -9,7 +9,7 @@
     },
     "filters": {
       "third_party": {
-        "()": "fintl.fine_logging.DependencyFilter",
+        "()": "fintl.common.logging.DependencyFilter",
         "param": 20
       }
     },

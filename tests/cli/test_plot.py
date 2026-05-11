@@ -6,8 +6,8 @@ import polars as pl
 import pytest
 from typer.testing import CliRunner
 
-from fintl.accounts_etl.common.schemas import BALANCE_SCHEMA, Provider, Sources
 from fintl.cli.main import app
+from fintl.etl.common.schemas import BALANCE_SCHEMA, Provider, Sources
 
 from .conftest import make_config
 

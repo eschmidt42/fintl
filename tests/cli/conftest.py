@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from fintl.accounts_etl.common.schemas import Config, Logging, Sources
+from fintl.etl.common.schemas import Config, Logging, Sources
 
 
 @pytest.fixture

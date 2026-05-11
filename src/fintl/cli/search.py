@@ -34,7 +34,7 @@ from textual.screen import ModalScreen
 from textual.validation import ValidationResult, Validator
 from textual.widgets import Collapsible, DataTable, Footer, Header, Input, Static
 
-from fintl.accounts_etl.common.schemas import Config
+from fintl.etl.common.schemas import Config
 
 WAIT_TIME = 1  # seconds
 

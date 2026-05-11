@@ -5,13 +5,13 @@ import rich.logging
 import typer
 from rich.console import Console
 
-from fintl.accounts_etl import process_accounts
-from fintl.accounts_etl.common.schemas import Config
-from fintl.fine_logging import (
+from fintl.common.logging import (
     WarningBufferHandler,
     print_warning_summary,
     setup_logging,
 )
+from fintl.etl import process_accounts
+from fintl.etl.common.schemas import Config
 
 app = typer.Typer(help="Run the accounts ETL pipeline.")
 

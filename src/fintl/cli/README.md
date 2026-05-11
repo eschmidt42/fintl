@@ -19,7 +19,7 @@ or directly from the repository with `uv`:
 uv run fintl --help
 ```
 
-The `etl`, `store`, `search`, and `plot` commands read from the directory configured by `fintl.accounts_etl.schemas.Config`, especially `Config.target_dir`.
+The `etl`, `store`, `search`, and `plot` commands read from the directory configured by `fintl.etl.schemas.Config`, especially `Config.target_dir`.
 
 ## `fintl.toml`
 
@@ -272,7 +272,7 @@ account type, e.g. a new CSV layout that DKB started exporting in 2025.
    the relevant `ServicePlugin`:
 
    ```python
-   from fintl.accounts_etl.dkb import giro202501
+   from fintl.etl.dkb import giro202501
 
    GIRO = ServicePlugin(
        name="giro",
@@ -360,8 +360,8 @@ entry, e.g. adding a `depot` service to Postbank.
 
    ```python
    # src/fintl/accounts_etl/n26/plugin.py
-   from fintl.accounts_etl.n26 import giro0
-   from fintl.accounts_etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
+   from fintl.etl.n26 import giro0
+   from fintl.etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 
    GIRO = ServicePlugin(
        name="giro",
@@ -382,7 +382,7 @@ entry, e.g. adding a `depot` service to Postbank.
    `src/fintl/accounts_etl/registry.py`:
 
    ```python
-   from fintl.accounts_etl.n26.plugin import PLUGIN as N26_PLUGIN
+   from fintl.etl.n26.plugin import PLUGIN as N26_PLUGIN
 
    ALL_PLUGINS: list[ProviderPlugin] = [
        DKB_PLUGIN,
@@ -405,7 +405,7 @@ by the Scalable broker parsers), pass a custom `source_files_getter` to
 `ParserSpec` inside the provider's `plugin.py`:
 
 ```python
-from fintl.accounts_etl.scalable.files import (
+from fintl.etl.scalable.files import (
     get_parser_source_files as scalable_get_source_files,
 )
 

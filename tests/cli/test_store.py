@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 import pytest
 from typer.testing import CliRunner
 
-from fintl.accounts_etl.common.schemas import Case, ParserSpec, Provider, Sources
 from fintl.cli.main import app
+from fintl.etl.common.schemas import Case, ParserSpec, Provider, Sources
 
 from .conftest import make_config
 

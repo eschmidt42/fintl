@@ -5,10 +5,10 @@ import typer
 from rich.console import Console
 from rich.text import Text
 
-from fintl.accounts_etl.common.schemas import Config, ParserSpec
-from fintl.accounts_etl.engine.registry import ALL_PARSERS
-from fintl.accounts_etl.io.store import FileOperation, store_files
-from fintl.fine_logging import setup_logging
+from fintl.common.logging import setup_logging
+from fintl.etl.common.schemas import Config, ParserSpec
+from fintl.etl.engine.registry import ALL_PARSERS
+from fintl.etl.io.store import FileOperation, store_files
 
 logger = logging.getLogger(__name__)
 console = Console()
