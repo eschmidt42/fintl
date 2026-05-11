@@ -1,13 +1,13 @@
 import typer
 
-from fintl.cli.commands.etl import run as etl
+from fintl.cli.commands import run_etl
 from fintl.cli.commands.plot import run as plot
 from fintl.cli.commands.search import main as search_main
 from fintl.cli.commands.store import run as store
 
 app = typer.Typer()
 
-app.command(name="etl", help="Run the accounts ETL pipeline.")(etl)
+app.command(name="etl", help="Run the accounts ETL pipeline.")(run_etl)
 app.command(name="plot", help="Plot bank account balances.")(plot)
 app.command(
     name="store",
