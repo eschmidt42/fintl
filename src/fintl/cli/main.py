@@ -1,6 +1,7 @@
 import typer
 
 from fintl.cli.commands.etl import run as etl
+from fintl.cli.commands.search import main as search_main
 from fintl.cli.commands.store import run as store
 from fintl.cli.plot import run as plot
 
@@ -17,8 +18,6 @@ app.command(
 @app.command()
 def search():
     """Interactively search bank transactions."""
-
-    from fintl.cli.search import main as search_main
 
     search_main()
 
