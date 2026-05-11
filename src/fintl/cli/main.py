@@ -1,6 +1,6 @@
 import typer
 
-from fintl.cli.etl import run as etl
+from fintl.cli.commands.etl import run as etl
 from fintl.cli.plot import run as plot
 from fintl.cli.store import run as store
 
