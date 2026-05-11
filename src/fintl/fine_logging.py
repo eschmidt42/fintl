@@ -20,7 +20,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from fintl.common.path_utils import normalize_path, sanity_check_path
+from fintl.common.paths import normalize_path, sanity_check_path
 
 LOG_RECORD_BUILTIN_ATTRS = {
     "args",

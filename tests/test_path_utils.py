@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from fintl.common.path_utils import normalize_path, sanity_check_path
+from fintl.common.paths import normalize_path, sanity_check_path
 
 
 def test_normalize_path(tmp_path: Path):

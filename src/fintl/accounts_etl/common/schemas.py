@@ -16,7 +16,7 @@ from pydantic_settings import (
     TomlConfigSettingsSource,
 )
 
-from fintl.common.path_utils import normalize_path, sanity_check_path
+from fintl.common.paths import normalize_path, sanity_check_path
 from fintl.fine_logging import Logging
 
 logger = logging.getLogger(__name__)
