@@ -102,8 +102,7 @@ def run(
     config = Config()
     setup_logging(config.logging)
 
-    operation = FileOperation.COPYING if copy else FileOperation.MOVING
-    op_label = "Copied" if copy else "Moved"
+    operation, op_label = get_operation(copy)
 
     console.print(f"[bold]Scanning:[/bold] {source_dir}")
 
@@ -119,6 +118,10 @@ def run(
         choose=choose,
     )
 
+    display_results_to_console(op_label, counts)
+
+
+def display_results_to_console(op_label: str, counts: dict[str, int]):
     console.print()
     console.print(
         f"[bold]Done.[/bold] "
@@ -139,3 +142,9 @@ def run(
             "[yellow]Some files matched multiple parsers and were skipped. "
             "Review your parser applicability predicates.[/yellow]"
         )
+
+
+def get_operation(copy: bool) -> tuple[FileOperation, str]:
+    operation = FileOperation.COPYING if copy else FileOperation.MOVING
+    op_label = "Copied" if copy else "Moved"
+    return operation, op_label
