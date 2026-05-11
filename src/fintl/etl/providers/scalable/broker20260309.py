@@ -9,11 +9,9 @@ import polars as pl
 from instructor.processing.multimodal import Image
 from pydantic import BaseModel
 
+from fintl.common import Case, Config, OllamaConfig
 from fintl.etl.common.schemas import (
     BalanceInfo,
-    Case,
-    Config,
-    OllamaConfig,
     ProviderEnum,
     ScalableBrokerParserEnum,
     ServiceEnum,

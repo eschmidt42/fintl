@@ -4,12 +4,20 @@ Reads data/all-transactions.xlsx/parquet and creates data/all-transactions-label
 """
 
 import logging
+from enum import StrEnum
+from typing import Literal
 
 import polars as pl
-
-from fintl.etl.common.schemas import LabelConditionOp, LabelRule
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
+
+class LabelConditionOp(StrEnum):
+    contains = "contains"
+    not_contains = "not_contains"
+    equals = "equals"
+    not_equals = "not_equals"
 
 
 def _condition_expr(col: str, op: LabelConditionOp, value: str) -> pl.Expr:
@@ -34,6 +42,17 @@ def _condition_expr(col: str, op: LabelConditionOp, value: str) -> pl.Expr:
             return pl.col(col) != value
         case _:
             raise NotImplementedError(f"{op=} is not implemented in this function.")
+
+
+class LabelCondition(BaseModel):
+    column: Literal["source", "recipient", "description", "provider"]
+    op: LabelConditionOp
+    value: str
+
+
+class LabelRule(BaseModel):
+    label: str
+    conditions: list[LabelCondition]
 
 
 def build_label_expr(rules: list[LabelRule]) -> pl.Expr:

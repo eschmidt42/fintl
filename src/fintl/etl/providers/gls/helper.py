@@ -5,12 +5,12 @@ from pathlib import Path
 
 import polars as pl
 
+from fintl.common import Case
 from fintl.etl.common.number_conversion import german_string_numbers_to_floats
 from fintl.etl.common.schemas import (
     HASH_COLUMNS,
     TRANSACTION_COLUMNS,
     BalanceInfo,
-    Case,
 )
 from fintl.etl.common.transactions import (
     hash_transactions,

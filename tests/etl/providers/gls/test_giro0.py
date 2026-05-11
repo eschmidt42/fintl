@@ -5,15 +5,13 @@ import polars as pl
 import pytest
 from inline_snapshot import snapshot
 
+from fintl.common import Config, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.common.schemas import (
     BalanceInfo,
-    Config,
     GLSGiroParserEnum,
-    Logging,
-    Provider,
     ProviderEnum,
     ServiceEnum,
-    Sources,
 )
 from fintl.etl.io.files.filenames import (
     balance_csv_name_to_json,

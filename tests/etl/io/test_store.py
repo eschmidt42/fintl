@@ -8,13 +8,10 @@ from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock
 
+from fintl.common import Case, Config, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.common.schemas import (
-    Case,
-    Config,
-    Logging,
     ParserSpec,
-    Provider,
-    Sources,
 )
 from fintl.etl.io.store import (
     FileOperation,

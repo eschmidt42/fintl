@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from fintl.etl.common.schemas import OllamaConfig
+from fintl.common import OllamaConfig
 from fintl.etl.providers.scalable import broker20260309 as broker
 
 

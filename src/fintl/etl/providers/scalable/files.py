@@ -4,7 +4,8 @@ from typing import Callable
 
 import polars as pl
 
-from fintl.etl.common.schemas import BalanceInfo, Case, Config
+from fintl.common import Case, Config
+from fintl.etl.common.schemas import BalanceInfo
 from fintl.etl.io.files.detect import (
     detect_present_parsed_files,
 )

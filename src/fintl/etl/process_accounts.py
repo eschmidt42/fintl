@@ -4,11 +4,11 @@ from pathlib import Path
 import polars as pl
 from rich.console import Console
 
+from fintl.common import Config
 from fintl.etl.common.labels import assign_labels
 from fintl.etl.common.schemas import (
     BALANCE_COLUMNS,
     TRANSACTION_COLUMNS,
-    Config,
 )
 from fintl.etl.engine import runner
 from fintl.etl.io.parquets import concatenate_parquets
