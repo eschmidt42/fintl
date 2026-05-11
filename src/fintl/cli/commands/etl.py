@@ -2,11 +2,7 @@ from typing import Annotated
 
 import typer
 
-from fintl.common import Config
-from fintl.common.logging import (
-    setup_logging,
-    warning_summary_scope,
-)
+from fintl.common import Config, setup_logging, warning_summary_scope
 from fintl.etl import process_accounts
 
 
