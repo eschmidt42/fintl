@@ -2,29 +2,12 @@ import pathlib
 import tempfile
 import webbrowser
 from pathlib import Path
-from typing import Annotated, Optional
 
 import altair as alt
 import polars as pl
 import typer
 
 from fintl.common import Config
-
-
-def run(
-    save: Annotated[
-        Optional[pathlib.Path],
-        typer.Option("--save", help="Save chart as HTML to this path"),
-    ] = None,
-):
-    """Plot bank account balances."""
-    config = Config()
-
-    balances = load_data(config)
-
-    chart = draw_plot(balances)
-
-    display_plot(save, chart)
 
 
 def display_plot(save: Path | None, chart: alt.Chart):

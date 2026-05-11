@@ -44,9 +44,9 @@ def test_run_save_writes_html(
     logger_config_path: Path,
 ):
     config = _plot_config(tmp_path, logger_config_path)
-    monkeypatch.setattr("fintl.cli.commands.plot.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
     mock_open = MagicMock()
-    monkeypatch.setattr("fintl.cli.commands.plot.webbrowser.open", mock_open)
+    monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
 
     save_path = tmp_path / "chart.html"
     result = cli_runner.invoke(app, ["plot", "--save", str(save_path)])
@@ -63,9 +63,9 @@ def test_run_without_save_opens_browser(
     logger_config_path: Path,
 ):
     config = _plot_config(tmp_path, logger_config_path)
-    monkeypatch.setattr("fintl.cli.commands.plot.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
     mock_open = MagicMock()
-    monkeypatch.setattr("fintl.cli.commands.plot.webbrowser.open", mock_open)
+    monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
 
     result = cli_runner.invoke(app, ["plot"])
 
