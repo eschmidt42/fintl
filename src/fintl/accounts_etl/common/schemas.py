@@ -17,7 +17,7 @@ from pydantic_settings import (
 )
 
 from fintl.common.paths import normalize_path, sanity_check_path
-from fintl.fine_logging import Logging
+from fintl.logging import Logging
 
 logger = logging.getLogger(__name__)
 
