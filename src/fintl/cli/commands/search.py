@@ -379,6 +379,6 @@ class TableApp(App):
         self.apply_filter()
 
 
-def main():
+def run():
     app = TableApp()
     app.run()
