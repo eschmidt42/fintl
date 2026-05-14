@@ -73,6 +73,9 @@ testpaths = ["tests"]
 [tool.inline-snapshot]
 format-command="ruff check --fix-only --stdin-filename {filename} | ruff format --stdin-filename {filename}"
 
+[tool.ruff]
+line-length = 100
+
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/linter/#rule-selection
-select = ["I", "F"]
+select = ["I", "F", "E"]

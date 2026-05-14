@@ -96,7 +96,7 @@ def extract_transactions(
     )
     is_empty_1st_line = len(lines[0].strip()) == 0
     logger.debug(
-        f"{file_path=} ({is_empty_1st_line=}) has {ix_start_transactions=} and {transactions_header=}"
+        f"{file_path=} ({is_empty_1st_line=}) has {ix_start_transactions=} and {transactions_header=}"  # noqa: E501
     )
 
     schema = {
@@ -115,15 +115,11 @@ def extract_transactions(
     }
     separator = detect_separator(lines)
     if separator is None:
-        raise ValueError(
-            f"{separator=} but it is not allowed to be None in the following."
-        )
+        raise ValueError(f"{separator=} but it is not allowed to be None in the following.")
 
     transactions = pl.read_csv(
         file_path,
-        skip_rows=ix_start_transactions - 1
-        if is_empty_1st_line
-        else ix_start_transactions,
+        skip_rows=ix_start_transactions - 1 if is_empty_1st_line else ix_start_transactions,
         separator=separator,
         truncate_ragged_lines=True,
         encoding=encoding,
@@ -234,18 +230,14 @@ def main(config: Config):
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

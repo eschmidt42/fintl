@@ -72,9 +72,7 @@ def extract_transactions(
     ix_start_transactions, transactions_header = find_line_with_pattern(
         lines, pattern=transaction_pattern
     )
-    logger.debug(
-        f"{file_path=} has {ix_start_transactions=} and {transactions_header=}"
-    )
+    logger.debug(f"{file_path=} has {ix_start_transactions=} and {transactions_header=}")
 
     schema = {
         "Umsatz abgerechnet und nicht im Saldo enthalten": pl.Utf8,
@@ -127,9 +125,7 @@ def extract_transactions(
 
 def extract_balance(case: Case, file_path: Path, lines: list[str]) -> BalanceInfo:
     balance_info_pattern: str = '^("?Saldo:)'  # start of balance info
-    ix_start_balance, balance_line = find_line_with_pattern(
-        lines, pattern=balance_info_pattern
-    )
+    ix_start_balance, balance_line = find_line_with_pattern(lines, pattern=balance_info_pattern)
 
     logger.debug(f"{file_path=} has {ix_start_balance=} and {balance_line=}")
 
@@ -214,18 +210,14 @@ def main(config: Config):
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

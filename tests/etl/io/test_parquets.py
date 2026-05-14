@@ -43,9 +43,7 @@ def test_concatenate_parquets_warns_on_empty_parquet(
     _create_empty_transactions_parquet(config, case)
 
     with caplog.at_level(logging.WARNING, logger="fintl.etl.io.parquets"):
-        result = concatenate_parquets(
-            "transactions.parquet", config, [case], ["amount"]
-        )
+        result = concatenate_parquets("transactions.parquet", config, [case], ["amount"])
 
     assert result is None
     assert any("n_rows=0" in m for m in caplog.messages)
@@ -61,9 +59,7 @@ def test_concatenate_parquets_no_warning_on_empty_scalable_broker(
     _create_empty_transactions_parquet(config, case)
 
     with caplog.at_level(logging.WARNING, logger="fintl.etl.io.parquets"):
-        result = concatenate_parquets(
-            "transactions.parquet", config, [case], ["amount"]
-        )
+        result = concatenate_parquets("transactions.parquet", config, [case], ["amount"])
 
     assert result is None
     assert not any("n_rows=0" in m for m in caplog.messages)

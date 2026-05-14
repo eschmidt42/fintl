@@ -66,9 +66,7 @@ def concatenate_balances_history(
         parsed_dir: Directory containing newly parsed balance files.
         new_files_to_parse: List of paths to new balance files to process.
     """
-    balances, n_new_lines = concatenate_new_balances(
-        parser_dir, parsed_dir, new_files_to_parse
-    )
+    balances, n_new_lines = concatenate_new_balances(parser_dir, parsed_dir, new_files_to_parse)
     balances = balances.sort(TransactionColumnsEnum.date.value, descending=False)
 
     balances_parquet_path = parser_dir / "balances.parquet"
@@ -80,9 +78,7 @@ def concatenate_balances_history(
     balances.write_excel(excel_path)
 
 
-def store_balance(
-    parsed_dir: Path, file_path: Path, balance: BalanceInfo | None
-) -> None:
+def store_balance(parsed_dir: Path, file_path: Path, balance: BalanceInfo | None) -> None:
     """Writes a balance record to JSON and Parquet formats.
 
     Args:

@@ -76,13 +76,9 @@ def extract_transactions(
     ix_start_transactions, transactions_header = find_line_with_pattern(
         lines, pattern=transaction_pattern
     )
-    ix_end_transactions, _ = find_line_with_pattern(
-        lines, pattern=transaction_end_pattern
-    )
+    ix_end_transactions, _ = find_line_with_pattern(lines, pattern=transaction_end_pattern)
     n_rows = ix_end_transactions - ix_start_transactions - 1
-    logger.debug(
-        f"{file_path=} has {ix_start_transactions=} and {transactions_header=}"
-    )
+    logger.debug(f"{file_path=} has {ix_start_transactions=} and {transactions_header=}")
 
     schema = {
         "Buchungstag": pl.Utf8,
@@ -118,9 +114,7 @@ def extract_transactions(
     )
 
     transactions = transactions.with_columns(
-        pl.col("Betrag").map_elements(
-            german_string_numbers_to_floats, return_dtype=pl.Float64
-        ),
+        pl.col("Betrag").map_elements(german_string_numbers_to_floats, return_dtype=pl.Float64),
     )
     transactions = transactions.with_columns(
         amount=pl.col("Betrag"),
@@ -153,9 +147,7 @@ def extract_balance(
     lines: list[str],
 ) -> BalanceInfo:
     balance_info_pattern: str = "^(Letzter Kontostand)"  # start of balance info
-    ix_start_balance, balance_line = find_line_with_pattern(
-        lines, pattern=balance_info_pattern
-    )
+    ix_start_balance, balance_line = find_line_with_pattern(lines, pattern=balance_info_pattern)
 
     logger.debug(f"{file_path=} has {ix_start_balance=} and {balance_line=}")
 
@@ -243,18 +235,14 @@ def main(config: Config):
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

@@ -27,9 +27,7 @@ def test_files_exist(files_root_path: Path, csv_root_dir: Path):
     assert csv_root_dir.exists()
 
 
-def test_giro_parsers_apply(
-    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
-):
+def test_giro_parsers_apply(tmp_path: Path, csv_root_dir: Path, logger_config_path: Path):
 
     dkb_giro_source_dir = csv_root_dir / "DKB" / "kontoauszug"
 
@@ -48,9 +46,7 @@ def test_giro_parsers_apply(
         logging=Logging(config_file=logger_path),
     )
 
-    source_files_giro0 = get_parser_source_files(
-        giro0.CASE, config, giro0.check_if_parser_applies
-    )
+    source_files_giro0 = get_parser_source_files(giro0.CASE, config, giro0.check_if_parser_applies)
     assert len(source_files_giro0) == 1
 
     source_files_giro202307 = get_parser_source_files(
@@ -66,9 +62,7 @@ def test_giro_parsers_apply(
     runner.check_service_overlap(config, "dkb", "giro")
 
 
-def test_tagesgeld_parsers_apply(
-    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
-):
+def test_tagesgeld_parsers_apply(tmp_path: Path, csv_root_dir: Path, logger_config_path: Path):
 
     dkb_tagesgeld_source_dir = csv_root_dir / "DKB" / "tagesgeld"
 
@@ -103,9 +97,7 @@ def test_tagesgeld_parsers_apply(
     runner.check_service_overlap(config, "dkb", "tagesgeld")
 
 
-def test_credit_parsers_apply(
-    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
-):
+def test_credit_parsers_apply(tmp_path: Path, csv_root_dir: Path, logger_config_path: Path):
 
     dkb_credit_source_dir = csv_root_dir / "DKB" / "credit"
 

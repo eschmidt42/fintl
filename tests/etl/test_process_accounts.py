@@ -260,9 +260,7 @@ def test_scalable_broker_only(
             file=str(file_path),
         )
 
-    monkeypatch.setattr(
-        broker20260309, "_check_ollama_availability", lambda *a, **kw: None
-    )
+    monkeypatch.setattr(broker20260309, "_check_ollama_availability", lambda *a, **kw: None)
     monkeypatch.setattr(broker20260309, "_check_model_available", lambda *a, **kw: None)
     monkeypatch.setattr(broker20260309, "extract_balance", _fake_extract_balance)
     scalable_src = tmp_path / "scalable_src"
@@ -272,9 +270,7 @@ def test_scalable_broker_only(
 
     out_dir = tmp_path / "out"
     out_dir.mkdir()
-    config = _config(
-        out_dir, Sources(scalable=Provider(broker=scalable_src)), logger_config_path
-    )
+    config = _config(out_dir, Sources(scalable=Provider(broker=scalable_src)), logger_config_path)
     config = config.model_copy(update={"ollama": OllamaConfig(model="fake-model")})
     process_accounts.main(config)
 
@@ -380,9 +376,7 @@ def test_partial_giro_file_subset(
 
     out_dir = tmp_path / "out"
     out_dir.mkdir()
-    config = _config(
-        out_dir, Sources(dkb=Provider(giro=giro_source)), logger_config_path
-    )
+    config = _config(out_dir, Sources(dkb=Provider(giro=giro_source)), logger_config_path)
     process_accounts.main(config)
 
     tx_path = config.target_dir / "all-transactions.parquet"
@@ -395,9 +389,7 @@ def test_partial_giro_file_subset(
 
 def test_mixed_dkb_giro_versions(tmp_path: Path, logger_config_path: Path, dirs: Dirs):
     """Full DKB giro dir (4 files, 3 parser versions): all versions appear, no duplicate hashes."""
-    config = _config(
-        tmp_path, Sources(dkb=Provider(giro=dirs["dkb_giro"])), logger_config_path
-    )
+    config = _config(tmp_path, Sources(dkb=Provider(giro=dirs["dkb_giro"])), logger_config_path)
     process_accounts.main(config)
 
     tx_path = config.target_dir / "all-transactions.parquet"
@@ -459,9 +451,7 @@ def test_concatenate_all_providers_balances_none(
             return None
         return dummy_transactions
 
-    with patch.object(
-        process_accounts, "concatenate_parquets", side_effect=_fake_concat
-    ):
+    with patch.object(process_accounts, "concatenate_parquets", side_effect=_fake_concat):
         process_accounts.concatenate_all_providers(config)
 
     assert not (config.target_dir / "all-balances.parquet").exists()

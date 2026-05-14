@@ -52,9 +52,7 @@ def run(
 
     console = Console()
     console.print(f"[bold]Scanning:[/bold] {source_dir}")
-    prompter = Prompter(
-        yes=yes, copy=copy, op_label=op_label, config=config, console=console
-    )
+    prompter = Prompter(yes=yes, copy=copy, op_label=op_label, config=config, console=console)
 
     counts = store_files(
         source_dir,

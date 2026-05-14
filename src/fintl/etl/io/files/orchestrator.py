@@ -56,7 +56,5 @@ def get_parser_source_files(
         A list of paths to relevant source files.
     """
     source_dir = config.get_source_dir(case.provider, case.service)
-    relevant_source_files = detect_relevant_source_files(
-        source_dir, check_if_parser_applies
-    )
+    relevant_source_files = detect_relevant_source_files(source_dir, check_if_parser_applies)
     return relevant_source_files

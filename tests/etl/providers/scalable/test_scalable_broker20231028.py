@@ -54,9 +54,7 @@ def test_main(tmp_path: Path, html_file: Path, logger_config_path: Path):
     parsed_dir = config.get_parsed_dir(broker.CASE)
     path_balance_json_single = parsed_dir / balance_htm_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_htm_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_htm_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(broker.CASE)
@@ -154,9 +152,7 @@ def test_check_if_parser_applies_date_none_raises(tmp_path: Path, html_fname: st
             broker.check_if_parser_applies(file_path)
 
 
-def test_extract_balance_raises_when_product_list_item_missing(
-    tmp_path: Path, html_fname: str
-):
+def test_extract_balance_raises_when_product_list_item_missing(tmp_path: Path, html_fname: str):
     """extract_balance must raise ValueError when product-list-item div is absent."""
     import pytest
 

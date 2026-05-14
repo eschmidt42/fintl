@@ -86,18 +86,12 @@ def test_main(config: Config):
     copied_file_paths = [raw_dir / f for f in files]
 
     parsed_dir = config.get_parsed_dir(giro.CASE)
-    paths_balance_json_single = [
-        parsed_dir / balance_csv_name_to_json(f) for f in files
-    ]
-    paths_balance_parquet_single = [
-        parsed_dir / balance_csv_name_to_parquet(f) for f in files
-    ]
+    paths_balance_json_single = [parsed_dir / balance_csv_name_to_json(f) for f in files]
+    paths_balance_parquet_single = [parsed_dir / balance_csv_name_to_parquet(f) for f in files]
     paths_transactions_parquet_single = [
         parsed_dir / transaction_csv_name_to_parquet(f) for f in files
     ]
-    paths_transactions_xlsx_single = [
-        parsed_dir / transaction_csv_name_to_xlsx(f) for f in files
-    ]
+    paths_transactions_xlsx_single = [parsed_dir / transaction_csv_name_to_xlsx(f) for f in files]
 
     parser_dir = config.get_parser_dir(giro.CASE)
     path_balances_xlsx_parser = parser_dir / "balances.xlsx"
@@ -141,9 +135,7 @@ def test_main(config: Config):
     ts_raw = [get_time(f) for f in copied_file_paths]
     ts_balance_json_single = [get_time(f) for f in paths_balance_json_single]
     ts_balance_parquet_single = [get_time(f) for f in paths_balance_parquet_single]
-    ts_transactions_parquet_single = [
-        get_time(f) for f in paths_transactions_parquet_single
-    ]
+    ts_transactions_parquet_single = [get_time(f) for f in paths_transactions_parquet_single]
     ts_transactions_xlsx_single = [get_time(f) for f in paths_transactions_xlsx_single]
 
     n_balances = len(pl.read_parquet(path_balances_parquet_parser))
@@ -273,14 +265,14 @@ def test_extract_transactions_invalid_date(tmp_path: Path):
 "11.22.23";"";"Vorgemerkt";"ISSUER";"AMZN";"2023-12-09T01:23 VISA";"Ausgang";"DExxxxxxxxxxxxx";"12,34";"";"";"1234567"
 "22.12.23";"";"Vorgemerkt";"ISSUER";"YOURFAVSUPERMARKET";"2023-12-12T34:56 VISA";"Ausgang";"DExxxxxxxxxxxxx";"-11,77";"";"";"1234567"
 
-""".strip()
+""".strip()  # noqa: E501
     )
     lines = file_path.read_text().splitlines()
     with pytest.raises(pl.exceptions.InvalidOperationError) as excinfo:
         extract_transactions(CASE, file_path, lines, "utf-8")
 
     assert (
-        "conversion from `str` to `date` failed in column 'Buchungsdatum' for 1 out of 1 values: [\"11.22.23\"]"
+        "conversion from `str` to `date` failed in column 'Buchungsdatum' for 1 out of 1 values: [\"11.22.23\"]"  # noqa: E501
         in str(excinfo.value)
     )
 

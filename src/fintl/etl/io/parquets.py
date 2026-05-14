@@ -32,7 +32,7 @@ def concatenate_parquets(
 
         if not path.exists():
             logger.warning(
-                f"{path=} does not exist for {case.provider} / {case.service} / {case.parser}, skipping."
+                f"{path=} does not exist for {case.provider} / {case.service} / {case.parser}, skipping."  # noqa: E501
             )
             continue
 
@@ -40,13 +40,12 @@ def concatenate_parquets(
         n_rows = len(tmp)
         is_transactions = fname == "transactions.parquet"
         is_scalable_broker = (
-            case.provider == ProviderEnum.scalable
-            and case.service == ServiceEnum.broker
+            case.provider == ProviderEnum.scalable and case.service == ServiceEnum.broker
         )
         if n_rows == 0:
             if not (is_transactions and is_scalable_broker):
                 logger.warning(
-                    f"{n_rows=} for {case.provider} / {case.service} / {case.parser}, skipping {fname}."
+                    f"{n_rows=} for {case.provider} / {case.service} / {case.parser}, skipping {fname}."  # noqa: E501
                 )
             continue
         else:

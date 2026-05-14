@@ -59,9 +59,7 @@ def test_main(tmp_path: Path, csv_file: Path, csv_fname: str, logger_config_path
     parsed_dir = config.get_parsed_dir(tagesgeld.CASE)
     path_balance_json_single = parsed_dir / balance_csv_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_csv_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_csv_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(tagesgeld.CASE)
@@ -146,7 +144,7 @@ def test_extract_transactions_returns_empty_dataframe_when_no_data_rows(tmp_path
 
     # The header pattern is '^("?Buchungstag";"Wertstellung")'
     lines = [
-        '"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Begünstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"\n',
+        '"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Begünstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"\n',  # noqa: E501
     ]
     file_path = tmp_path / "empty.csv"
     file_path.write_text("".join(lines))

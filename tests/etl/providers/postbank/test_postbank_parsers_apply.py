@@ -44,9 +44,7 @@ def test_giro_parsers_apply(tmp_path: Path, csv_file: Path, logger_config_path: 
         logging=Logging(config_file=logger_path),
     )
 
-    source_files_giro0 = get_parser_source_files(
-        giro0.CASE, config, giro0.check_if_parser_applies
-    )
+    source_files_giro0 = get_parser_source_files(giro0.CASE, config, giro0.check_if_parser_applies)
     assert len(source_files_giro0) == 1
 
     source_files_giro202305 = get_parser_source_files(

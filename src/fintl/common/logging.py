@@ -101,9 +101,7 @@ class JSONFormatter(logging.Formatter):
         """
         always_fields = {
             "message": record.getMessage(),
-            "timestamp": dt.datetime.fromtimestamp(
-                record.created, tz=dt.timezone.utc
-            ).isoformat(),
+            "timestamp": dt.datetime.fromtimestamp(record.created, tz=dt.timezone.utc).isoformat(),
         }
         if record.exc_info is not None:
             always_fields["exc_info"] = self.formatException(record.exc_info)
@@ -210,9 +208,7 @@ def setup_logging_from_json(config_file: Path):
     logging.config.dictConfig(config)
     queue_handler = logging.getHandlerByName("queue_handler")
 
-    if queue_handler is not None and isinstance(
-        queue_handler, logging.handlers.QueueHandler
-    ):
+    if queue_handler is not None and isinstance(queue_handler, logging.handlers.QueueHandler):
         queue_handler.listener.start()  # type: ignore
         atexit.register(queue_handler.listener.stop)  # type: ignore
 
@@ -353,9 +349,7 @@ def setup_logging_from_toml(log_config: Logging):
     logging.config.dictConfig(config_dict)
     queue_handler = logging.getHandlerByName("queue_handler")
 
-    if queue_handler is not None and isinstance(
-        queue_handler, logging.handlers.QueueHandler
-    ):
+    if queue_handler is not None and isinstance(queue_handler, logging.handlers.QueueHandler):
         queue_handler.listener.start()  # type: ignore
         atexit.register(queue_handler.listener.stop)  # type: ignore
 
@@ -372,9 +366,7 @@ def setup_logging(log_config: Logging):
         setup_logging_from_toml(log_config)
 
 
-def _build_table(
-    records: list[logging.LogRecord], strip_prefix: str | None = None
-) -> Table:
+def _build_table(records: list[logging.LogRecord], strip_prefix: str | None = None) -> Table:
     """Builds a Rich table from a list of log records.
 
     Args:
@@ -384,9 +376,7 @@ def _build_table(
     Returns:
         Table: A Rich Table object.
     """
-    table = Table(
-        show_header=True, header_style="bold", show_edge=False, padding=(0, 1)
-    )
+    table = Table(show_header=True, header_style="bold", show_edge=False, padding=(0, 1))
     table.add_column("Level", no_wrap=True, width=9)
     table.add_column("Logger", no_wrap=True, style="dim")
     table.add_column("Message")

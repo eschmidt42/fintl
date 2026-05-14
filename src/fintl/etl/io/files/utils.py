@@ -6,9 +6,7 @@ import polars as pl
 logger = logging.getLogger(__name__)
 
 
-def error_if_overlap(
-    parser: str, known_files: set[Path], new_files: list[Path]
-) -> None:
+def error_if_overlap(parser: str, known_files: set[Path], new_files: list[Path]) -> None:
     """Checks for overlapping files between known and new lists.
 
     Compares two sets/lists of file paths to identify any common elements.
@@ -24,7 +22,7 @@ def error_if_overlap(
     """
     overlap = known_files.intersection(new_files)
     if len(overlap) > 0:
-        msg = f"{parser=} would parse the following files that other parsers would parse as well: {overlap=}"
+        msg = f"{parser=} would parse the following files that other parsers would parse as well: {overlap=}"  # noqa: E501
         logger.error(msg)
         raise ValueError(msg)
 
@@ -60,13 +58,9 @@ def find_common_columns(dfs: list[pl.DataFrame]) -> None:
         if common_columns is None:
             common_columns = transaction_df.columns
         else:
-            new_common_columns = [
-                c for c in common_columns if c in transaction_df.columns
-            ]
+            new_common_columns = [c for c in common_columns if c in transaction_df.columns]
             if len(new_common_columns) < len(common_columns):
-                discarded_columns.extend(
-                    list(set(common_columns).difference(new_common_columns))
-                )
+                discarded_columns.extend(list(set(common_columns).difference(new_common_columns)))
             discarded_columns.extend(
                 list(set(transaction_df.columns).difference(new_common_columns))
             )

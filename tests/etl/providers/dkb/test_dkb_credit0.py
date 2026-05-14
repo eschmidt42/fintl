@@ -59,9 +59,7 @@ def test_main(tmp_path: Path, csv_file: Path):
     parsed_dir = config.get_parsed_dir(credit.CASE)
     path_balance_json_single = parsed_dir / balance_csv_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_csv_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_csv_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(credit.CASE)

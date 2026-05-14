@@ -39,9 +39,7 @@ def test_detect_separator_empty_file():
 def test_check_if_parser_applies_valid_file(tmp_path: Path):
     # Create a dummy file with the expected name and content
     file_path = tmp_path / "DE12345678901234567890_2023.10.26.csv"
-    file_path.write_text(
-        "Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);..."
-    )
+    file_path.write_text("Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);...")
 
     assert fintl.etl.providers.gls.helper.check_if_parser_applies(file_path) is True
 
@@ -49,9 +47,7 @@ def test_check_if_parser_applies_valid_file(tmp_path: Path):
 def test_check_if_parser_applies_invalid_file_name(tmp_path: Path):
     # Create a dummy file with an invalid name
     file_path = tmp_path / "invalid_file_name.csv"
-    file_path.write_text(
-        "Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);..."
-    )
+    file_path.write_text("Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);...")
 
     assert fintl.etl.providers.gls.helper.check_if_parser_applies(file_path) is False
 
@@ -59,9 +55,7 @@ def test_check_if_parser_applies_invalid_file_name(tmp_path: Path):
 def test_check_if_parser_applies_invalid_separator(tmp_path: Path):
     # Create a dummy file with the expected name but an invalid separator
     file_path = tmp_path / "DE12345678901234567890_2023.10.26.csv"
-    file_path.write_text(
-        "Bezeichnung Auftragskonto,IBAN Auftragskonto,...\nBetrag (€),..."
-    )
+    file_path.write_text("Bezeichnung Auftragskonto,IBAN Auftragskonto,...\nBetrag (€),...")
 
     assert fintl.etl.providers.gls.helper.check_if_parser_applies(file_path) is False
 
@@ -87,8 +81,8 @@ def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
 
 def test_extract_transactions_raises_on_invalid_date(tmp_path: Path):
     """extract_transactions must re-raise InvalidOperationError when date parsing fails."""
-    header = "Bezeichnung Auftragskonto;IBAN Auftragskonto;BIC Auftragskonto;Bankname Auftragskonto;Buchungstag;Valutadatum;Name Zahlungsbeteiligter;IBAN Zahlungsbeteiligter;BIC (SWIFT-Code) Zahlungsbeteiligter;Buchungstext;Verwendungszweck;Betrag;Waehrung;Saldo nach Buchung;Bemerkung;Kategorie;Steuerrelevant;Glaeubiger ID;Mandatsreferenz\n"
-    data_row = "My Bank;DE00000000000000000000;BIC;Bank;NOT-A-DATE;NOT-A-DATE;Alice;DE111;BIC2;text;desc;-1,00;EUR;100,00;;;;\n"
+    header = "Bezeichnung Auftragskonto;IBAN Auftragskonto;BIC Auftragskonto;Bankname Auftragskonto;Buchungstag;Valutadatum;Name Zahlungsbeteiligter;IBAN Zahlungsbeteiligter;BIC (SWIFT-Code) Zahlungsbeteiligter;Buchungstext;Verwendungszweck;Betrag;Waehrung;Saldo nach Buchung;Bemerkung;Kategorie;Steuerrelevant;Glaeubiger ID;Mandatsreferenz\n"  # noqa: E501
+    data_row = "My Bank;DE00000000000000000000;BIC;Bank;NOT-A-DATE;NOT-A-DATE;Alice;DE111;BIC2;text;desc;-1,00;EUR;100,00;;;;\n"  # noqa: E501
     lines = [header, data_row]
     file_path = tmp_path / "DE12345678901234567890_2023.10.26.csv"
     file_path.write_text("".join(lines))

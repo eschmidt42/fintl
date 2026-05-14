@@ -33,9 +33,7 @@ def draw_plot(balances: pl.DataFrame) -> alt.Chart:
 def load_data(config: Config) -> pl.DataFrame:
     balances = pl.read_parquet(config.target_dir / "all-balances.parquet")
     balances = balances.with_columns(
-        name=pl.col("provider").str.to_lowercase()
-        + " "
-        + pl.col("service").str.to_lowercase()
+        name=pl.col("provider").str.to_lowercase() + " " + pl.col("service").str.to_lowercase()
     )
 
     return balances

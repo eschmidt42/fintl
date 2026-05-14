@@ -189,9 +189,7 @@ def test_config_get_logger_config_path_with_config_file(tmp_path: Path):
     assert result == config_file.resolve().absolute()
 
 
-def test_config_fintl_config_env_var_is_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+def test_config_fintl_config_env_var_is_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """FINTL_CONFIG must override the default TOML path."""
     giro = tmp_path / "giro"
     giro.mkdir()

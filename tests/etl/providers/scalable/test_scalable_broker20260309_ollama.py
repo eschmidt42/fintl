@@ -38,9 +38,7 @@ def test_extract_balance_with_real_ollama(  # pragma: no cover
 ) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""
 
-    result = broker.extract_balance(
-        broker.CASE, png_file, ollama_config=real_ollama_config
-    )
+    result = broker.extract_balance(broker.CASE, png_file, ollama_config=real_ollama_config)
 
     assert result.date == datetime.date(2026, 4, 27)
     assert isinstance(result.amount, float)

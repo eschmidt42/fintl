@@ -33,9 +33,7 @@ def test_german_string_numbers_to_floats():
     with pytest.raises(GermanNumberParsingError):
         german_string_numbers_to_floats("1,234.56")
 
-    assert (
-        german_string_numbers_to_floats("1.234,56 EUR", strip_currency=True) == 1234.56
-    )
+    assert german_string_numbers_to_floats("1.234,56 EUR", strip_currency=True) == 1234.56
 
 
 def test_check_if_german_number_multiple_commas():

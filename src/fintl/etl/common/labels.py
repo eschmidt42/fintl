@@ -1,6 +1,7 @@
 """Assign labels to transactions
 
-Reads data/all-transactions.xlsx/parquet and creates data/all-transactions-labelled.xlsx/parquet with label columns.
+Reads data/all-transactions.xlsx/parquet and creates
+data/all-transactions-labelled.xlsx/parquet with label columns.
 """
 
 import logging
@@ -88,9 +89,7 @@ def build_label_expr(rules: list[LabelRule]) -> pl.Expr:
     return expr.otherwise(pl.lit("unknown"))
 
 
-def assign_labels(
-    transactions: pl.DataFrame, label_rules: list[LabelRule]
-) -> pl.DataFrame:
+def assign_labels(transactions: pl.DataFrame, label_rules: list[LabelRule]) -> pl.DataFrame:
     """Assigns labels to transactions based on the provided rules.
 
     Adds a 'label_root' column to the transaction DataFrame by applying

@@ -90,29 +90,16 @@ def extract_balance(
     with file_path.open("r") as f:
         soup = BeautifulSoup(f, "html.parser")
 
-    # example for element containing euros, cents and currency
-    # <div class="MuiGrid-root jss94 jss96 MuiGrid-container MuiGrid-wrap-xs-nowrap" style="font-size:56px" data-testid="large-price"><div class="MuiGrid-root jss91 jss92 jss99 MuiGrid-item" data-testid="formatted-number">1,234</div><div class="MuiGrid-root jss88 MuiGrid-item"><div class="MuiGrid-root jss93 MuiGrid-container MuiGrid-direction-xs-column MuiGrid-justify-content-xs-space-between"><div class="MuiGrid-root jss92 jss98 MuiGrid-item" data-testid="decimal">69</div><div class="MuiGrid-root jss95 jss92 MuiGrid-item" data-testid="suffix"><div class="jss98">€</div></div></div></div></div>
-    # element = soup.find(
-    #     "div",
-    #     class_="MuiGrid-root jss94 jss96 MuiGrid-container MuiGrid-wrap-xs-nowrap",
-    # )
-
-    # euros
-    # example: <div class="MuiGrid-root jss91 jss92 jss99 MuiGrid-item" data-testid="formatted-number">1,234</div>
     tag = soup.find("div", {"data-testid": "large-price"})
     if not isinstance(tag, element.Tag) or tag.div is None or tag.div.string is None:
         raise ValueError
     val_before_decimal = tag.div.string
 
-    # cents
-    # example: <div class="MuiGrid-root jss92 jss98 MuiGrid-item" data-testid="decimal">69</div>
     tag = soup.find("div", {"data-testid": "decimal"})
     if not isinstance(tag, element.Tag):
         raise ValueError
     val_after_decimal = tag.string
 
-    # currency
-    # example: <div class="MuiGrid-root jss95 jss92 MuiGrid-item" data-testid="suffix"><div class="jss98">€</div></div>
     tag = soup.find("div", {"data-testid": "suffix"})
     if not isinstance(tag, element.Tag) or tag.div is None:
         raise ValueError
@@ -181,18 +168,14 @@ def main(config: Config):
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

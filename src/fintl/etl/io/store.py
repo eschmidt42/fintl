@@ -165,7 +165,7 @@ def store_files(
         "unmatched": int, "ambiguous": int}``.
         *matched* counts files with exactly one parser match.
         *ambiguous* counts files that matched more than one provider-service configuration, e.g. DKB giro and DKB credit.
-    """
+    """  # noqa: E501
 
     candidates = find_candidate_files(source_dir)
     logger.info("Scanning %d candidate file(s) in %s", len(candidates), source_dir)
@@ -197,9 +197,7 @@ def store_files(
                 logger.debug("Ambiguous file skipped by user: %s", file.name)
                 continue
 
-            if _route_file(
-                file, config.get_source_dir_from_case(chosen.case), operation
-            ):
+            if _route_file(file, config.get_source_dir_from_case(chosen.case), operation):
                 counts["copied"] += 1
             else:
                 counts["skipped"] += 1

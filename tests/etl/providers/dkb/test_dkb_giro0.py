@@ -58,15 +58,9 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path, csv_fnam
     parsed_dir = config.get_parsed_dir(giro.CASE)
 
     path_balance_json_single = parsed_dir / balance_csv_name_to_json(Path(csv_fname))
-    path_balance_parquet_single = parsed_dir / balance_csv_name_to_parquet(
-        Path(csv_fname)
-    )
-    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(
-        Path(csv_fname)
-    )
-    path_transactions_xlsx_single = parsed_dir / transaction_csv_name_to_xlsx(
-        Path(csv_fname)
-    )
+    path_balance_parquet_single = parsed_dir / balance_csv_name_to_parquet(Path(csv_fname))
+    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(Path(csv_fname))
+    path_transactions_xlsx_single = parsed_dir / transaction_csv_name_to_xlsx(Path(csv_fname))
 
     parser_dir = config.get_parser_dir(giro.CASE)
     path_balances_xlsx_parser = parser_dir / "balances.xlsx"

@@ -34,9 +34,7 @@ def concatenate_all_providers(config: Config) -> None:
 
     cases = runner.all_cases()
     logger.info("Concatenating transactions")
-    transactions = concatenate_parquets(
-        "transactions.parquet", config, cases, TRANSACTION_COLUMNS
-    )
+    transactions = concatenate_parquets("transactions.parquet", config, cases, TRANSACTION_COLUMNS)
 
     if transactions is not None:
         parquet_path = config.target_dir / "all-transactions.parquet"
@@ -90,9 +88,7 @@ def make_labels(config: Config) -> None:
     logger.info(f"Reading from {path_in=}")
 
     if not path_in.exists():
-        logger.warning(
-            f"Could not assign labels, {path_in=} does not seem to exist, returning."
-        )
+        logger.warning(f"Could not assign labels, {path_in=} does not seem to exist, returning.")
         return
 
     df = pl.read_parquet(path_in)

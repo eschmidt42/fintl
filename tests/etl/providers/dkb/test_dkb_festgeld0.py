@@ -83,18 +83,12 @@ def test_main(config: Config, csv_fname: str):
 
     parsed_dir = config.get_parsed_dir(festgeld0.CASE)
 
-    paths_balance_json_single = [
-        parsed_dir / balance_csv_name_to_json(f) for f in files
-    ]
-    paths_balance_parquet_single = [
-        parsed_dir / balance_csv_name_to_parquet(f) for f in files
-    ]
+    paths_balance_json_single = [parsed_dir / balance_csv_name_to_json(f) for f in files]
+    paths_balance_parquet_single = [parsed_dir / balance_csv_name_to_parquet(f) for f in files]
     paths_transactions_parquet_single = [
         parsed_dir / transaction_csv_name_to_parquet(f) for f in files
     ]
-    paths_transactions_xlsx_single = [
-        parsed_dir / transaction_csv_name_to_xlsx(f) for f in files
-    ]
+    paths_transactions_xlsx_single = [parsed_dir / transaction_csv_name_to_xlsx(f) for f in files]
 
     parser_dir = config.get_parser_dir(festgeld0.CASE)
 
@@ -139,9 +133,7 @@ def test_main(config: Config, csv_fname: str):
     ts_raw = [get_time(f) for f in copied_file_paths]
     ts_balance_json_single = [get_time(f) for f in paths_balance_json_single]
     ts_balance_parquet_single = [get_time(f) for f in paths_balance_parquet_single]
-    ts_transactions_parquet_single = [
-        get_time(f) for f in paths_transactions_parquet_single
-    ]
+    ts_transactions_parquet_single = [get_time(f) for f in paths_transactions_parquet_single]
     ts_transactions_xlsx_single = [get_time(f) for f in paths_transactions_xlsx_single]
 
     n_balances = len(pl.read_parquet(path_balances_parquet_parser))
@@ -242,9 +234,7 @@ def test_extract_transactions(config: Config, csv_fname: str):
     assert df["description"].to_list() == snapshot(
         ["wup", "wuppety", "Zinsen vom ...", "DKB-Anlage 123"]
     )
-    assert df["recipient"].to_list() == snapshot(
-        ["DKB AG", "DKB AG", "myself", "myself"]
-    )
+    assert df["recipient"].to_list() == snapshot(["DKB AG", "DKB AG", "myself", "myself"])
 
 
 def test_case_enum():
@@ -270,7 +260,7 @@ def test_extract_transactions_raises_on_invalid_date(tmp_path: Path):
     # Build a minimal valid CSV with a correct separator but an unparseable date.
     header_lines = [
         "",  # empty first line so is_empty_1st_line is True
-        '"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"\n',
+        '"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"\n',  # noqa: E501
         '"NOT-A-DATE";"01.01.24";"Gebucht";"Alice";"Bob";"desc";"Lastschrift";"DE00";"−1,00";"";"";""\n',
     ]
     file_path = tmp_path / "DE12345678901234567890.csv"

@@ -59,9 +59,7 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
     parsed_dir = config.get_parsed_dir(giro.CASE)
     path_balance_json_single = parsed_dir / balance_csv_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_csv_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_csv_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_csv_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(giro.CASE)
@@ -179,9 +177,7 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
             "fintl.etl.providers.postbank.giro202305.parse_csv_file",
             side_effect=_parse_csv_file,
         ),
-        patch(
-            "fintl.etl.providers.postbank.giro202305.store_transactions"
-        ) as mock_store_t,
+        patch("fintl.etl.providers.postbank.giro202305.store_transactions") as mock_store_t,
         patch("fintl.etl.providers.postbank.giro202305.store_balance") as mock_store_b,
     ):
         giro.parse_new_files(giro.CASE, [bad_file, good_file], parsed_dir)

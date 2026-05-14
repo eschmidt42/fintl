@@ -7,9 +7,7 @@ from typer.testing import CliRunner
 from fintl.cli.main import app
 
 
-def _write_config_toml(
-    tmp_path: Path, files_root_path: Path, logger_path: Path
-) -> Path:
+def _write_config_toml(tmp_path: Path, files_root_path: Path, logger_path: Path) -> Path:
     target = tmp_path / "target"
     target.mkdir(parents=True, exist_ok=True)
     toml_path = tmp_path / "fintl.toml"

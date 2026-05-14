@@ -19,9 +19,7 @@ from fintl.etl.io.files.filenames import (
 logger = logging.getLogger(__name__)
 
 
-def detect_relevant_source_files(
-    source_dir: Path, check_if_parser_applies: Callable
-) -> list[Path]:
+def detect_relevant_source_files(source_dir: Path, check_if_parser_applies: Callable) -> list[Path]:
     """Detects relevant raw files in the given source directory."""
     relevant_source_files = [
         file_path
@@ -29,9 +27,7 @@ def detect_relevant_source_files(
         for file_path in source_dir.glob(pattern)
         if check_if_parser_applies(file_path)
     ]
-    logger.info(
-        f"Detected {len(relevant_source_files):_} relevant source files @ {source_dir=}."
-    )
+    logger.info(f"Detected {len(relevant_source_files):_} relevant source files @ {source_dir=}.")
     return relevant_source_files
 
 
@@ -39,9 +35,7 @@ def get_parser_source_files(
     case: Case, config: Config, check_if_parser_applies: Callable
 ) -> list[Path]:
     source_dir = config.get_source_dir(case.provider, case.service)
-    relevant_source_files = detect_relevant_source_files(
-        source_dir, check_if_parser_applies
-    )
+    relevant_source_files = detect_relevant_source_files(source_dir, check_if_parser_applies)
     return relevant_source_files
 
 
@@ -52,9 +46,7 @@ def detect_relevant_target_files(raw_dir: Path) -> list[Path]:
         for pattern in ["**/*.htm", "**/*.html", "**/*.png"]
         for file_path in raw_dir.glob(pattern)
     ]
-    logger.info(
-        f"Detected {len(relevant_target_files):_} relevant source files @ {raw_dir=}."
-    )
+    logger.info(f"Detected {len(relevant_target_files):_} relevant source files @ {raw_dir=}.")
     return relevant_target_files
 
 
@@ -78,7 +70,7 @@ def select_files_to_parse(present_parsed_files: list[Path], raw_files: list[Path
         if transaction_htm_name_to_xlsx(file_path) not in parsed_files
     ]
     logger.info(
-        f"Selecting {len(files_to_parse):_} files to parse after comparing {len(present_parsed_files):_} present parsed files and {len(raw_files):_} raw files."
+        f"Selecting {len(files_to_parse):_} files to parse after comparing {len(present_parsed_files):_} present parsed files and {len(raw_files):_} raw files."  # noqa: E501
     )
     return files_to_parse
 

@@ -139,7 +139,8 @@ def test_JSONFormatter_with_extra_attributes():
 
 
 def test_dependency_filter_allows_1st_party_logger():
-    """A logger whose name starts with 'fintl', or '__main__' must always be allowed regardless of level."""
+    """A logger whose name starts with 'fintl', or '__main__'
+    must always be allowed regardless of level."""
     filter_ = DependencyFilter(param=logging.WARNING)
     for name in ("fintl.something", "__main__"):
         record = logging.LogRecord(

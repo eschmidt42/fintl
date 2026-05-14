@@ -95,9 +95,7 @@ def print_etl_overview(config: Config, console: Console | None = None) -> None:
                 continue
             specs = parsers_for(plugin.name, svc.name)
             parser_names = (
-                ", ".join(s.case.parser for s in specs)
-                if specs
-                else "(no parsers registered)"
+                ", ".join(s.case.parser for s in specs) if specs else "(no parsers registered)"
             )
             table.add_row(plugin.name, svc.name, parser_names)
 
@@ -119,9 +117,7 @@ def _get_source_files(spec: ParserSpec, config: Config) -> list[Path]:
         list[Path]: Source file paths that ``spec.applies`` selects.
     """
     getter = (
-        spec.source_files_getter
-        if spec.source_files_getter is not None
-        else csv_get_source_files
+        spec.source_files_getter if spec.source_files_getter is not None else csv_get_source_files
     )
     return getter(spec.case, config, spec.applies)
 
@@ -243,8 +239,6 @@ def all_cases(provider: str | None = None) -> list[Case]:
         list[Case]: Registered ``Case`` instances in registry order.
     """
     specs = (
-        ALL_PARSERS
-        if provider is None
-        else [s for s in ALL_PARSERS if s.case.provider == provider]
+        ALL_PARSERS if provider is None else [s for s in ALL_PARSERS if s.case.provider == provider]
     )
     return [spec.case for spec in specs]

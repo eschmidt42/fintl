@@ -64,9 +64,7 @@ def german_string_numbers_to_floats(s: str | int | float, strip_currency: bool =
         GermanNumberParsingError: If the input string is not in German format.
     """
     if isinstance(s, (int, float)):
-        logger.debug(
-            f"Skipping german_string_numbers_to_floats for {s} because it's not a string"
-        )
+        logger.debug(f"Skipping german_string_numbers_to_floats for {s} because it's not a string")
         return s
 
     if strip_currency:

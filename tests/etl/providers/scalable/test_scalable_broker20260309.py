@@ -51,9 +51,7 @@ def mock_lm_extraction():
         yield
 
 
-def test_main(
-    tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path
-):
+def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path):
     broker_source_dir = png_file.parent
     assert broker_source_dir.exists()
 
@@ -75,9 +73,7 @@ def test_main(
     parsed_dir = config.get_parsed_dir(broker.CASE)
     path_balance_json_single = parsed_dir / balance_htm_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_htm_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_htm_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(broker.CASE)
@@ -224,9 +220,7 @@ def test_get_lm_extraction_raises_ollama_inference_error_on_retry_exhausted(
     dummy_file = tmp_path / png_fname
     dummy_file.write_bytes(b"\x89PNG")
 
-    with pytest.raises(
-        OllamaInferenceError, match="model runner has unexpectedly stopped"
-    ):
+    with pytest.raises(OllamaInferenceError, match="model runner has unexpectedly stopped"):
         _get_lm_extraction(dummy_file, mock_client)
 
 
@@ -241,9 +235,7 @@ def test_check_ollama_availability_raises_on_connection_failure():
         _check_ollama_availability,
     )
 
-    with patch.object(
-        httpx, "get", side_effect=httpx.ConnectError("connection refused")
-    ):
+    with patch.object(httpx, "get", side_effect=httpx.ConnectError("connection refused")):
         with pytest.raises(OllamaUnavailableError, match="not reachable"):
             _check_ollama_availability("http://localhost:11434/v1")
 
@@ -381,9 +373,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
         "_check_ollama_availability",
         side_effect=broker.OllamaUnavailableError("server down"),
     ):
-        with caplog.at_level(
-            logging.WARNING, logger="fintl.etl.scalable.broker20260309"
-        ):
+        with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(
                 broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
             )
@@ -414,9 +404,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
             side_effect=broker.OllamaModelUnavailableError("model not found"),
         ),
     ):
-        with caplog.at_level(
-            logging.WARNING, logger="fintl.etl.scalable.broker20260309"
-        ):
+        with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(
                 broker.CASE, [dummy], parsed_dir, ollama_config=OllamaConfig(model="m")
             )
@@ -491,9 +479,7 @@ def test_check_model_available_raises_on_http_error():
         _check_model_available,
     )
 
-    with patch.object(
-        httpx, "get", side_effect=httpx.ConnectError("connection refused")
-    ):
+    with patch.object(httpx, "get", side_effect=httpx.ConnectError("connection refused")):
         with pytest.raises(OllamaModelUnavailableError, match="Could not retrieve"):
             _check_model_available("http://localhost:11434/v1", "qwen3.5:27b")
 
@@ -528,9 +514,7 @@ def test_parse_new_files_continues_on_generic_error(
         patch.object(broker, "_check_model_available"),
         patch.object(broker, "parse_image_file", side_effect=_raise_generic),
     ):
-        with caplog.at_level(
-            logging.WARNING, logger="fintl.etl.scalable.broker20260309"
-        ):
+        with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(
                 broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
             )

@@ -54,9 +54,7 @@ def test_main(tmp_path: Path, html_file_path: Path, logger_config_path: Path):
     parsed_dir = config.get_parsed_dir(broker.CASE)
     path_balance_json_single = parsed_dir / balance_htm_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_htm_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_htm_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(broker.CASE)
@@ -154,9 +152,7 @@ def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
             broker.check_if_parser_applies(file_path)
 
 
-def test_extract_balance_raises_when_large_price_missing(
-    tmp_path: Path, html_fname: str
-):
+def test_extract_balance_raises_when_large_price_missing(tmp_path: Path, html_fname: str):
     """extract_balance must raise ValueError when large-price div is absent."""
     html = "<html><body><div>no price here</div></body></html>"
     file_path = tmp_path / html_fname
@@ -167,9 +163,7 @@ def test_extract_balance_raises_when_large_price_missing(
 
 def test_extract_balance_raises_when_decimal_missing(tmp_path: Path, html_fname: str):
     """extract_balance must raise ValueError when decimal div is absent."""
-    html = (
-        '<html><body><div data-testid="large-price"><div>1234</div></div></body></html>'
-    )
+    html = '<html><body><div data-testid="large-price"><div>1234</div></div></body></html>'
     file_path = tmp_path / html_fname
     file_path.write_text(html)
     with pytest.raises(ValueError):
@@ -190,9 +184,7 @@ def test_extract_balance_raises_when_suffix_missing(tmp_path: Path, html_fname: 
         broker.extract_balance(broker.CASE, file_path, [])
 
 
-def test_extract_balance_currency_none_falls_back_to_empty_string(
-    tmp_path: Path, html_fname: str
-):
+def test_extract_balance_currency_none_falls_back_to_empty_string(tmp_path: Path, html_fname: str):
     """When suffix > div has multiple string children .string returns None;
     currency must fall back to ''."""
     # Two spans inside the inner div → BeautifulSoup .string returns None

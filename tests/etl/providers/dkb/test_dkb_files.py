@@ -57,9 +57,7 @@ def _make_transactions(extra_col: str | None = None) -> pl.DataFrame:
 
 @pytest.fixture
 def schema_and_other_cols() -> tuple[pl.Schema, list[str]]:
-    other_cols = [
-        col for col in TRANSACTION_COLUMNS if col not in ["date", "amount", "hash"]
-    ]
+    other_cols = [col for col in TRANSACTION_COLUMNS if col not in ["date", "amount", "hash"]]
     schema = pl.Schema(
         {
             "date": pl.Date,
@@ -130,9 +128,7 @@ def test_concatenate_new_transactions_merges_with_existing(
     new_df.write_parquet(new_path)
 
     # Run the function.
-    result, n_new = concatenate_new_transactions(
-        parser_dir, parsed_dir, [parsed_dir / "new.csv"]
-    )
+    result, n_new = concatenate_new_transactions(parser_dir, parsed_dir, [parsed_dir / "new.csv"])
 
     # Assertions.
     assert result is not None
@@ -181,9 +177,7 @@ def test_concatenate_new_transactions_no_existing_file(
     new_df.write_parquet(new_path)
 
     # Run the function.
-    result, n_new = concatenate_new_transactions(
-        parser_dir, parsed_dir, [parsed_dir / "new.csv"]
-    )
+    result, n_new = concatenate_new_transactions(parser_dir, parsed_dir, [parsed_dir / "new.csv"])
 
     # Assertions.
     assert result is not None
@@ -232,9 +226,7 @@ def test_concatenate_new_transactions_all_duplicates(
     new_df.write_parquet(new_path)
 
     # Run the function.
-    result, n_new = concatenate_new_transactions(
-        parser_dir, parsed_dir, [parsed_dir / "new.csv"]
-    )
+    result, n_new = concatenate_new_transactions(parser_dir, parsed_dir, [parsed_dir / "new.csv"])
 
     # Assertions.
     assert result is not None
@@ -270,9 +262,7 @@ def test_concatenate_new_transactions_enforces_transaction_columns(
     new_df.write_parquet(new_path)
 
     # Run the function.
-    result, n_new = concatenate_new_transactions(
-        parser_dir, parsed_dir, [parsed_dir / "new.csv"]
-    )
+    result, n_new = concatenate_new_transactions(parser_dir, parsed_dir, [parsed_dir / "new.csv"])
 
     # Assertions.
     assert result is not None
@@ -411,9 +401,7 @@ def test_load_transactions_returns_loaded_dataframes(tmp_path: Path):
     assert result[0].equals(df)
 
 
-def test_load_transactions_skips_missing_parquet(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
-):
+def test_load_transactions_skips_missing_parquet(tmp_path: Path, caplog: pytest.LogCaptureFixture):
     parsed_dir = tmp_path / "parsed"
     parsed_dir.mkdir()
 
@@ -433,9 +421,7 @@ def test_load_transactions_skips_missing_parquet(
     )
     df.write_parquet(parsed_dir / "valid-transactions.parquet")
 
-    result = load_transactions(
-        parsed_dir, [parsed_dir / "valid.csv", parsed_dir / "missing.csv"]
-    )
+    result = load_transactions(parsed_dir, [parsed_dir / "valid.csv", parsed_dir / "missing.csv"])
 
     assert len(result) == 1
     assert "does not exist" in caplog.text

@@ -22,44 +22,28 @@ LABEL_RULES: list[LabelRule] = [
     ),
     LabelRule(
         label="income",
+        conditions=[LabelCondition(column="source", op=LabelConditionOp.contains, value="DWS")],
+    ),
+    LabelRule(
+        label="rebooking",
         conditions=[
-            LabelCondition(column="source", op=LabelConditionOp.contains, value="DWS")
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="myself"),
+            LabelCondition(column="description", op=LabelConditionOp.not_contains, value="food"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="myself"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.not_contains, value="food"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="description", op=LabelConditionOp.not_contains, value="food"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.not_contains, value="food"
-            ),
-        ],
-    ),
-    LabelRule(
-        label="rebooking",
-        conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
             LabelCondition(
                 column="recipient",
                 op=LabelConditionOp.equals,
@@ -81,21 +65,15 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane DKB"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane DKB"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
             LabelCondition(column="source", op=LabelConditionOp.equals, value="myself"),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane Doe"),
             LabelCondition(
                 column="description",
                 op=LabelConditionOp.not_contains,
@@ -106,43 +84,25 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="tagesgeld"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="tagesgeld"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="Food"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="Food"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="myself"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="food"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="myself"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="food"),
         ],
     ),
     LabelRule(
@@ -168,9 +128,7 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="income",
         conditions=[
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="Lohn/Gehalt"
-            )
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="Lohn/Gehalt")
         ],
     ),
     LabelRule(
@@ -196,9 +154,7 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="savings",
         conditions=[
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.contains, value="DWS Investment"
-            )
+            LabelCondition(column="recipient", op=LabelConditionOp.contains, value="DWS Investment")
         ],
     ),
     LabelRule(
@@ -224,15 +180,9 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.contains, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="(?i)food"
-            ),
-            LabelCondition(
-                column="provider", op=LabelConditionOp.contains, value="DKB"
-            ),
+            LabelCondition(column="recipient", op=LabelConditionOp.contains, value="JANE DOE"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="(?i)food"),
+            LabelCondition(column="provider", op=LabelConditionOp.contains, value="DKB"),
         ],
     ),
     LabelRule(
@@ -459,10 +409,7 @@ def test_assign_labels():
 
     df_labelled = fintl_labels.assign_labels(df, LABEL_RULES)
 
-    assert (
-        df_labelled["label_root"].to_list()
-        == df_labelled["expected_label_root"].to_list()
-    )
+    assert df_labelled["label_root"].to_list() == df_labelled["expected_label_root"].to_list()
 
 
 def test_condition_expr_not_equals():
@@ -489,9 +436,7 @@ def test_build_label_expr_multi_condition_first_rule():
             label="match",
             conditions=[
                 LabelCondition(column="source", op=LabelConditionOp.equals, value="A"),
-                LabelCondition(
-                    column="recipient", op=LabelConditionOp.equals, value="B"
-                ),
+                LabelCondition(column="recipient", op=LabelConditionOp.equals, value="B"),
             ],
         )
     ]

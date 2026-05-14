@@ -42,9 +42,7 @@ def _spec(
 def _store_config(tmp_path: Path, logger_config_path: Path):
     giro_src = tmp_path / "sources" / "dkb" / "giro"
     giro_src.mkdir(parents=True)
-    return make_config(
-        tmp_path, Sources(dkb=Provider(giro=giro_src)), logger_config_path
-    )
+    return make_config(tmp_path, Sources(dkb=Provider(giro=giro_src)), logger_config_path)
 
 
 def test_run_copies_matched_file(
@@ -110,9 +108,7 @@ def test_run_already_copied_file_is_not_duplicated(
     # first run copies the file (using --copy so source dir is preserved for the second run)
     cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes", "--copy"])
     # second run: file already exists in raw dir → skipped, not duplicated
-    result = cli_runner.invoke(
-        app, ["store", "--from-dir", str(downloads), "--yes", "--copy"]
-    )
+    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes", "--copy"])
 
     assert result.exit_code == 0, result.output
     assert "Copied: 0" in result.output
@@ -160,9 +156,7 @@ def test_run_interactive_confirm_declines(
     monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
     monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
-    result = cli_runner.invoke(
-        app, ["store", "--from-dir", str(downloads)], input="n\n"
-    )
+    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads)], input="n\n")
 
     assert result.exit_code == 0, result.output
     assert "Skipped: 1" in result.output
@@ -186,9 +180,7 @@ def test_run_interactive_confirm_copy_label(
     monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
     # --copy changes the action label to "Copy" in the interactive prompt.
-    result = cli_runner.invoke(
-        app, ["store", "--from-dir", str(downloads), "--copy"], input="y\n"
-    )
+    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--copy"], input="y\n")
 
     assert result.exit_code == 0, result.output
     assert "Copy this file?" in result.output
@@ -208,9 +200,7 @@ def test_run_ambiguous_with_yes_skips(
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
     monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
-    monkeypatch.setattr(
-        "fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit]
-    )
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit])
 
     result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
 
@@ -234,14 +224,10 @@ def test_run_ambiguous_interactive_selects_parser(
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
     monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
-    monkeypatch.setattr(
-        "fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit]
-    )
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit])
 
     # Invalid input first (exercises ValueError retry), then select parser 1.
-    result = cli_runner.invoke(
-        app, ["store", "--from-dir", str(downloads)], input="x\n1\n"
-    )
+    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads)], input="x\n1\n")
 
     assert result.exit_code == 0, result.output
     giro_dir = config.get_source_dir_from_case(spec_giro.case)
@@ -262,14 +248,10 @@ def test_run_ambiguous_interactive_user_skips(
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
     monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
-    monkeypatch.setattr(
-        "fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit]
-    )
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit])
 
     # User enters 0 to skip the ambiguous file.
-    result = cli_runner.invoke(
-        app, ["store", "--from-dir", str(downloads)], input="0\n"
-    )
+    result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads)], input="0\n")
 
     assert result.exit_code == 0, result.output
     assert "Ambiguous: 1" in result.output

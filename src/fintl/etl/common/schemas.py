@@ -160,9 +160,9 @@ class ParserSpec:
     applies: Callable[[Path], bool]
     run: Callable[["Config"], None]
     precedence: int = 0
-    source_files_getter: (
-        Callable[[Case, "Config", Callable[[Path], bool]], list[Path]] | None
-    ) = None
+    source_files_getter: Callable[[Case, "Config", Callable[[Path], bool]], list[Path]] | None = (
+        None
+    )
 
 
 @dataclass(frozen=True)

@@ -10,9 +10,7 @@ from fintl.etl.io.store import FileOperation
 
 
 class Prompter:
-    def __init__(
-        self, *, yes: bool, copy: bool, op_label: str, config: Config, console: Console
-    ):
+    def __init__(self, *, yes: bool, copy: bool, op_label: str, config: Config, console: Console):
         self.yes = yes
         self.copy = copy
         self.op_label = op_label
@@ -22,9 +20,7 @@ class Prompter:
     def confirm(self, prompt: str, op: FileOperation) -> bool:
 
         if self.yes:
-            self.console.print(
-                Text(f"✔ {self.op_label}d:", style="green", overflow="fold")
-            )
+            self.console.print(Text(f"✔ {self.op_label}d:", style="green", overflow="fold"))
             self.console.print(f"  | {prompt}", style="green")
             return True
 
@@ -47,9 +43,7 @@ class Prompter:
 
         self.console.print()
         self.console.print(
-            Text(
-                f"⚠ {file.name} matched multiple parsers — select one:", style="yellow"
-            )
+            Text(f"⚠ {file.name} matched multiple parsers — select one:", style="yellow")
         )
 
         for i, spec in enumerate(specs, 1):

@@ -20,7 +20,7 @@ Example data:
 │        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ /Paperw ┆         │
 │        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ ork…    ┆         │
 └────────┴──────────┴────────┴──────────┴─────────┴─────────┴─────────┴────────┴─────────┴─────────┘
-"""
+"""  # noqa: E501
 
 from fintl.cli.commands.search.tui import TableApp
 

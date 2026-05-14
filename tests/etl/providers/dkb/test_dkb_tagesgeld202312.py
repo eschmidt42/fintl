@@ -90,9 +90,7 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
             "fintl.etl.providers.dkb.tagesgeld202312.parse_csv_file",
             side_effect=_parse_csv_file,
         ),
-        patch(
-            "fintl.etl.providers.dkb.tagesgeld202312.store_transactions"
-        ) as mock_store_t,
+        patch("fintl.etl.providers.dkb.tagesgeld202312.store_transactions") as mock_store_t,
         patch("fintl.etl.providers.dkb.tagesgeld202312.store_balance") as mock_store_b,
     ):
         tagesgeld.parse_new_files(tagesgeld.CASE, [bad_file, good_file], parsed_dir)
@@ -127,18 +125,12 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
     copied_file_paths = [raw_dir / f for f in files]
 
     parsed_dir = config.get_parsed_dir(tagesgeld.CASE)
-    paths_balance_json_single = [
-        parsed_dir / balance_csv_name_to_json(f) for f in files
-    ]
-    paths_balance_parquet_single = [
-        parsed_dir / balance_csv_name_to_parquet(f) for f in files
-    ]
+    paths_balance_json_single = [parsed_dir / balance_csv_name_to_json(f) for f in files]
+    paths_balance_parquet_single = [parsed_dir / balance_csv_name_to_parquet(f) for f in files]
     paths_transactions_parquet_single = [
         parsed_dir / transaction_csv_name_to_parquet(f) for f in files
     ]
-    paths_transactions_xlsx_single = [
-        parsed_dir / transaction_csv_name_to_xlsx(f) for f in files
-    ]
+    paths_transactions_xlsx_single = [parsed_dir / transaction_csv_name_to_xlsx(f) for f in files]
 
     parser_dir = config.get_parser_dir(tagesgeld.CASE)
     path_balances_xlsx_parser = parser_dir / "balances.xlsx"
@@ -182,9 +174,7 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
     ts_raw = [get_time(f) for f in copied_file_paths]
     ts_balance_json_single = [get_time(f) for f in paths_balance_json_single]
     ts_balance_parquet_single = [get_time(f) for f in paths_balance_parquet_single]
-    ts_transactions_parquet_single = [
-        get_time(f) for f in paths_transactions_parquet_single
-    ]
+    ts_transactions_parquet_single = [get_time(f) for f in paths_transactions_parquet_single]
     ts_transactions_xlsx_single = [get_time(f) for f in paths_transactions_xlsx_single]
 
     n_balances = len(pl.read_parquet(path_balances_parquet_parser))

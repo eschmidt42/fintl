@@ -5,7 +5,6 @@ no real parser execution or network access is required.
 """
 
 from pathlib import Path
-from typing import Callable
 from unittest.mock import MagicMock
 
 from fintl.common import Case, Config, Provider, Sources
@@ -22,7 +21,10 @@ from fintl.etl.io.store import (
     store_files,
 )
 
-_NO_CHOOSE: Callable[[Path, list[ParserSpec]], ParserSpec | None] = lambda _f, _s: None
+
+def _no_choose(f: Path, s: list[ParserSpec]) -> ParserSpec | None:
+    return None
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -256,7 +258,7 @@ def test_store_files_copies_confirmed(tmp_path: Path):
         [spec],
         operation=FileOperation.COPYING,
         confirm=lambda _, op: True,
-        choose=_NO_CHOOSE,
+        choose=_no_choose,
     )
 
     source_dir = config.get_source_dir_from_case(spec.case)
@@ -280,7 +282,7 @@ def test_store_files_skips_on_rejection(tmp_path: Path):
         [spec],
         operation=FileOperation.COPYING,
         confirm=lambda _, op: False,
-        choose=_NO_CHOOSE,
+        choose=_no_choose,
     )
 
     source_dir = config.get_source_dir_from_case(spec.case)
@@ -302,7 +304,7 @@ def test_store_files_counts_unmatched(tmp_path: Path):
         [spec],
         operation=FileOperation.COPYING,
         confirm=lambda _, op: True,
-        choose=_NO_CHOOSE,
+        choose=_no_choose,
     )
 
     assert counts["unmatched"] == 1
@@ -320,7 +322,7 @@ def test_store_files_no_candidates(tmp_path: Path):
         [],
         operation=FileOperation.COPYING,
         confirm=lambda _, op: True,
-        choose=_NO_CHOOSE,
+        choose=_no_choose,
     )
 
     assert counts == {
@@ -416,7 +418,7 @@ def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
         [spec_a, spec_b],
         operation=FileOperation.COPYING,
         confirm=lambda p, op: confirm_calls.append(p) or True,  # type: ignore[func-returns-value]
-        choose=_NO_CHOOSE,
+        choose=_no_choose,
     )
 
     assert confirm_calls == [], "confirm should not be called for ambiguous files"
@@ -473,7 +475,7 @@ def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path)
         [spec],
         operation=FileOperation.COPYING,
         confirm=lambda _, op: True,
-        choose=_NO_CHOOSE,
+        choose=_no_choose,
     )
 
     assert counts["skipped"] == 1
