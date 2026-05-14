@@ -75,4 +75,4 @@ format-command="ruff check --fix-only --stdin-filename {filename} | ruff format 
 
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/linter/#rule-selection
-select = ["I", "F401"]
+select = ["I", "F"]

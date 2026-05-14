@@ -45,7 +45,7 @@ def detect_new_parsed_files(
     Returns:
         A list of paths to new balance CSV files corresponding to newly parsed data.
     """
-    logger.info(f"Detecting newly parsed files")
+    logger.info("Detecting newly parsed files")
 
     available_parsed_balance_files = list(parsed_dir.glob("*-balance.parquet"))
 

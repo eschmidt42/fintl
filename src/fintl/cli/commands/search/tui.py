@@ -256,7 +256,7 @@ class TableApp(App):
             self.transactions_filtered = self.filter_dataframe()
             self.set_table(self.transactions_filtered)
             self.update_stats()
-        except Exception as e:
+        except Exception:
             # If filter fails, show original data
             self.transactions_filtered = self.transactions_original
             self.set_table(self.transactions_original)

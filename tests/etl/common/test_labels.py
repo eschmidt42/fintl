@@ -509,4 +509,4 @@ def test_condition_expr_no_case_matches_returns_none():
     from fintl.etl.common.labels import LabelConditionOp, _condition_expr
 
     with pytest.raises(NotImplementedError):
-        result = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")
+        _ = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")

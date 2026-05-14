@@ -104,7 +104,7 @@ class Config(BaseSettings):
             return Path(self.logging.config_file).resolve().absolute()
         else:
             logger.error(
-                f"logging.config_file was not set in the config, cannot return value."
+                "logging.config_file was not set in the config, cannot return value."
             )
 
     def get_source_dir(self, provider: str, service: str) -> Path:

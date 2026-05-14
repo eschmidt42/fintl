@@ -33,7 +33,7 @@ def concatenate_all_providers(config: Config) -> None:
     logger.info("Concatenating all providers")
 
     cases = runner.all_cases()
-    logger.info(f"Concatenating transactions")
+    logger.info("Concatenating transactions")
     transactions = concatenate_parquets(
         "transactions.parquet", config, cases, TRANSACTION_COLUMNS
     )
@@ -48,10 +48,10 @@ def concatenate_all_providers(config: Config) -> None:
         transactions.write_excel(excel_path)
     else:
         logger.warning(
-            f"All transaction dataframes were empty or paths did not exist, skipping writing."
+            "All transaction dataframes were empty or paths did not exist, skipping writing."
         )
 
-    logger.info(f"Concatenating balances")
+    logger.info("Concatenating balances")
     balances = concatenate_parquets("balances.parquet", config, cases, BALANCE_COLUMNS)
 
     if balances is not None:
@@ -64,7 +64,7 @@ def concatenate_all_providers(config: Config) -> None:
         balances.write_excel(excel_path)
     else:
         logger.warning(
-            f"All balances dataframes were empty or paths did not exist, skipping writing."
+            "All balances dataframes were empty or paths did not exist, skipping writing."
         )
 
     logger.info("Finished concatenating all providers")
@@ -125,7 +125,7 @@ def main(config: Config) -> None:
         None
     """
     console = Console()
-    logger.info(f"Starting ETL pipeline")
+    logger.info("Starting ETL pipeline")
 
     runner.print_etl_overview(config, console)
     runner.run_enabled_services(config, console)
