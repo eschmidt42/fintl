@@ -26,7 +26,7 @@ repos:
   hooks:
   - id: ruff-check
     name: linting
-    entry: uv run ruff check --select "I,F401" --fix
+    entry: uv run ruff check --fix
     pass_filenames: false
     language: system
     types_or: [python, pyi]

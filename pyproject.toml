@@ -68,6 +68,11 @@ dev = [
 markers = [
     "ollama: requires a running Ollama instance with a multimodal model (skipped by default; run with -m ollama)",
 ]
+testpaths = ["tests"]
 
 [tool.inline-snapshot]
 format-command="ruff check --fix-only --stdin-filename {filename} | ruff format --stdin-filename {filename}"
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/linter/#rule-selection
+select = ["I", "F401"]
