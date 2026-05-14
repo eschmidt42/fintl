@@ -79,3 +79,6 @@ line-length = 100
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/linter/#rule-selection
 select = ["I", "F", "E"]
+
+[tool.uv]
+exclude-newer = "1 week"
