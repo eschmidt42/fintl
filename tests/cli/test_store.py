@@ -60,8 +60,8 @@ def test_run_copies_matched_file(
 
     config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
     result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
 
@@ -82,8 +82,8 @@ def test_run_skips_unmatched_file(
 
     config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=False)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
     result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
 
@@ -104,8 +104,8 @@ def test_run_already_copied_file_is_not_duplicated(
 
     config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
     # first run copies the file (using --copy so source dir is preserved for the second run)
     cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes", "--copy"])
@@ -132,8 +132,8 @@ def test_run_interactive_confirm_accepts(
 
     config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
     # No --yes; default prompt answer is "Move" with default=True, so Enter confirms.
     result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads)], input="\n")
@@ -157,8 +157,8 @@ def test_run_interactive_confirm_declines(
 
     config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
     result = cli_runner.invoke(
         app, ["store", "--from-dir", str(downloads)], input="n\n"
@@ -182,8 +182,8 @@ def test_run_interactive_confirm_copy_label(
 
     config = _store_config(tmp_path, logger_config_path)
     spec = _spec("dkb", "giro", "giro0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr("fintl.cli.commands.store.core.ALL_PARSERS", [spec])
 
     # --copy changes the action label to "Copy" in the interactive prompt.
     result = cli_runner.invoke(
@@ -207,8 +207,10 @@ def test_run_ambiguous_with_yes_skips(
     config = _store_config_multi(tmp_path, logger_config_path)
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec_giro, spec_credit])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr(
+        "fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit]
+    )
 
     result = cli_runner.invoke(app, ["store", "--from-dir", str(downloads), "--yes"])
 
@@ -231,8 +233,10 @@ def test_run_ambiguous_interactive_selects_parser(
     config = _store_config_multi(tmp_path, logger_config_path)
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec_giro, spec_credit])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr(
+        "fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit]
+    )
 
     # Invalid input first (exercises ValueError retry), then select parser 1.
     result = cli_runner.invoke(
@@ -257,8 +261,10 @@ def test_run_ambiguous_interactive_user_skips(
     config = _store_config_multi(tmp_path, logger_config_path)
     spec_giro = _spec("dkb", "giro", "giro0", applies=True)
     spec_credit = _spec("dkb", "credit", "credit0", applies=True)
-    monkeypatch.setattr("fintl.cli.store.Config", lambda: config)
-    monkeypatch.setattr("fintl.cli.store.ALL_PARSERS", [spec_giro, spec_credit])
+    monkeypatch.setattr("fintl.cli.commands.store.core.Config", lambda: config)
+    monkeypatch.setattr(
+        "fintl.cli.commands.store.core.ALL_PARSERS", [spec_giro, spec_credit]
+    )
 
     # User enters 0 to skip the ambiguous file.
     result = cli_runner.invoke(

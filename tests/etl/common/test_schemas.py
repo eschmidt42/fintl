@@ -228,7 +228,7 @@ def test_config_fintl_config_env_var_absent_uses_default(
     monkeypatch.setattr(TomlConfigSettingsSource, "__init__", capturing_init)
     try:
         Config()
-    except Exception:
+    except Exception:  # pragma: no cover
         pass
 
     assert captured == ["~/.config/petprojects/fintl.toml"]

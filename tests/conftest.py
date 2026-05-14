@@ -15,7 +15,7 @@ def files_root_path() -> Path:
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]):
     markexpr = getattr(config.option, "markexpr", "") or ""
-    if "ollama" in markexpr:
+    if "ollama" in markexpr:  # pragma: no cover
         return
     skip = pytest.mark.skip(reason="requires Ollama; run with: pytest -m ollama")
     for item in items:

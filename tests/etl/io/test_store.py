@@ -226,6 +226,19 @@ def test_route_file_creates_raw_dir(tmp_path: Path):
     assert (raw_dir / "file.csv").exists()
 
 
+def test_route_file_moves_file(tmp_path: Path):
+    src = tmp_path / "src" / "file.csv"
+    src.parent.mkdir()
+    src.write_text("data")
+    raw_dir = tmp_path / "raw"
+
+    moved = _route_file(src, raw_dir, FileOperation.MOVING)
+
+    assert moved is True
+    assert (raw_dir / "file.csv").read_text() == "data"
+    assert not src.exists()
+
+
 # ── store_files ───────────────────────────────────────────────────────────────
 
 

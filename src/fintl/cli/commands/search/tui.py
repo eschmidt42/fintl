@@ -1,68 +1,20 @@
-"""
-CLI tool to interactively search through bank transactions.
-
-Example data:
-
-┌────────┬──────────┬────────┬──────────┬─────────┬─────────┬─────────┬────────┬─────────┬─────────┐
-│ source ┆ recipien ┆ amount ┆ descript ┆ date    ┆ provide ┆ service ┆ parser ┆ file    ┆ hash    │
-│ ---    ┆ t        ┆ ---    ┆ ion      ┆ ---     ┆ r       ┆ ---     ┆ ---    ┆ ---     ┆ ---     │
-│ str    ┆ ---      ┆ f64    ┆ ---      ┆ date    ┆ ---     ┆ str     ┆ str    ┆ str     ┆ u64     │
-│        ┆ str      ┆        ┆ str      ┆         ┆ str     ┆         ┆        ┆         ┆         │
-╞════════╪══════════╪════════╪══════════╪═════════╪═════════╪═════════╪════════╪═════════╪═════════╡
-│ myself ┆ EXAMPLE  ┆ -100.0 ┆ 2022-10- ┆ 2022-10 ┆ DKB     ┆ giro    ┆ giro0  ┆ /home/a ┆ 1234567 │
-│        ┆ BANK     ┆        ┆ 12       ┆ -14     ┆         ┆         ┆        ┆ lice/Do ┆ 8901234 │
-│        ┆ MAIN ST  ┆        ┆ Debitk.0 ┆         ┆         ┆         ┆        ┆ cuments ┆ 56789   │
-│        ┆          ┆        ┆ 0 VISA…  ┆         ┆         ┆         ┆        ┆ /Paperw ┆         │
-│        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ ork…    ┆         │
-│ myself ┆ Santa    ┆ -131.0 ┆ Foobar   ┆ 2022-05 ┆ DKB     ┆ giro    ┆ giro0  ┆ /home/a ┆ 9876543 │
-│        ┆ Clause   ┆        ┆          ┆ -09     ┆         ┆         ┆        ┆ lice/Do ┆ 2109876 │
-│        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ cuments ┆ 54321   │
-│        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ /Paperw ┆         │
-│        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ ork…    ┆         │
-└────────┴──────────┴────────┴──────────┴─────────┴─────────┴─────────┴────────┴─────────┴─────────┘
-"""
-
-from functools import cache
-from pathlib import Path
-
 import polars as pl
 from dateutil.parser import parse
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.validation import ValidationResult, Validator
 from textual.widgets import Collapsible, DataTable, Footer, Header, Input, Static
 
+from fintl.cli.commands.search.constants import (
+    _FILTERABLE_INPUT_IDS,
+    CSS_PATH,
+    MAX_COLUMN_WIDTH,
+    WAIT_TIME,
+)
+from fintl.cli.commands.search.helper import get_transactions
+from fintl.cli.commands.search.validators import AmountValidator, DateValidator
 from fintl.common import Config
-
-WAIT_TIME = 1  # seconds
-
-MAX_COLUMN_WIDTH = 24
-
-_FILTERABLE_INPUT_IDS = [
-    "source-input",
-    "recipient-input",
-    "description-input",
-    "date-lb-input",
-    "date-ub-input",
-    "amount-lb-input",
-    "amount-ub-input",
-    "provider-input",
-    "service-input",
-]
-
-
-@cache
-def get_transactions(path_root: Path) -> pl.DataFrame:
-    path_transactions = path_root / "all-transactions.parquet"
-    assert path_transactions.exists()
-
-    df = pl.read_parquet(path_transactions)
-
-    df = df.sort("date", descending=True)
-    df = df.drop(["file", "hash"])
-    return df
 
 
 class RowDetailScreen(ModalScreen):
@@ -98,30 +50,8 @@ class RowDetailScreen(ModalScreen):
         self.app.notify(f"Copied [{field}]: {preview}")
 
 
-class DateValidator(Validator):
-    def validate(self, value: str) -> ValidationResult:
-        if not value:
-            return self.success()
-        try:
-            parse(value)
-            return self.success()
-        except ValueError:
-            return self.failure("Invalid date")
-
-
-class AmountValidator(Validator):
-    def validate(self, value: str) -> ValidationResult:
-        if not value:
-            return self.success()
-        try:
-            float(value)
-            return self.success()
-        except ValueError:
-            return self.failure("Must be a number")
-
-
 class TableApp(App):
-    CSS_PATH = "search.tcss"
+    CSS_PATH = CSS_PATH
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit", show=True),
         Binding("ctrl+x", "clear_filters", "Clear filters", show=True),
@@ -377,12 +307,3 @@ class TableApp(App):
             self._sort_reverse = False
 
         self.apply_filter()
-
-
-def main():
-    app = TableApp()
-    app.run()
-
-
-if __name__ == "__main__":
-    main()

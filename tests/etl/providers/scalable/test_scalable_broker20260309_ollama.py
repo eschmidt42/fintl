@@ -24,7 +24,7 @@ def test_files_exist(files_root_path: Path, png_file: Path):
 
 
 @pytest.fixture
-def real_ollama_config() -> OllamaConfig:
+def real_ollama_config() -> OllamaConfig:  # pragma: no cover
     model = os.environ.get("FINTL_OLLAMA_MODEL")
     if not model:
         pytest.skip("FINTL_OLLAMA_MODEL env var not set")
@@ -33,7 +33,7 @@ def real_ollama_config() -> OllamaConfig:
 
 
 @pytest.mark.ollama
-def test_extract_balance_with_real_ollama(
+def test_extract_balance_with_real_ollama(  # pragma: no cover
     real_ollama_config: OllamaConfig, png_file
 ) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""

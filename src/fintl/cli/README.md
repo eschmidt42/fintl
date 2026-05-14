@@ -180,7 +180,7 @@ A summary is printed at the end:
 Done. Files matched: 3 | Moved: 2 | Skipped: 1 | Unmatched: 0 | Ambiguous: 0
 ```
 
-Source: `src/fintl/cli/store.py`
+Source: `src/fintl/cli/store/core.py`
 
 
 ## `fintl search`
@@ -215,7 +215,7 @@ Useful interactions:
 - pressing `Enter` in the detail dialog copies the selected value to the clipboard
 - `Ctrl+Q` quits
 
-Source: `src/fintl/cli/search.py`
+Source: `src/fintl/cli/search/core.py`
 
 
 ## `fintl plot`
@@ -236,7 +236,7 @@ The command reads `all-balances.parquet` from `Config.target_dir`.
 
 When `--save` is omitted, the chart is written to a temporary HTML file and opened automatically. When `--save` is provided, the chart is saved to that path and then opened.
 
-Source: `src/fintl/cli/plot.py`
+Source: `src/fintl/cli/plot/core.py`
 
 
 ## Extending the ETL
@@ -247,7 +247,7 @@ The ETL is organised around three levels:
 - **Service** — an account type at that provider (e.g. `giro`, `broker`)
 - **Parser** — a versioned format handler for a specific file layout exported by that service
 
-Each parser module is registered as a `ParserSpec` inside a provider's `plugin.py`. The runner discovers all specs through the central `ALL_PLUGINS` list in `src/fintl/accounts_etl/registry.py` and calls each parser in precedence order.
+Each parser module is registered as a `ParserSpec` inside a provider's `plugin.py`. The runner discovers all specs through the central `ALL_PLUGINS` list in `src/fintl/etl/engine/registry.py` and calls each parser in precedence order.
 
 The ETL is designed so that adding a new parser version, service, or provider
 requires changes in as few places as possible.
@@ -258,7 +258,7 @@ A "parser version" handles a specific file format for an existing bank
 account type, e.g. a new CSV layout that DKB started exporting in 2025.
 
 1. **Create the parser module** in the appropriate provider package, e.g.
-   `src/fintl/accounts_etl/dkb/giro202501.py`.  The module must expose:
+   `src/fintl/etl/providers/dkb/giro202501.py`.  The module must expose:
 
    - `CASE: Case` — a `Case(provider=..., service=..., parser=...)` instance
      that uniquely names this parser.
@@ -268,11 +268,11 @@ account type, e.g. a new CSV layout that DKB started exporting in 2025.
    - `main(config: Config) -> None` — runs the full parse-and-store pipeline.
 
 2. **Register the parser** in the provider's plugin module, e.g.
-   `src/fintl/accounts_etl/dkb/plugin.py`, by adding a `ParserSpec` to
+   `src/fintl/etl/providers/dkb/plugin.py`, by adding a `ParserSpec` to
    the relevant `ServicePlugin`:
 
    ```python
-   from fintl.etl.dkb import giro202501
+   from fintl.etl.providers.dkb import giro202501
 
    GIRO = ServicePlugin(
        name="giro",
@@ -301,7 +301,7 @@ A "service" is a new account type at a bank that already has a provider
 entry, e.g. adding a `depot` service to Postbank.
 
 1. Add the service field to `Provider` and `ServiceEnum` in
-   `src/fintl/accounts_etl/schemas.py`:
+   `src/fintl/etl/common/schemas.py`:
 
    ```python
    class ServiceEnum(str, Enum):
@@ -319,7 +319,7 @@ entry, e.g. adding a `depot` service to Postbank.
 2. Create the parser module(s) following the same steps as above.
 
 3. Add a new `ServicePlugin` to the provider's `plugin.py`, e.g.
-   `src/fintl/accounts_etl/postbank/plugin.py`:
+   `src/fintl/etl/providers/postbank/plugin.py`:
 
    ```python
    DEPOT = ServicePlugin(
@@ -342,7 +342,7 @@ entry, e.g. adding a `depot` service to Postbank.
 ### Adding a new provider (bank)
 
 1. Add the provider to `ProviderEnum` and `Sources` in
-   `src/fintl/accounts_etl/schemas.py`:
+   `src/fintl/etl/providers/common/schemas.py`:
 
    ```python
    class ProviderEnum(str, Enum):
@@ -355,13 +355,13 @@ entry, e.g. adding a `depot` service to Postbank.
    ```
 
 2. Create a provider sub-package, e.g.
-   `src/fintl/accounts_etl/n26/`, with an `__init__.py`, at least one
+   `src/fintl/etl/providers/n26/`, with an `__init__.py`, at least one
    parser module, and a `plugin.py` that exports `PLUGIN`:
 
    ```python
-   # src/fintl/accounts_etl/n26/plugin.py
-   from fintl.etl.n26 import giro0
-   from fintl.etl.schemas import ParserSpec, ProviderPlugin, ServicePlugin
+   # src/fintl/etl/providers/n26/plugin.py
+   from fintl.etl.providers.n26 import giro0
+   from fintl.etl.providers.schemas import ParserSpec, ProviderPlugin, ServicePlugin
 
    GIRO = ServicePlugin(
        name="giro",
@@ -379,10 +379,10 @@ entry, e.g. adding a `depot` service to Postbank.
    ```
 
 3. Import and add the plugin to `ALL_PLUGINS` in
-   `src/fintl/accounts_etl/registry.py`:
+   `src/fintl/etl/engine/registry.py`:
 
    ```python
-   from fintl.etl.n26.plugin import PLUGIN as N26_PLUGIN
+   from fintl.etl.providers.n26.plugin import PLUGIN as N26_PLUGIN
 
    ALL_PLUGINS: list[ProviderPlugin] = [
        DKB_PLUGIN,
@@ -396,7 +396,7 @@ entry, e.g. adding a `depot` service to Postbank.
 4. Add the new provider's source paths to `~/.config/petprojects/fintl.toml`.
 
 The runner iterates `config.sources` dynamically, so no changes to
-`src/fintl/accounts_etl/process_accounts.py` or any other orchestration file are required.
+`src/fintl/etl/process_accounts.py` or any other orchestration file are required.
 
 ### Parsers with non-CSV source files
 
@@ -405,7 +405,7 @@ by the Scalable broker parsers), pass a custom `source_files_getter` to
 `ParserSpec` inside the provider's `plugin.py`:
 
 ```python
-from fintl.etl.scalable.files import (
+from fintl.etl.providers.scalable.files import (
     get_parser_source_files as scalable_get_source_files,
 )
 

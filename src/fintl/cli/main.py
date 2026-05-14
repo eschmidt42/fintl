@@ -1,27 +1,17 @@
 import typer
 
-from fintl.cli.etl import run as etl
-from fintl.cli.plot import run as plot
-from fintl.cli.store import run as store
+from fintl.cli.commands import run_etl, run_plot, run_search, run_store
 
 app = typer.Typer()
 
-app.command(name="etl", help="Run the accounts ETL pipeline.")(etl)
-app.command(name="plot", help="Plot bank account balances.")(plot)
+app.command(name="etl", help="Run the accounts ETL pipeline.")(run_etl)
+app.command(name="plot", help="Plot bank account balances.")(run_plot)
 app.command(
     name="store",
     help="Store downloaded bank files into the correct ETL input directories.",
-)(store)
+)(run_store)
+app.command(name="search", help="Interactively search bank transactions.")(run_search)
 
 
-@app.command()
-def search():
-    """Interactively search bank transactions."""
-
-    from fintl.cli.search import main as search_main
-
-    search_main()
-
-
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     app()
