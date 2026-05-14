@@ -14,6 +14,7 @@ from fintl.common.logging import (
     Logging,
     WarningBufferHandler,
     _build_table,
+    flush_warning_summary,
     print_warning_summary,
     setup_logging_from_json,
     setup_logging_from_toml,
@@ -356,3 +357,42 @@ def test_print_warning_summary_count_in_title():
     records = [_make_record("fintl.x", logging.WARNING, f"msg {i}") for i in range(3)]
     output = _summary_output(records)
     assert "(3)" in output
+
+
+# ── flush_warning_summary ─────────────────────────────────────────────────────
+
+
+def test_flush_warning_summary_disabled_is_noop():
+    flush_warning_summary(enabled=False)  # must not raise
+
+
+def test_flush_warning_summary_with_records():
+    from unittest.mock import ANY, patch
+
+    record = _make_record("fintl.test", logging.WARNING, "oops")
+    buf = WarningBufferHandler()
+    buf.records = [record]
+
+    with (
+        patch("logging.getHandlerByName") as mock_get,
+        patch("fintl.common.logging.print_warning_summary") as mock_print,
+    ):
+        mock_get.side_effect = lambda name: buf if name == "warning_buffer" else None
+        flush_warning_summary(enabled=True)
+
+    mock_print.assert_called_once_with(buf.records, ANY)
+
+
+def test_flush_warning_summary_enabled_but_empty_records():
+    from unittest.mock import patch
+
+    buf = WarningBufferHandler()  # records is empty
+
+    with (
+        patch("logging.getHandlerByName") as mock_get,
+        patch("fintl.common.logging.print_warning_summary") as mock_print,
+    ):
+        mock_get.side_effect = lambda name: buf if name == "warning_buffer" else None
+        flush_warning_summary(enabled=True)
+
+    mock_print.assert_not_called()

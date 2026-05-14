@@ -124,7 +124,7 @@ def _route_file(file: Path, raw_dir: Path, operation: FileOperation) -> bool:
         case FileOperation.MOVING:
             shutil.move(file, dest)
             logger.info("Moved %s → %s", file, dest)
-        case FileOperation.COPYING:
+        case FileOperation.COPYING:  # pragma: no branch
             shutil.copy2(file, dest)
             logger.info("Copied %s → %s", file, dest)
 

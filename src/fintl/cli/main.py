@@ -13,5 +13,5 @@ app.command(
 app.command(name="search", help="Interactively search bank transactions.")(run_search)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     app()

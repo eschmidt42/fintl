@@ -459,8 +459,7 @@ def flush_warning_summary(enabled: bool):
             if isinstance(stdout_handler, rich.logging.RichHandler)
             else Console()
         )
-        if enabled:
-            print_warning_summary(buf.records, console)
+        print_warning_summary(buf.records, console)
 
 
 @contextmanager
