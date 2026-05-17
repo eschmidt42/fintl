@@ -29,6 +29,7 @@ dependencies = [
     "polars>=1.39.3",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
+    "pygments>=2.20.0",
     "python-dateutil>=2.9.0.post0",
     "rich>=14.3.3",
     "textual>=8.1.1",
