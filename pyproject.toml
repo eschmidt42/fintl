@@ -155,6 +155,7 @@ convention = "google"
 
 [tool.uv]
 exclude-newer = "1 week"
+exclude-newer-package = { "fintl" = false } # exempt package so the testpypi sanity check works
 
 [tool.uv.audit]
 ignore-until-fixed = ["GHSA-w8v5-vhqr-4h9v"]
