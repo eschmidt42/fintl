@@ -179,67 +179,21 @@ class TableApp(App):
 
     def filter_dataframe(self) -> pl.DataFrame:
         """Apply all active filter inputs and return the filtered DataFrame."""
-        source_input = self.query_one("#source-input", Input)
-        recipient_input = self.query_one("#recipient-input", Input)
-        description_input = self.query_one("#description-input", Input)
-        date_lb_input = self.query_one("#date-lb-input", Input)
-        date_ub_input = self.query_one("#date-ub-input", Input)
-        amount_lb_input = self.query_one("#amount-lb-input", Input)
-        amount_ub_input = self.query_one("#amount-ub-input", Input)
-        provider_input = self.query_one("#provider-input", Input)
-        service_input = self.query_one("#service-input", Input)
-
-        source_text = source_input.value.strip()
-        recipient_text = recipient_input.value.strip()
-        description_text = description_input.value.strip()
-        date_lb_text = date_lb_input.value.strip()
-        amount_lb_text = amount_lb_input.value.strip()
-        date_ub_text = date_ub_input.value.strip()
-        amount_ub_text = amount_ub_input.value.strip()
-        provider_text = provider_input.value.strip()
-        service_text = service_input.value.strip()
+        date_lb_text = self.query_one("#date-lb-input", Input).value.strip()
+        date_ub_text = self.query_one("#date-ub-input", Input).value.strip()
+        amount_lb_text = self.query_one("#amount-lb-input", Input).value.strip()
+        amount_ub_text = self.query_one("#amount-ub-input", Input).value.strip()
 
         df = self.transactions_original
 
-        if source_text:
-            df = df.filter(
-                pl.col("source")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(source_text.lower(), literal=True)
-            )
+        text_columns = ["source", "recipient", "description", "provider", "service"]
 
-        if recipient_text:
-            df = df.filter(
-                pl.col("recipient")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(recipient_text.lower(), literal=True)
-            )
-
-        if description_text:
-            df = df.filter(
-                pl.col("description")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(description_text.lower(), literal=True)
-            )
-
-        if provider_text:
-            df = df.filter(
-                pl.col("provider")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(provider_text.lower(), literal=True)
-            )
-
-        if service_text:
-            df = df.filter(
-                pl.col("service")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(service_text.lower(), literal=True)
-            )
+        for col in text_columns:
+            text = self.query_one(f"#{col}-input", Input).value.strip().lower()
+            if text:
+                df = df.filter(
+                    pl.col(col).cast(pl.String).str.to_lowercase().str.contains(text, literal=True)
+                )
 
         if date_lb_text:
             date_lb = parse(date_lb_text)
