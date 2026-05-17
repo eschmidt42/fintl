@@ -120,7 +120,8 @@ select = [
     "C90", # https://docs.astral.sh/ruff/rules/#mccabe-c90
     "N", # https://docs.astral.sh/ruff/rules/#pep8-naming-n
     "A", # https://docs.astral.sh/ruff/rules/#flake8-builtins-a
-    "C4" # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    "C4", # https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    "LOG" # https://docs.astral.sh/ruff/rules/#flake8-logging-log
 ]
 
 # On top of the Google convention, disable `D417`, which requires
