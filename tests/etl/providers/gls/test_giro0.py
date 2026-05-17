@@ -1,3 +1,5 @@
+"""Tests for gls.giro0 parser."""
+
 import datetime
 from pathlib import Path
 
@@ -26,6 +28,7 @@ from fintl.etl.providers.gls.giro0 import CASE
 
 @pytest.fixture
 def csv_file(files_root_path: Path) -> Path:
+    """Return the path to the GLS giro CSV fixture file."""
     return (
         files_root_path
         / "csv_files"
@@ -36,12 +39,14 @@ def csv_file(files_root_path: Path) -> Path:
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 @pytest.fixture
 def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
+    """Provide a Config instance pointing to the GLS giro fixture directory."""
     giro_source_dir = csv_file.parent
     assert giro_source_dir.exists()
 
@@ -57,10 +62,12 @@ def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of a path."""
     return path.stat().st_mtime
 
 
 def get_files() -> list[Path]:
+    """Return the list of GLS giro fixture file names."""
     files = [
         Path("Umsaetze_DE01234567890123456789_2024.03.23.csv"),
         Path("Umsaetze_DE01234567890123456789_2024.03.30.csv"),
@@ -69,6 +76,7 @@ def get_files() -> list[Path]:
 
 
 def test_main(config: Config):
+    """Test that the giro parser runs end-to-end and produces expected output files."""
     raw_dir = config.get_raw_dir(credit.CASE)
 
     files = get_files()
@@ -76,18 +84,12 @@ def test_main(config: Config):
     copied_file_paths = [raw_dir / f for f in files]
 
     parsed_dir = config.get_parsed_dir(credit.CASE)
-    paths_balance_json_single = [
-        parsed_dir / balance_csv_name_to_json(f) for f in files
-    ]
-    paths_balance_parquet_single = [
-        parsed_dir / balance_csv_name_to_parquet(f) for f in files
-    ]
+    paths_balance_json_single = [parsed_dir / balance_csv_name_to_json(f) for f in files]
+    paths_balance_parquet_single = [parsed_dir / balance_csv_name_to_parquet(f) for f in files]
     paths_transactions_parquet_single = [
         parsed_dir / transaction_csv_name_to_parquet(f) for f in files
     ]
-    paths_transactions_xlsx_single = [
-        parsed_dir / transaction_csv_name_to_xlsx(f) for f in files
-    ]
+    paths_transactions_xlsx_single = [parsed_dir / transaction_csv_name_to_xlsx(f) for f in files]
 
     parser_dir = config.get_parser_dir(credit.CASE)
     path_balances_xlsx_parser = parser_dir / "balances.xlsx"
@@ -129,15 +131,9 @@ def test_main(config: Config):
     assert path_transactions_xlsx_parser.exists()
 
     ts_raw = [get_time(f) for f in copied_file_paths]
-    ts_balance_json_single = [
-        get_time(f) for f in paths_balance_json_single if f.exists()
-    ]
-    ts_balance_parquet_single = [
-        get_time(f) for f in paths_balance_parquet_single if f.exists()
-    ]
-    ts_transactions_parquet_single = [
-        get_time(f) for f in paths_transactions_parquet_single
-    ]
+    ts_balance_json_single = [get_time(f) for f in paths_balance_json_single if f.exists()]
+    ts_balance_parquet_single = [get_time(f) for f in paths_balance_parquet_single if f.exists()]
+    ts_transactions_parquet_single = [get_time(f) for f in paths_transactions_parquet_single]
     ts_transactions_xlsx_single = [get_time(f) for f in paths_transactions_xlsx_single]
 
     n_balances = len(pl.read_parquet(path_balances_parquet_parser))
@@ -206,6 +202,7 @@ def test_main(config: Config):
 
 
 def test_extract_transactions_valid_data(config: Config):
+    """Test that extract_transactions returns a correctly shaped DataFrame."""
     files = get_files()
 
     file_path = config.get_source_dir("gls", "giro") / files[1]
@@ -223,7 +220,7 @@ def test_extract_transactions_valid_data(config: Config):
     assert transactions_df["amount"].to_list() == snapshot([-30.0, 42.0])
     assert transactions_df["description"].to_list() == snapshot(
         [
-            "MASTERCARD Abrechnung EREF: wuppety MREF: schnuppety CRED: cruppety IBAN: DE01234567890123456789 BIC: GENODEM1GLS",
+            "MASTERCARD Abrechnung EREF: wuppety MREF: schnuppety CRED: cruppety IBAN: DE01234567890123456789 BIC: GENODEM1GLS",  # noqa: E501
             "transfer to gls",
         ]
     )
@@ -233,6 +230,7 @@ def test_extract_transactions_valid_data(config: Config):
 
 
 def test_extract_balance_normal(config: Config):
+    """Test that extract_balance returns a valid BalanceInfo for a normal giro file."""
     files = get_files()
     file_path = config.get_source_dir("gls", "giro") / files[1]
     lines = file_path.read_text().splitlines()
@@ -252,6 +250,7 @@ def test_extract_balance_normal(config: Config):
 
 
 def test_extract_balance_empty_transactions(config: Config):
+    """Test that extract_balance returns None when the transaction list is empty."""
     files = get_files()
     file_path = config.get_source_dir("gls", "giro") / files[0]
 

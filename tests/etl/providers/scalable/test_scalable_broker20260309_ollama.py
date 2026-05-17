@@ -1,3 +1,5 @@
+"""Tests for scalable.broker20260309 requiring a real Ollama instance."""
+
 import datetime
 import os
 from pathlib import Path
@@ -10,21 +12,25 @@ from fintl.etl.providers.scalable import broker20260309 as broker
 
 @pytest.fixture
 def png_fname() -> str:
+    """Return the PNG fixture filename for Ollama broker tests."""
     return "Screenshot 2026-04-27 at 08.20.00.png"
 
 
 @pytest.fixture
 def png_file(files_root_path: Path, png_fname: str) -> Path:
+    """Return the full path to the PNG fixture file."""
     return files_root_path / "artefacts" / "Scalable-Capital" / png_fname
 
 
 def test_files_exist(files_root_path: Path, png_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert png_file.exists()
 
 
 @pytest.fixture
 def real_ollama_config() -> OllamaConfig:  # pragma: no cover
+    """Return an OllamaConfig built from environment variables, skipping if unset."""
     model = os.environ.get("FINTL_OLLAMA_MODEL")
     if not model:
         pytest.skip("FINTL_OLLAMA_MODEL env var not set")
@@ -37,10 +43,7 @@ def test_extract_balance_with_real_ollama(  # pragma: no cover
     real_ollama_config: OllamaConfig, png_file
 ) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""
-
-    result = broker.extract_balance(
-        broker.CASE, png_file, ollama_config=real_ollama_config
-    )
+    result = broker.extract_balance(broker.CASE, png_file, ollama_config=real_ollama_config)
 
     assert result.date == datetime.date(2026, 4, 27)
     assert isinstance(result.amount, float)

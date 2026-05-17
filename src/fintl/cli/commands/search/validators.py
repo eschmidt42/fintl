@@ -1,9 +1,14 @@
+"""Input validators for the search command filter fields."""
+
 from dateutil.parser import parse
 from textual.validation import ValidationResult, Validator
 
 
 class DateValidator(Validator):
+    """Validator that accepts empty strings or parseable date strings."""
+
     def validate(self, value: str) -> ValidationResult:
+        """Return success if value is empty or a valid date string."""
         if not value:
             return self.success()
         try:
@@ -14,7 +19,10 @@ class DateValidator(Validator):
 
 
 class AmountValidator(Validator):
+    """Validator that accepts empty strings or numeric amount strings."""
+
     def validate(self, value: str) -> ValidationResult:
+        """Return success if value is empty or convertible to a float."""
         if not value:
             return self.success()
         try:

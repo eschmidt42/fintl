@@ -1,5 +1,4 @@
-"""
-CLI tool to interactively search through bank transactions.
+"""CLI tool to interactively search through bank transactions.
 
 Example data:
 
@@ -20,11 +19,12 @@ Example data:
 │        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ /Paperw ┆         │
 │        ┆          ┆        ┆          ┆         ┆         ┆         ┆        ┆ ork…    ┆         │
 └────────┴──────────┴────────┴──────────┴─────────┴─────────┴─────────┴────────┴─────────┴─────────┘
-"""
+"""  # noqa: E501
 
 from fintl.cli.commands.search.tui import TableApp
 
 
 def run():
+    """Launch the interactive transaction search TUI."""
     app = TableApp()
     app.run()

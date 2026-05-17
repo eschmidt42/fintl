@@ -1,3 +1,5 @@
+"""Tests for the label assignment and expression building utilities."""
+
 import polars as pl
 import pytest
 
@@ -22,44 +24,28 @@ LABEL_RULES: list[LabelRule] = [
     ),
     LabelRule(
         label="income",
+        conditions=[LabelCondition(column="source", op=LabelConditionOp.contains, value="DWS")],
+    ),
+    LabelRule(
+        label="rebooking",
         conditions=[
-            LabelCondition(column="source", op=LabelConditionOp.contains, value="DWS")
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="myself"),
+            LabelCondition(column="description", op=LabelConditionOp.not_contains, value="food"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="myself"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.not_contains, value="food"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="description", op=LabelConditionOp.not_contains, value="food"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.not_contains, value="food"
-            ),
-        ],
-    ),
-    LabelRule(
-        label="rebooking",
-        conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
             LabelCondition(
                 column="recipient",
                 op=LabelConditionOp.equals,
@@ -81,21 +67,15 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane DKB"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane DKB"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
             LabelCondition(column="source", op=LabelConditionOp.equals, value="myself"),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane Doe"),
             LabelCondition(
                 column="description",
                 op=LabelConditionOp.not_contains,
@@ -106,43 +86,25 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="tagesgeld"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="tagesgeld"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="Food"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="JANE DOE"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="Food"),
         ],
     ),
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="source", op=LabelConditionOp.equals, value="Jane Doe"
-            ),
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.equals, value="myself"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="food"
-            ),
+            LabelCondition(column="source", op=LabelConditionOp.equals, value="Jane Doe"),
+            LabelCondition(column="recipient", op=LabelConditionOp.equals, value="myself"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="food"),
         ],
     ),
     LabelRule(
@@ -168,9 +130,7 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="income",
         conditions=[
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="Lohn/Gehalt"
-            )
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="Lohn/Gehalt")
         ],
     ),
     LabelRule(
@@ -196,9 +156,7 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="savings",
         conditions=[
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.contains, value="DWS Investment"
-            )
+            LabelCondition(column="recipient", op=LabelConditionOp.contains, value="DWS Investment")
         ],
     ),
     LabelRule(
@@ -224,15 +182,9 @@ LABEL_RULES: list[LabelRule] = [
     LabelRule(
         label="rebooking",
         conditions=[
-            LabelCondition(
-                column="recipient", op=LabelConditionOp.contains, value="JANE DOE"
-            ),
-            LabelCondition(
-                column="description", op=LabelConditionOp.contains, value="(?i)food"
-            ),
-            LabelCondition(
-                column="provider", op=LabelConditionOp.contains, value="DKB"
-            ),
+            LabelCondition(column="recipient", op=LabelConditionOp.contains, value="JANE DOE"),
+            LabelCondition(column="description", op=LabelConditionOp.contains, value="(?i)food"),
+            LabelCondition(column="provider", op=LabelConditionOp.contains, value="DKB"),
         ],
     ),
     LabelRule(
@@ -269,6 +221,7 @@ LABEL_RULES: list[LabelRule] = [
 
 
 def test_assign_labels():
+    """Test that assign_labels correctly assigns labels to transactions."""
     # Create a sample DataFrame for testing
     data = [
         {
@@ -459,10 +412,7 @@ def test_assign_labels():
 
     df_labelled = fintl_labels.assign_labels(df, LABEL_RULES)
 
-    assert (
-        df_labelled["label_root"].to_list()
-        == df_labelled["expected_label_root"].to_list()
-    )
+    assert df_labelled["label_root"].to_list() == df_labelled["expected_label_root"].to_list()
 
 
 def test_condition_expr_not_equals():
@@ -482,16 +432,16 @@ def test_build_label_expr_empty_rules():
 
 
 def test_build_label_expr_multi_condition_first_rule():
-    """The AND-combining loop inside build_label_expr must be exercised
-    when the *first* rule has more than one condition."""
+    """The AND-combining loop inside build_label_expr must be exercised.
+
+    When the *first* rule has more than one condition.
+    """
     rules = [
         LabelRule(
             label="match",
             conditions=[
                 LabelCondition(column="source", op=LabelConditionOp.equals, value="A"),
-                LabelCondition(
-                    column="recipient", op=LabelConditionOp.equals, value="B"
-                ),
+                LabelCondition(column="recipient", op=LabelConditionOp.equals, value="B"),
             ],
         )
     ]
@@ -503,10 +453,12 @@ def test_build_label_expr_multi_condition_first_rule():
 
 def test_condition_expr_no_case_matches_returns_none():
     """_condition_expr must return None (implicit) when op matches no case arm.
-    This covers the unreachable match-exit branch of the last case."""
+
+    This covers the unreachable match-exit branch of the last case.
+    """
     from typing import cast
 
     from fintl.etl.common.labels import LabelConditionOp, _condition_expr
 
     with pytest.raises(NotImplementedError):
-        result = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")
+        _ = _condition_expr("col", cast(LabelConditionOp, "not_a_real_op"), "val")

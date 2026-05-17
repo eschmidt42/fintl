@@ -19,6 +19,7 @@ from fintl.cli.commands.search.tui import RowDetailScreen, TableApp
 
 @pytest.fixture
 def sample_df() -> pl.DataFrame:
+    """Return a sample two-row transactions DataFrame."""
     return pl.DataFrame(
         {
             "source": ["me", "me"],
@@ -37,6 +38,7 @@ def sample_df() -> pl.DataFrame:
 def patched_app(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, sample_df: pl.DataFrame
 ) -> type[TableApp]:
+    """Return the TableApp class with Config and get_transactions monkeypatched."""
     mock_config = MagicMock()
     mock_config.target_dir = tmp_path
     monkeypatch.setattr("fintl.cli.commands.search.tui.Config", lambda: mock_config)
@@ -52,6 +54,7 @@ def patched_app(
 
 
 def _header_event(column_value: str | None) -> MagicMock:
+    """Return a mock DataTable.HeaderSelected event for the given column value."""
     event = MagicMock(spec=DataTable.HeaderSelected)
     event.column_key = MagicMock()
     event.column_key.value = column_value
@@ -65,6 +68,7 @@ def _header_event(column_value: str | None) -> MagicMock:
 async def test_app_starts_and_populates_table(
     patched_app: type[TableApp], sample_df: pl.DataFrame
 ) -> None:
+    """Test that the app starts and populates the data table with all rows."""
     async with patched_app().run_test() as pilot:
         table = pilot.app.query_one("#data-table", DataTable)
         assert table.row_count == len(sample_df)
@@ -72,6 +76,7 @@ async def test_app_starts_and_populates_table(
 
 @pytest.mark.anyio
 async def test_stats_shows_row_count_on_start(patched_app: type[TableApp]) -> None:
+    """Test that the stats widget shows the correct row count on startup."""
     async with patched_app().run_test() as pilot:
         stats = pilot.app.query_one("#stats", Static)
         assert isinstance(stats.content, str)
@@ -83,6 +88,7 @@ async def test_stats_shows_row_count_on_start(patched_app: type[TableApp]) -> No
 
 @pytest.mark.anyio
 async def test_filter_by_source(patched_app: type[TableApp]) -> None:
+    """Test that filtering by source returns the expected rows."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -93,6 +99,7 @@ async def test_filter_by_source(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_filter_by_recipient(patched_app: type[TableApp]) -> None:
+    """Test that filtering by recipient narrows the results correctly."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -103,6 +110,7 @@ async def test_filter_by_recipient(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_filter_by_description(patched_app: type[TableApp]) -> None:
+    """Test that filtering by description narrows the results correctly."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -113,6 +121,7 @@ async def test_filter_by_description(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_filter_by_provider(patched_app: type[TableApp]) -> None:
+    """Test that filtering by provider narrows the results correctly."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -123,6 +132,7 @@ async def test_filter_by_provider(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_filter_by_service(patched_app: type[TableApp]) -> None:
+    """Test that filtering by service returns all matching rows."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -133,6 +143,7 @@ async def test_filter_by_service(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_filter_by_date_lower_bound(patched_app: type[TableApp]) -> None:
+    """Test that a date lower-bound filter excludes rows before that date."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -143,6 +154,7 @@ async def test_filter_by_date_lower_bound(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_filter_by_date_upper_bound(patched_app: type[TableApp]) -> None:
+    """Test that a date upper-bound filter excludes rows after that date."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -153,6 +165,7 @@ async def test_filter_by_date_upper_bound(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_filter_by_amount_lower_bound(patched_app: type[TableApp]) -> None:
+    """Test that an amount lower-bound filter excludes negative amounts."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -163,6 +176,7 @@ async def test_filter_by_amount_lower_bound(patched_app: type[TableApp]) -> None
 
 @pytest.mark.anyio
 async def test_filter_by_amount_upper_bound(patched_app: type[TableApp]) -> None:
+    """Test that an amount upper-bound filter excludes amounts above the threshold."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -173,6 +187,7 @@ async def test_filter_by_amount_upper_bound(patched_app: type[TableApp]) -> None
 
 @pytest.mark.anyio
 async def test_filter_with_no_sort_column(patched_app: type[TableApp]) -> None:
+    """Test that apply_filter works correctly when no sort column is set."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -186,6 +201,7 @@ async def test_filter_with_no_sort_column(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_header_click_sets_sort_column(patched_app: type[TableApp]) -> None:
+    """Test that clicking a header sets the sort column and clears reverse flag."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -198,6 +214,7 @@ async def test_header_click_sets_sort_column(patched_app: type[TableApp]) -> Non
 async def test_header_click_same_column_toggles_reverse(
     patched_app: type[TableApp],
 ) -> None:
+    """Test that clicking the same column header toggles the sort direction."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -209,6 +226,7 @@ async def test_header_click_same_column_toggles_reverse(
 
 @pytest.mark.anyio
 async def test_header_click_none_column_is_noop(patched_app: type[TableApp]) -> None:
+    """Test that a header click with a None column key does not change sort state."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -222,6 +240,7 @@ async def test_header_click_none_column_is_noop(patched_app: type[TableApp]) -> 
 
 @pytest.mark.anyio
 async def test_action_clear_filters(patched_app: type[TableApp]) -> None:
+    """Test that action_clear_filters resets all input fields to empty strings."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -233,6 +252,7 @@ async def test_action_clear_filters(patched_app: type[TableApp]) -> None:
 
 @pytest.mark.anyio
 async def test_action_focus_table(patched_app: type[TableApp]) -> None:
+    """Test that action_focus_table focuses the data table widget."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         pilot.app.action_focus_table()
@@ -246,6 +266,7 @@ async def test_action_focus_table(patched_app: type[TableApp]) -> None:
 async def test_on_input_changed_valid_triggers_filter(
     patched_app: type[TableApp],
 ) -> None:
+    """Test that a valid input change triggers the filter after the debounce timer."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -259,6 +280,7 @@ async def test_on_input_changed_valid_triggers_filter(
 async def test_on_input_changed_invalid_shows_error(
     patched_app: type[TableApp],
 ) -> None:
+    """Test that an invalid input value shows an error message in the stats widget."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -288,7 +310,9 @@ async def test_on_input_changed_second_change_resets_existing_timer(
 async def test_on_input_changed_valid_with_other_input_invalid(
     patched_app: type[TableApp],
 ) -> None:
-    """Exercises branch 285->288.
+    """Test that a valid change on one input is handled when another input is invalid.
+
+    Exercises branch 285->288.
 
     amount-lb-input is invalid → _all_inputs_valid() is False.
     When date-lb-input gets a VALID value, validation_result is valid so the
@@ -307,7 +331,10 @@ async def test_on_input_changed_valid_with_other_input_invalid(
 async def test_on_input_changed_non_filterable_input_skips_timer(
     patched_app: type[TableApp],
 ) -> None:
-    """Exercises branch 291->exit: input.id not in _FILTERABLE_INPUT_IDS."""
+    """Test that a non-filterable input change does not create a debounce timer.
+
+    Exercises branch 291->exit: input.id not in _FILTERABLE_INPUT_IDS.
+    """
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -326,6 +353,7 @@ async def test_on_input_changed_non_filterable_input_skips_timer(
 async def test_apply_filter_exception_falls_back_to_original(
     patched_app: type[TableApp], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Test that apply_filter falls back to the original DataFrame on exception."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app
@@ -343,6 +371,7 @@ async def test_apply_filter_exception_falls_back_to_original(
 
 @pytest.mark.anyio
 async def test_row_detail_screen_shows_fields(patched_app: type[TableApp]) -> None:
+    """Test that RowDetailScreen displays all fields from the selected row."""
     row = {"source": "me", "amount": -10.0, "date": datetime.date(2024, 1, 1)}
     async with patched_app().run_test() as pilot:
         await pilot.app.push_screen(RowDetailScreen(row))
@@ -357,6 +386,7 @@ async def test_row_detail_screen_shows_fields(patched_app: type[TableApp]) -> No
 async def test_row_detail_screen_row_select_copies_value(
     patched_app: type[TableApp],
 ) -> None:
+    """Test that selecting a row in RowDetailScreen copies the value to clipboard."""
     row = {"source": "me", "amount": -10.0}
     async with patched_app().run_test() as pilot:
         await pilot.app.push_screen(RowDetailScreen(row))
@@ -375,6 +405,7 @@ async def test_row_detail_screen_row_select_copies_value(
 async def test_main_table_row_selected_pushes_detail_screen(
     patched_app: type[TableApp],
 ) -> None:
+    """Test that selecting a row in the main table pushes the RowDetailScreen."""
     async with patched_app().run_test() as pilot:
         assert isinstance(pilot.app, TableApp)
         app = pilot.app

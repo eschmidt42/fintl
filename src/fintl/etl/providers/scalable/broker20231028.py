@@ -1,3 +1,5 @@
+"""Scalable broker account parser for HTML files from 2023-10-28 onwards (broker20231028)."""
+
 import datetime
 import logging
 import re
@@ -41,6 +43,7 @@ CASE = Case(
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     pattern_result = re.search(r"^(\d{4}-\d{2}-\d{2}\.html?)$", str(file_path.name))
     is_file_name_match = pattern_result is not None
 
@@ -56,7 +59,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
         with file_path.open("r") as f:
             lines = f.readlines()
 
-        is_content_match = any(["€" in line for line in lines])
+        is_content_match = any("€" in line for line in lines)
 
     return is_file_name_match and is_content_match
 
@@ -66,6 +69,7 @@ def extract_balance(
     file_path: Path,
     lines: list[str],
 ) -> BalanceInfo:
+    """Extract balance information from parsed file."""
     with file_path.open("r") as f:
         soup = BeautifulSoup(f, "html.parser")
 
@@ -98,6 +102,7 @@ def extract_balance(
 
 
 def parse_html_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 
@@ -113,6 +118,7 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
 ):
+    """Parse all newly discovered files for this account type."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
         return
@@ -134,21 +140,18 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

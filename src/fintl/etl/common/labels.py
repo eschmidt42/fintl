@@ -1,6 +1,7 @@
-"""Assign labels to transactions
+"""Assign labels to transactions.
 
-Reads data/all-transactions.xlsx/parquet and creates data/all-transactions-labelled.xlsx/parquet with label columns.
+Reads data/all-transactions.xlsx/parquet and creates
+data/all-transactions-labelled.xlsx/parquet with label columns.
 """
 
 import logging
@@ -14,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class LabelConditionOp(StrEnum):
+    """Supported comparison operators for label conditions."""
+
     contains = "contains"
     not_contains = "not_contains"
     equals = "equals"
@@ -45,12 +48,16 @@ def _condition_expr(col: str, op: LabelConditionOp, value: str) -> pl.Expr:
 
 
 class LabelCondition(BaseModel):
+    """A single condition to evaluate for labelling a transaction."""
+
     column: Literal["source", "recipient", "description", "provider"]
     op: LabelConditionOp
     value: str
 
 
 class LabelRule(BaseModel):
+    """A labelling rule combining one or more conditions with a target label."""
+
     label: str
     conditions: list[LabelCondition]
 
@@ -88,9 +95,7 @@ def build_label_expr(rules: list[LabelRule]) -> pl.Expr:
     return expr.otherwise(pl.lit("unknown"))
 
 
-def assign_labels(
-    transactions: pl.DataFrame, label_rules: list[LabelRule]
-) -> pl.DataFrame:
+def assign_labels(transactions: pl.DataFrame, label_rules: list[LabelRule]) -> pl.DataFrame:
     """Assigns labels to transactions based on the provided rules.
 
     Adds a 'label_root' column to the transaction DataFrame by applying

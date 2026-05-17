@@ -1,3 +1,5 @@
+"""DKB Tagesgeld (daily savings account) statement parser (format introduced 2023-12)."""
+
 import datetime
 import logging
 import re
@@ -7,8 +9,8 @@ import polars as pl
 
 from fintl.common import Case, Config
 from fintl.etl.common.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
+    ExtractBalanceError,
+    ExtractTransactionsError,
 )
 from fintl.etl.common.number_conversion import german_string_numbers_to_floats
 from fintl.etl.common.schemas import (
@@ -51,6 +53,7 @@ CASE = Case(
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     is_file_name_match = (
         re.search(
             r"^(\d{2}-\d{2}-\d{4}\_Umsatzliste\_Tagesgeld.*\.csv)",
@@ -63,7 +66,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
     lines = load_lines(file_path, encoding)
     is_header_match = any(
         re.search(
-            r'"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige\*r";"Zahlungsempfänger\*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag \(€\)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"',
+            r'"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige\*r";"Zahlungsempfänger\*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag \(€\)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"',  # noqa: E501
             line,
         )
         for line in lines
@@ -74,9 +77,8 @@ def check_if_parser_applies(file_path: Path) -> bool:
 def extract_transactions(
     case: Case, file_path: Path, lines: list[str], encoding: str
 ) -> pl.DataFrame:
-    transaction_pattern: str = (
-        '^("?Buchungsdatum";"Wertstellung")'  # start of transactions
-    )
+    """Extract and normalise transactions from parsed CSV lines."""
+    transaction_pattern: str = '^("?Buchungsdatum";"Wertstellung")'  # start of transactions
 
     date_format: str = "%d.%m.%y"
     date_cols: list = ["Buchungsdatum", "Wertstellung"]
@@ -84,9 +86,7 @@ def extract_transactions(
     ix_start_transactions, transactions_header = find_line_with_pattern(
         lines, pattern=transaction_pattern
     )
-    logger.debug(
-        f"{file_path=} has {ix_start_transactions=} and {transactions_header=}"
-    )
+    logger.debug(f"{file_path=} has {ix_start_transactions=} and {transactions_header=}")
 
     is_empty_1st_line = len(lines[0].strip()) == 0
 
@@ -106,9 +106,7 @@ def extract_transactions(
 
     transactions = pl.read_csv(
         file_path,
-        skip_rows=ix_start_transactions - 1
-        if is_empty_1st_line
-        else ix_start_transactions,
+        skip_rows=ix_start_transactions - 1 if is_empty_1st_line else ix_start_transactions,
         separator=";",
         truncate_ragged_lines=True,
         encoding=encoding,
@@ -146,10 +144,9 @@ def extract_transactions(
 
 
 def extract_balance(case: Case, file_path: Path, lines: list[str]) -> BalanceInfo:
+    """Extract balance information from parsed CSV lines."""
     balance_info_pattern: str = '^("?Kontostand vom)'  # start of balance info
-    ix_start_balance, balance_line = find_line_with_pattern(
-        lines, pattern=balance_info_pattern
-    )
+    ix_start_balance, balance_line = find_line_with_pattern(lines, pattern=balance_info_pattern)
 
     logger.debug(f"{file_path=} has {ix_start_balance=} and {balance_line=}")
 
@@ -179,6 +176,7 @@ def extract_balance(case: Case, file_path: Path, lines: list[str]) -> BalanceInf
 
 
 def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single CSV file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 
@@ -189,14 +187,14 @@ def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceIn
     except Exception as e:
         msg = f"failed to parse {case=} transactions: {file_path=}"
         logger.error(msg)
-        raise ExtractTransactionsException(msg) from e
+        raise ExtractTransactionsError(msg) from e
 
     try:
         balance = extract_balance(case, file_path, lines)
     except Exception as e:
         msg = f"failed to parse {case=} balance: {file_path=}"
         logger.error(msg)
-        raise ExtractBalanceException(msg) from e
+        raise ExtractBalanceError(msg) from e
 
     return transactions, balance
 
@@ -206,6 +204,7 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
 ):
+    """Parse all newly discovered files for this account type."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
         return
@@ -220,7 +219,7 @@ def parse_new_files(
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
         try:
             transactions, balance = parse_csv_file(case, file_path)
-        except (ExtractBalanceException, ExtractTransactionsException):
+        except (ExtractBalanceError, ExtractTransactionsError):
             continue  # already logged in parse_csv_file
 
         store_transactions(parsed_dir, file_path, transactions)
@@ -230,21 +229,18 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

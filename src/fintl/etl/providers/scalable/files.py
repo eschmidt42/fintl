@@ -1,3 +1,5 @@
+"""File I/O utilities for Scalable broker parsers."""
+
 import logging
 from pathlib import Path
 from typing import Callable
@@ -19,9 +21,7 @@ from fintl.etl.io.files.filenames import (
 logger = logging.getLogger(__name__)
 
 
-def detect_relevant_source_files(
-    source_dir: Path, check_if_parser_applies: Callable
-) -> list[Path]:
+def detect_relevant_source_files(source_dir: Path, check_if_parser_applies: Callable) -> list[Path]:
     """Detects relevant raw files in the given source directory."""
     relevant_source_files = [
         file_path
@@ -29,19 +29,16 @@ def detect_relevant_source_files(
         for file_path in source_dir.glob(pattern)
         if check_if_parser_applies(file_path)
     ]
-    logger.info(
-        f"Detected {len(relevant_source_files):_} relevant source files @ {source_dir=}."
-    )
+    logger.info(f"Detected {len(relevant_source_files):_} relevant source files @ {source_dir=}.")
     return relevant_source_files
 
 
 def get_parser_source_files(
     case: Case, config: Config, check_if_parser_applies: Callable
 ) -> list[Path]:
+    """Return source files applicable to this parser from the configured source directory."""
     source_dir = config.get_source_dir(case.provider, case.service)
-    relevant_source_files = detect_relevant_source_files(
-        source_dir, check_if_parser_applies
-    )
+    relevant_source_files = detect_relevant_source_files(source_dir, check_if_parser_applies)
     return relevant_source_files
 
 
@@ -52,9 +49,7 @@ def detect_relevant_target_files(raw_dir: Path) -> list[Path]:
         for pattern in ["**/*.htm", "**/*.html", "**/*.png"]
         for file_path in raw_dir.glob(pattern)
     ]
-    logger.info(
-        f"Detected {len(relevant_target_files):_} relevant source files @ {raw_dir=}."
-    )
+    logger.info(f"Detected {len(relevant_target_files):_} relevant source files @ {raw_dir=}.")
     return relevant_target_files
 
 
@@ -71,6 +66,7 @@ def detect_raw_files(raw_dir: Path, check_if_parser_applies: Callable) -> list[P
 
 
 def select_files_to_parse(present_parsed_files: list[Path], raw_files: list[Path]):
+    """Select raw files that have not yet been parsed."""
     parsed_files = [file_path.name for file_path in present_parsed_files]
     files_to_parse = [
         file_path
@@ -78,7 +74,7 @@ def select_files_to_parse(present_parsed_files: list[Path], raw_files: list[Path
         if transaction_htm_name_to_xlsx(file_path) not in parsed_files
     ]
     logger.info(
-        f"Selecting {len(files_to_parse):_} files to parse after comparing {len(present_parsed_files):_} present parsed files and {len(raw_files):_} raw files."
+        f"Selecting {len(files_to_parse):_} files to parse after comparing {len(present_parsed_files):_} present parsed files and {len(raw_files):_} raw files."  # noqa: E501
     )
     return files_to_parse
 
@@ -90,6 +86,7 @@ def detect_new_raw_files(
     provider: str,
     service: str,
 ) -> list[Path]:
+    """Detect raw files that have not yet been parsed for the given provider and service."""
     logger.info(f"Detecting new raw files for {provider=} -> {service=}")
 
     raw_files = detect_raw_files(raw_dir, check_if_parser_applies)
@@ -106,6 +103,7 @@ def detect_new_raw_files(
 
 
 def store_transactions(parsed_dir: Path, file_path: Path, transactions: pl.DataFrame):
+    """Write transactions to Excel and Parquet files in the parsed directory."""
     excel_file = parsed_dir / transaction_htm_name_to_xlsx(file_path)
     logger.debug(f"Writing {excel_file=}")
     transactions.write_excel(excel_file)
@@ -116,6 +114,7 @@ def store_transactions(parsed_dir: Path, file_path: Path, transactions: pl.DataF
 
 
 def store_balance(parsed_dir: Path, file_path: Path, balance: BalanceInfo):
+    """Write balance information to JSON and Parquet files in the parsed directory."""
     json_file = parsed_dir / balance_htm_name_to_json(file_path)
     logger.debug(f"Writing {json_file=}")
     d = balance.model_dump_json(indent=4)

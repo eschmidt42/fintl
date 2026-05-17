@@ -3,7 +3,7 @@ name: CI
 
 # Shared variables
 env:
-  UV_VERSION: "0.10.10"
+  UV_VERSION: "0.11.14"
 
 on:
   push:
@@ -36,17 +36,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Security audit (pip-audit)
-        run: |
-          # Run pip-audit as an isolated tool (not a project dependency).
-          # We export a fully-resolved requirements file from the uv lock so
-          # pip-audit can audit the project's dependencies.
-          uv export --format requirements-txt --all-extras --dev -o requirements-ci.txt > /dev/null
-          # uv export includes the local project as an editable install (-e .),
-          # which isn't hashable. We only want to audit resolved dependencies.
-          grep -v '^-e \.$' requirements-ci.txt > requirements-ci-audit.txt
-          uv tool run pip-audit -r requirements-ci-audit.txt --disable-pip \
-            --ignore-vuln CVE-2026-4539 \
-            --ignore-vuln CVE-2025-69872
+        run: uv audit
 
       - name: Install the project
         run: uv sync --all-extras --dev

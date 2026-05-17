@@ -1,3 +1,5 @@
+"""Helpers for discovering raw, parsed, and source files on disk."""
+
 import logging
 import re
 from pathlib import Path
@@ -20,10 +22,8 @@ def detect_present_parsed_files(parsed_dir: Path) -> list[Path]:
     Returns:
         A list of paths to existing parsed .xlsx files.
     """
-    present_parsed_files = [file_path for file_path in parsed_dir.glob("**/*.xlsx")]
-    logger.info(
-        f"Detected {len(present_parsed_files):_} present parsed files @ {parsed_dir=}."
-    )
+    present_parsed_files = list(parsed_dir.glob("**/*.xlsx"))
+    logger.info(f"Detected {len(present_parsed_files):_} present parsed files @ {parsed_dir=}.")
     return present_parsed_files
 
 
@@ -45,7 +45,7 @@ def detect_new_parsed_files(
     Returns:
         A list of paths to new balance CSV files corresponding to newly parsed data.
     """
-    logger.info(f"Detecting newly parsed files")
+    logger.info("Detecting newly parsed files")
 
     available_parsed_balance_files = list(parsed_dir.glob("*-balance.parquet"))
 
@@ -56,20 +56,16 @@ def detect_new_parsed_files(
 
         already_stored_files = all_balances["file"].unique().to_list()
 
-        already_stored_files = set([Path(f).stem for f in already_stored_files])
+        already_stored_files = {Path(f).stem for f in already_stored_files}
     else:
         already_stored_files = set()
 
     n = len("-balance.parquet")
     newly_parsed_parquets = [
-        f
-        for f in available_parsed_balance_files
-        if not f.name[:-n] in already_stored_files
+        f for f in available_parsed_balance_files if f.name[:-n] not in already_stored_files
     ]
 
-    newly_parsed_csv_files = [
-        raw_dir / f"{f.name[:-n]}.csv" for f in newly_parsed_parquets
-    ]
+    newly_parsed_csv_files = [raw_dir / f"{f.name[:-n]}.csv" for f in newly_parsed_parquets]
     return newly_parsed_csv_files
 
 
@@ -85,9 +81,7 @@ def detect_raw_files(raw_dir: Path, check_if_parser_applies: Callable) -> list[P
         A list of matched file paths.
     """
     raw_files = [
-        file_path
-        for file_path in raw_dir.glob("**/*.csv")
-        if check_if_parser_applies(file_path)
+        file_path for file_path in raw_dir.glob("**/*.csv") if check_if_parser_applies(file_path)
     ]
     logger.info(f"Detected {len(raw_files):_} raw files @ {raw_dir=}.")
     return raw_files
@@ -133,16 +127,12 @@ def detect_new_raw_files(
 
 def detect_relevant_target_files(raw_dir: Path) -> list[Path]:
     """Detects relevant raw files in the given target directory."""
-    relevant_target_files = [file_path for file_path in raw_dir.glob("**/*.csv")]
-    logger.info(
-        f"Detected {len(relevant_target_files):_} relevant source files @ {raw_dir=}."
-    )
+    relevant_target_files = list(raw_dir.glob("**/*.csv"))
+    logger.info(f"Detected {len(relevant_target_files):_} relevant source files @ {raw_dir=}.")
     return relevant_target_files
 
 
-def detect_relevant_source_files(
-    source_dir: Path, check_if_parser_applies: Callable
-) -> list[Path]:
+def detect_relevant_source_files(source_dir: Path, check_if_parser_applies: Callable) -> list[Path]:
     """Detects relevant CSV files in the given source directory.
 
     Args:
@@ -154,13 +144,9 @@ def detect_relevant_source_files(
         A list of matched source file paths.
     """
     relevant_source_files = [
-        file_path
-        for file_path in source_dir.glob("**/*.csv")
-        if check_if_parser_applies(file_path)
+        file_path for file_path in source_dir.glob("**/*.csv") if check_if_parser_applies(file_path)
     ]
-    logger.info(
-        f"Detected {len(relevant_source_files):_} relevant source files @ {source_dir=}."
-    )
+    logger.info(f"Detected {len(relevant_source_files):_} relevant source files @ {source_dir=}.")
     return relevant_source_files
 
 
@@ -210,7 +196,6 @@ def find_line_with_pattern(lines: list[str], pattern: str) -> tuple[int, str]:
     Raises:
         ValueError: If no line matches the pattern.
     """
-
     ix_match = None
     matched_line = ""
     for i, line in enumerate(lines):

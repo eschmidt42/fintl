@@ -1,3 +1,5 @@
+"""Tests for the DKB giro202307 parser."""
+
 import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -8,8 +10,8 @@ import pytest
 from fintl.common import Config, Provider, Sources
 from fintl.common.logging import Logging
 from fintl.etl.common.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
+    ExtractBalanceError,
+    ExtractTransactionsError,
 )
 from fintl.etl.io.files.filenames import (
     balance_csv_name_to_json,
@@ -21,7 +23,7 @@ from fintl.etl.providers.dkb import giro202307 as giro
 
 
 def test_extract_balance_with_non_breaking_space(tmp_path: Path):
-    """Regression test: \xa0 (non-breaking space) between amount and currency must parse."""
+    r"""Regression test: \xa0 (non-breaking space) between amount and currency must parse."""
     lines = [
         '"Kontostand vom 26.03.2026:";"1.234,56\xa0€"\n',
     ]
@@ -34,24 +36,29 @@ def test_extract_balance_with_non_breaking_space(tmp_path: Path):
 
 @pytest.fixture
 def csv_fname() -> str:
+    """Return the DKB giro202307 CSV fixture filename."""
     return "23-09-2023_Umsatzliste_Girokonto_DE01234567890123456789.csv"
 
 
 @pytest.fixture
 def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    """Return the path to the DKB giro202307 CSV fixture file."""
     return files_root_path / "csv_files" / "DKB" / "kontoauszug" / csv_fname
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that the required fixture files exist on disk."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of the given path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path, csv_fname: str):
+    """Test that giro202307.main parses files and skips already-processed ones."""
     giro_source_dir = csv_file.parent
     assert giro_source_dir.exists()
 
@@ -170,34 +177,36 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path, csv_fnam
 
 
 def test_extract_balance_raises_when_pattern_no_match(tmp_path: Path):
-    """extract_balance must raise ValueError when the balance line does not
-    match the expected pattern."""
+    """extract_balance raise ValueError when the balance line does not match."""
     lines = ['"Kontostand vom 26.03.2026:";NOT_A_VALID_AMOUNT\n']
     with pytest.raises(ValueError, match="Could not match"):
         giro.extract_balance(giro.CASE, tmp_path / "dummy.csv", lines)
 
 
 def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractTransactionsException on bad transactions."""
     with patch(
         "fintl.etl.providers.dkb.giro202307.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
-        with pytest.raises(ExtractTransactionsException) as exc_info:
+        with pytest.raises(ExtractTransactionsError) as exc_info:
             giro.parse_csv_file(giro.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
 def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractBalanceException on bad balance data."""
     with patch(
         "fintl.etl.providers.dkb.giro202307.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
-        with pytest.raises(ExtractBalanceException) as exc_info:
+        with pytest.raises(ExtractBalanceError) as exc_info:
             giro.parse_csv_file(giro.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
 def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    """Test that parse_new_files skips a failing file and processes the remaining ones."""
     good_file = tmp_path / "good.csv"
     bad_file = tmp_path / "bad.csv"
     good_file.touch()
@@ -209,7 +218,7 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
     def _parse_csv_file(case, file_path):
         if file_path == bad_file:
-            raise ExtractTransactionsException("bad file")
+            raise ExtractTransactionsError("bad file")
         return good_transactions, good_balance
 
     with (

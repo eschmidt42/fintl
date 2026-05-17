@@ -1,3 +1,5 @@
+"""Scalable broker account parser (broker0) for HTML files before 2023-10-28."""
+
 import datetime
 import logging
 import re
@@ -41,6 +43,7 @@ CASE = Case(
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     pattern_result = re.search(r"^(\d{4}-\d{2}-\d{2}\.html?)$", str(file_path.name))
     is_file_name_match = pattern_result is not None
 
@@ -56,12 +59,13 @@ def check_if_parser_applies(file_path: Path) -> bool:
         with file_path.open("r") as f:
             lines = f.readlines()
 
-        is_content_match = any(["€" in line for line in lines])
+        is_content_match = any("€" in line for line in lines)
 
     return is_file_name_match and is_content_match
 
 
 def extract_transactions() -> pl.DataFrame:
+    """Extract and normalise transactions from parsed file lines."""
     schema = {
         "date": pl.Date,
         "source": pl.Utf8,
@@ -87,32 +91,20 @@ def extract_balance(
     file_path: Path,
     lines: list[str],
 ) -> BalanceInfo:
+    """Extract balance information from parsed file."""
     with file_path.open("r") as f:
         soup = BeautifulSoup(f, "html.parser")
 
-    # example for element containing euros, cents and currency
-    # <div class="MuiGrid-root jss94 jss96 MuiGrid-container MuiGrid-wrap-xs-nowrap" style="font-size:56px" data-testid="large-price"><div class="MuiGrid-root jss91 jss92 jss99 MuiGrid-item" data-testid="formatted-number">1,234</div><div class="MuiGrid-root jss88 MuiGrid-item"><div class="MuiGrid-root jss93 MuiGrid-container MuiGrid-direction-xs-column MuiGrid-justify-content-xs-space-between"><div class="MuiGrid-root jss92 jss98 MuiGrid-item" data-testid="decimal">69</div><div class="MuiGrid-root jss95 jss92 MuiGrid-item" data-testid="suffix"><div class="jss98">€</div></div></div></div></div>
-    # element = soup.find(
-    #     "div",
-    #     class_="MuiGrid-root jss94 jss96 MuiGrid-container MuiGrid-wrap-xs-nowrap",
-    # )
-
-    # euros
-    # example: <div class="MuiGrid-root jss91 jss92 jss99 MuiGrid-item" data-testid="formatted-number">1,234</div>
     tag = soup.find("div", {"data-testid": "large-price"})
     if not isinstance(tag, element.Tag) or tag.div is None or tag.div.string is None:
         raise ValueError
     val_before_decimal = tag.div.string
 
-    # cents
-    # example: <div class="MuiGrid-root jss92 jss98 MuiGrid-item" data-testid="decimal">69</div>
     tag = soup.find("div", {"data-testid": "decimal"})
     if not isinstance(tag, element.Tag):
         raise ValueError
     val_after_decimal = tag.string
 
-    # currency
-    # example: <div class="MuiGrid-root jss95 jss92 MuiGrid-item" data-testid="suffix"><div class="jss98">€</div></div>
     tag = soup.find("div", {"data-testid": "suffix"})
     if not isinstance(tag, element.Tag) or tag.div is None:
         raise ValueError
@@ -142,6 +134,7 @@ def extract_balance(
 
 
 def parse_html_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 
@@ -157,6 +150,7 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
 ):
+    """Parse all newly discovered files for this account type."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
         return
@@ -178,21 +172,18 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

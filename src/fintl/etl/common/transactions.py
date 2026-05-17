@@ -1,3 +1,5 @@
+"""Utilities for hashing and validating transaction DataFrames."""
+
 import logging
 from pathlib import Path
 
@@ -6,9 +8,7 @@ import polars as pl
 logger = logging.getLogger(__name__)
 
 
-def hash_transactions(
-    transactions: pl.DataFrame, hash_columns: list[str]
-) -> pl.DataFrame:
+def hash_transactions(transactions: pl.DataFrame, hash_columns: list[str]) -> pl.DataFrame:
     """Adds a hash column to a transactions DataFrame based on specific columns.
 
     Args:
@@ -18,9 +18,7 @@ def hash_transactions(
     Returns:
         The DataFrame with an added 'hash' column.
     """
-    transactions = transactions.with_columns(
-        hash=transactions.select(hash_columns).hash_rows()
-    )
+    transactions = transactions.with_columns(hash=transactions.select(hash_columns).hash_rows())
     return transactions
 
 
@@ -39,6 +37,4 @@ def verify_transactions(
     """
     for col in transaction_columns:
         if col not in transactions.columns:
-            raise ValueError(
-                f"Expected column '{col}' in transactions parsed from {file_path=}"
-            )
+            raise ValueError(f"Expected column '{col}' in transactions parsed from {file_path=}")

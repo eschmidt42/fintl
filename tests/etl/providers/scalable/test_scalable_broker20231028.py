@@ -1,3 +1,5 @@
+"""Tests for scalable.broker20231028 parser."""
+
 from pathlib import Path
 
 import polars as pl
@@ -16,24 +18,29 @@ from fintl.etl.providers.scalable import broker20231028 as broker
 
 @pytest.fixture
 def html_fname() -> str:
+    """Return the HTML fixture filename for broker20231028 tests."""
     return "2023-10-28.htm"
 
 
 @pytest.fixture
 def html_file(files_root_path: Path, html_fname: str) -> Path:
+    """Return the full path to the broker20231028 HTML fixture file."""
     return files_root_path / "artefacts" / "Scalable-Capital" / html_fname
 
 
 def test_files_exist(files_root_path: Path, html_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert html_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of a path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, html_file: Path, logger_config_path: Path):
+    """Test that the broker20231028 parser runs end-to-end and produces expected output files."""
     broker_source_dir = html_file.parent
     assert broker_source_dir.exists()
 
@@ -54,9 +61,7 @@ def test_main(tmp_path: Path, html_file: Path, logger_config_path: Path):
     parsed_dir = config.get_parsed_dir(broker.CASE)
     path_balance_json_single = parsed_dir / balance_htm_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_htm_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_htm_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(broker.CASE)
@@ -138,8 +143,7 @@ def test_main(tmp_path: Path, html_file: Path, logger_config_path: Path):
 
 
 def test_check_if_parser_applies_date_none_raises(tmp_path: Path, html_fname: str):
-    """check_if_parser_applies must raise ValueError when the inner date regex
-    returns None (defensive branch)."""
+    """check_if_parser_applies raises ValueError when the inner date regex returns None."""
     from unittest.mock import MagicMock, patch
 
     import pytest
@@ -154,9 +158,7 @@ def test_check_if_parser_applies_date_none_raises(tmp_path: Path, html_fname: st
             broker.check_if_parser_applies(file_path)
 
 
-def test_extract_balance_raises_when_product_list_item_missing(
-    tmp_path: Path, html_fname: str
-):
+def test_extract_balance_raises_when_product_list_item_missing(tmp_path: Path, html_fname: str):
     """extract_balance must raise ValueError when product-list-item div is absent."""
     import pytest
 

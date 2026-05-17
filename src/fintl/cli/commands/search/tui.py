@@ -1,3 +1,5 @@
+"""Textual TUI widgets for the interactive transaction search command."""
+
 import polars as pl
 from dateutil.parser import parse
 from textual.app import App, ComposeResult
@@ -18,13 +20,17 @@ from fintl.common import Config
 
 
 class RowDetailScreen(ModalScreen):
+    """Modal screen showing full details for a selected transaction row."""
+
     BINDINGS = [Binding("escape", "dismiss", "Close")]
 
     def __init__(self, row: dict) -> None:
+        """Initialise RowDetailScreen."""
         super().__init__()
         self.row = row
 
     def compose(self) -> ComposeResult:
+        """Compose the detail dialog layout."""
         with Vertical(id="detail-dialog"):
             yield DataTable(id="detail-table", cursor_type="row")
             yield Static(
@@ -33,6 +39,7 @@ class RowDetailScreen(ModalScreen):
             )
 
     def on_mount(self) -> None:
+        """Populate the detail table with row field/value pairs on mount."""
         table = self.query_one("#detail-table", DataTable)
         table.add_column("Field", width=14)
         table.add_column("Value", width=80)
@@ -41,6 +48,7 @@ class RowDetailScreen(ModalScreen):
         table.focus()
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        """Copy the selected row's value to the clipboard."""
         keys = list(self.row.keys())
         values = list(self.row.values())
         field = keys[event.cursor_row]
@@ -51,6 +59,8 @@ class RowDetailScreen(ModalScreen):
 
 
 class TableApp(App):
+    """Main Textual app for browsing and filtering bank transactions."""
+
     CSS_PATH = CSS_PATH
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit", show=True),
@@ -59,6 +69,7 @@ class TableApp(App):
     ]
 
     def compose(self) -> ComposeResult:
+        """Compose the main app layout with filter inputs and a data table."""
         yield Header()
         with Vertical():
             with Collapsible(title="Filters", id="filter-container"):
@@ -122,6 +133,7 @@ class TableApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
+        """Load transactions and populate the table on app mount."""
         self._sort_column: str = "date"
         self._sort_reverse: bool = True
         config = Config()
@@ -133,16 +145,19 @@ class TableApp(App):
         self.update_stats()
 
     def set_table(self, transactions: pl.DataFrame):
+        """Clear and repopulate the data table with the given transactions."""
         table = self.query_one("#data-table", DataTable)
         table = table.clear(columns=True)
         self.set_columns(table, transactions)
         self.set_rows(table, transactions)
 
     def set_rows(self, table: DataTable, transactions: pl.DataFrame):
+        """Add all transaction rows to the data table."""
         for row in transactions.rows():
             table.add_row(*row)
 
     def set_columns(self, table: DataTable, transactions: pl.DataFrame):
+        """Add columns to the data table with auto-sized widths."""
         columns = list(transactions.columns)
 
         for c in columns:
@@ -156,73 +171,29 @@ class TableApp(App):
             table.add_column(label, key=c, width=column_width)
 
     def update_stats(self) -> None:
+        """Update the stats bar with the current filtered/total row counts."""
         stats = self.query_one("#stats", Static)
         total_rows = len(self.transactions_original)
         filtered_rows = len(self.transactions_filtered)
         stats.update(f"Showing {filtered_rows}/{total_rows}")
 
     def filter_dataframe(self) -> pl.DataFrame:
-        source_input = self.query_one("#source-input", Input)
-        recipient_input = self.query_one("#recipient-input", Input)
-        description_input = self.query_one("#description-input", Input)
-        date_lb_input = self.query_one("#date-lb-input", Input)
-        date_ub_input = self.query_one("#date-ub-input", Input)
-        amount_lb_input = self.query_one("#amount-lb-input", Input)
-        amount_ub_input = self.query_one("#amount-ub-input", Input)
-        provider_input = self.query_one("#provider-input", Input)
-        service_input = self.query_one("#service-input", Input)
-
-        source_text = source_input.value.strip()
-        recipient_text = recipient_input.value.strip()
-        description_text = description_input.value.strip()
-        date_lb_text = date_lb_input.value.strip()
-        amount_lb_text = amount_lb_input.value.strip()
-        date_ub_text = date_ub_input.value.strip()
-        amount_ub_text = amount_ub_input.value.strip()
-        provider_text = provider_input.value.strip()
-        service_text = service_input.value.strip()
+        """Apply all active filter inputs and return the filtered DataFrame."""
+        date_lb_text = self.query_one("#date-lb-input", Input).value.strip()
+        date_ub_text = self.query_one("#date-ub-input", Input).value.strip()
+        amount_lb_text = self.query_one("#amount-lb-input", Input).value.strip()
+        amount_ub_text = self.query_one("#amount-ub-input", Input).value.strip()
 
         df = self.transactions_original
 
-        if source_text:
-            df = df.filter(
-                pl.col("source")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(source_text.lower(), literal=True)
-            )
+        text_columns = ["source", "recipient", "description", "provider", "service"]
 
-        if recipient_text:
-            df = df.filter(
-                pl.col("recipient")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(recipient_text.lower(), literal=True)
-            )
-
-        if description_text:
-            df = df.filter(
-                pl.col("description")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(description_text.lower(), literal=True)
-            )
-
-        if provider_text:
-            df = df.filter(
-                pl.col("provider")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(provider_text.lower(), literal=True)
-            )
-
-        if service_text:
-            df = df.filter(
-                pl.col("service")
-                .cast(pl.String)
-                .str.to_lowercase()
-                .str.contains(service_text.lower(), literal=True)
-            )
+        for col in text_columns:
+            text = self.query_one(f"#{col}-input", Input).value.strip().lower()
+            if text:
+                df = df.filter(
+                    pl.col(col).cast(pl.String).str.to_lowercase().str.contains(text, literal=True)
+                )
 
         if date_lb_text:
             date_lb = parse(date_lb_text)
@@ -248,37 +219,43 @@ class TableApp(App):
         return df
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        """Push the row detail screen when a transaction row is selected."""
         row_dict = self.transactions_filtered.row(event.cursor_row, named=True)
         self.push_screen(RowDetailScreen(row_dict))
 
     def apply_filter(self):
+        """Re-filter the transactions and refresh the table display."""
         try:
             self.transactions_filtered = self.filter_dataframe()
             self.set_table(self.transactions_filtered)
             self.update_stats()
-        except Exception as e:
+        except Exception:
             # If filter fails, show original data
             self.transactions_filtered = self.transactions_original
             self.set_table(self.transactions_original)
             self.update_stats()
 
     def action_focus_table(self) -> None:
+        """Move keyboard focus to the data table."""
         self.query_one("#data-table", DataTable).focus()
 
     def action_clear_filters(self) -> None:
-        for input in self.query(".filter-input").results(Input):
-            input.clear()
+        """Clear all filter inputs and expand the filter panel."""
+        for _input in self.query(".filter-input").results(Input):
+            _input.clear()
         collapsible = self.query_one("#filter-container", Collapsible)
         collapsible.collapsed = False
 
     def _all_inputs_valid(self) -> bool:
+        """Return True if every validated filter input is currently valid."""
         return all(
-            input.is_valid
-            for input in self.query(".filter-input").results(Input)
-            if input.validators  # only check inputs that have validators attached
+            _input.is_valid
+            for _input in self.query(".filter-input").results(Input)
+            if _input.validators  # only check inputs that have validators attached
         )
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        """Debounce filter application and show validation errors in the stats bar."""
         if event.validation_result and not event.validation_result.is_valid:
             msg = " · ".join(event.validation_result.failure_descriptions)
             self.query_one("#stats", Static).update(f"[red]{msg}[/red]")
@@ -296,6 +273,7 @@ class TableApp(App):
                     self._filter_timer = self.set_timer(WAIT_TIME, self.apply_filter)
 
     def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
+        """Toggle sort order or change sort column when a header is clicked."""
         column = event.column_key.value
         if column is None:
             return

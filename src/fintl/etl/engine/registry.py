@@ -23,6 +23,4 @@ ALL_PLUGINS: list[ProviderPlugin] = [
     GLS_PLUGIN,
 ]
 
-ALL_PARSERS: list[ParserSpec] = [
-    spec for plugin in ALL_PLUGINS for spec in plugin.all_parsers()
-]
+ALL_PARSERS: list[ParserSpec] = [spec for plugin in ALL_PLUGINS for spec in plugin.all_parsers()]

@@ -1,3 +1,5 @@
+"""Orchestrates the full ETL pipeline: run parsers, consolidate, and label."""
+
 import logging
 from pathlib import Path
 
@@ -29,14 +31,11 @@ def concatenate_all_providers(config: Config) -> None:
     Returns:
         None
     """
-
     logger.info("Concatenating all providers")
 
     cases = runner.all_cases()
-    logger.info(f"Concatenating transactions")
-    transactions = concatenate_parquets(
-        "transactions.parquet", config, cases, TRANSACTION_COLUMNS
-    )
+    logger.info("Concatenating transactions")
+    transactions = concatenate_parquets("transactions.parquet", config, cases, TRANSACTION_COLUMNS)
 
     if transactions is not None:
         parquet_path = config.target_dir / "all-transactions.parquet"
@@ -48,10 +47,10 @@ def concatenate_all_providers(config: Config) -> None:
         transactions.write_excel(excel_path)
     else:
         logger.warning(
-            f"All transaction dataframes were empty or paths did not exist, skipping writing."
+            "All transaction dataframes were empty or paths did not exist, skipping writing."
         )
 
-    logger.info(f"Concatenating balances")
+    logger.info("Concatenating balances")
     balances = concatenate_parquets("balances.parquet", config, cases, BALANCE_COLUMNS)
 
     if balances is not None:
@@ -64,7 +63,7 @@ def concatenate_all_providers(config: Config) -> None:
         balances.write_excel(excel_path)
     else:
         logger.warning(
-            f"All balances dataframes were empty or paths did not exist, skipping writing."
+            "All balances dataframes were empty or paths did not exist, skipping writing."
         )
 
     logger.info("Finished concatenating all providers")
@@ -90,9 +89,7 @@ def make_labels(config: Config) -> None:
     logger.info(f"Reading from {path_in=}")
 
     if not path_in.exists():
-        logger.warning(
-            f"Could not assign labels, {path_in=} does not seem to exist, returning."
-        )
+        logger.warning(f"Could not assign labels, {path_in=} does not seem to exist, returning.")
         return
 
     df = pl.read_parquet(path_in)
@@ -125,7 +122,7 @@ def main(config: Config) -> None:
         None
     """
     console = Console()
-    logger.info(f"Starting ETL pipeline")
+    logger.info("Starting ETL pipeline")
 
     runner.print_etl_overview(config, console)
     runner.run_enabled_services(config, console)

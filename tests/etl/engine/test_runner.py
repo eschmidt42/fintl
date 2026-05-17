@@ -41,6 +41,7 @@ def _spec(provider: str, service: str, parser: str, precedence: int = 0) -> Pars
 
 
 def test_parsers_for_filters_by_provider_and_service():
+    """Test that parsers_for returns only specs matching the given provider and service."""
     specs = [
         _spec("dkb", "giro", "giro0", precedence=0),
         _spec("dkb", "giro", "giro202312", precedence=20),
@@ -54,6 +55,7 @@ def test_parsers_for_filters_by_provider_and_service():
 
 
 def test_parsers_for_sorts_by_precedence():
+    """Test that parsers_for returns specs sorted by ascending precedence."""
     specs = [
         _spec("dkb", "giro", "giro202312", precedence=20),
         _spec("dkb", "giro", "giro0", precedence=0),
@@ -66,6 +68,7 @@ def test_parsers_for_sorts_by_precedence():
 
 
 def test_parsers_for_returns_empty_for_unknown_pair():
+    """Test that parsers_for returns an empty list for an unregistered provider/service pair."""
     specs = [_spec("dkb", "giro", "giro0")]
     with patch.object(runner, "ALL_PARSERS", specs):
         result = runner.parsers_for("postbank", "giro")
@@ -77,6 +80,7 @@ def test_parsers_for_returns_empty_for_unknown_pair():
 
 
 def test_all_cases_returns_all_when_no_filter():
+    """Test that all_cases returns every registered case when no provider filter is given."""
     specs = [
         _spec("dkb", "giro", "giro0"),
         _spec("postbank", "giro", "giro0"),
@@ -89,6 +93,7 @@ def test_all_cases_returns_all_when_no_filter():
 
 
 def test_all_cases_filters_by_provider():
+    """Test that all_cases filters cases to the specified provider."""
     specs = [
         _spec("dkb", "giro", "giro0"),
         _spec("dkb", "credit", "credit0"),
@@ -102,6 +107,7 @@ def test_all_cases_filters_by_provider():
 
 
 def test_all_cases_preserves_registry_order():
+    """Test that all_cases preserves the registry declaration order."""
     specs = [
         _spec("dkb", "giro", "giro0"),
         _spec("dkb", "giro", "giro202312"),
@@ -116,9 +122,8 @@ def test_all_cases_preserves_registry_order():
 # ── check_service_overlap ─────────────────────────────────────────────────────
 
 
-def test_check_service_overlap_passes_when_no_overlap(
-    tmp_path: Path, logger_config_path: Path
-):
+def test_check_service_overlap_passes_when_no_overlap(tmp_path: Path, logger_config_path: Path):
+    """Test that check_service_overlap does not raise when parsers claim disjoint files."""
     file_a = tmp_path / "a.csv"
     file_b = tmp_path / "b.csv"
 
@@ -135,9 +140,8 @@ def test_check_service_overlap_passes_when_no_overlap(
         runner.check_service_overlap(config, "dkb", "giro")  # must not raise
 
 
-def test_check_service_overlap_raises_on_overlap(
-    tmp_path: Path, logger_config_path: Path
-):
+def test_check_service_overlap_raises_on_overlap(tmp_path: Path, logger_config_path: Path):
+    """Test that check_service_overlap raises ValueError when two parsers claim the same file."""
     shared_file = tmp_path / "shared.csv"
 
     spec_a = _spec("dkb", "giro", "giro0")
@@ -148,9 +152,7 @@ def test_check_service_overlap_raises_on_overlap(
 
     with (
         patch.object(runner, "ALL_PARSERS", [spec_a, spec_b]),
-        patch.object(
-            runner, "_get_source_files", side_effect=[[shared_file], [shared_file]]
-        ),
+        patch.object(runner, "_get_source_files", side_effect=[[shared_file], [shared_file]]),
     ):
         with pytest.raises(ValueError):
             runner.check_service_overlap(config, "dkb", "giro")
@@ -159,9 +161,8 @@ def test_check_service_overlap_raises_on_overlap(
 # ── run_service ───────────────────────────────────────────────────────────────
 
 
-def test_run_service_calls_parsers_in_precedence_order(
-    tmp_path: Path, logger_config_path: Path
-):
+def test_run_service_calls_parsers_in_precedence_order(tmp_path: Path, logger_config_path: Path):
+    """Test that run_service invokes parsers in ascending precedence order."""
     call_order: list[str] = []
 
     def make_run(name: str):
@@ -196,6 +197,7 @@ def test_run_service_calls_parsers_in_precedence_order(
 
 
 def test_run_service_raises_on_overlap(tmp_path: Path, logger_config_path: Path):
+    """Test that run_service raises ValueError when parsers claim overlapping files."""
     shared_file = tmp_path / "shared.csv"
 
     spec_a = _spec("dkb", "giro", "giro0")
@@ -206,17 +208,14 @@ def test_run_service_raises_on_overlap(tmp_path: Path, logger_config_path: Path)
 
     with (
         patch.object(runner, "ALL_PARSERS", [spec_a, spec_b]),
-        patch.object(
-            runner, "_get_source_files", side_effect=[[shared_file], [shared_file]]
-        ),
+        patch.object(runner, "_get_source_files", side_effect=[[shared_file], [shared_file]]),
     ):
         with pytest.raises(ValueError):
             runner.run_service(config, "dkb", "giro")
 
 
-def test_run_service_does_not_run_parser_after_overlap(
-    tmp_path: Path, logger_config_path: Path
-):
+def test_run_service_does_not_run_parser_after_overlap(tmp_path: Path, logger_config_path: Path):
+    """Test that run_service does not invoke subsequent parsers after detecting overlap."""
     shared_file = tmp_path / "shared.csv"
 
     spec_a = _spec("dkb", "giro", "giro0")
@@ -233,9 +232,7 @@ def test_run_service_does_not_run_parser_after_overlap(
 
     with (
         patch.object(runner, "ALL_PARSERS", [spec_a, spec_b]),
-        patch.object(
-            runner, "_get_source_files", side_effect=[[shared_file], [shared_file]]
-        ),
+        patch.object(runner, "_get_source_files", side_effect=[[shared_file], [shared_file]]),
     ):
         with pytest.raises(ValueError):
             runner.run_service(config, "dkb", "giro")
@@ -246,9 +243,8 @@ def test_run_service_does_not_run_parser_after_overlap(
 # ── run_provider ──────────────────────────────────────────────────────────────
 
 
-def test_run_provider_skips_services_with_no_path(
-    tmp_path: Path, logger_config_path: Path
-):
+def test_run_provider_skips_services_with_no_path(tmp_path: Path, logger_config_path: Path):
+    """Test that run_provider skips services that have no configured source path."""
     spec = _spec("dkb", "giro", "giro0")
 
     # credit has no source path configured
@@ -268,6 +264,7 @@ def test_run_provider_skips_services_with_no_path(
 def test_run_provider_calls_run_service_for_each_enabled_service(
     tmp_path: Path, logger_config_path: Path
 ):
+    """Test that run_provider calls run_service once for each enabled service."""
     spec_giro = _spec("dkb", "giro", "giro0")
     spec_credit = _spec("dkb", "credit", "credit0")
 
@@ -291,6 +288,7 @@ def test_run_provider_calls_run_service_for_each_enabled_service(
 def test_run_enabled_services_skips_unconfigured_providers(
     tmp_path: Path, logger_config_path: Path
 ):
+    """Test that run_enabled_services skips providers not present in config.sources."""
     sources = Sources(dkb=Provider(giro=tmp_path))  # postbank/scalable/gls are None
     config = _config(tmp_path, sources, logger_config_path)
 
@@ -303,6 +301,7 @@ def test_run_enabled_services_skips_unconfigured_providers(
 def test_run_enabled_services_calls_all_configured_providers(
     tmp_path: Path, logger_config_path: Path
 ):
+    """Test that run_enabled_services calls run_provider for every configured provider."""
     sources = Sources(
         dkb=Provider(giro=tmp_path),
         postbank=Provider(giro=tmp_path),
@@ -322,6 +321,7 @@ def test_run_enabled_services_calls_all_configured_providers(
 def test_get_source_files_uses_custom_getter_when_provided(
     tmp_path: Path, logger_config_path: Path
 ):
+    """Test that _get_source_files calls the custom getter when one is set on the spec."""
     custom_getter = MagicMock(return_value=[tmp_path / "file.htm"])
     spec = ParserSpec(
         case=Case(provider="scalable", service="broker", parser="broker0"),
@@ -338,9 +338,8 @@ def test_get_source_files_uses_custom_getter_when_provided(
     assert result == [tmp_path / "file.htm"]
 
 
-def test_get_source_files_falls_back_to_csv_getter(
-    tmp_path: Path, logger_config_path: Path
-):
+def test_get_source_files_falls_back_to_csv_getter(tmp_path: Path, logger_config_path: Path):
+    """Test that _get_source_files falls back to csv_get_source_files when no custom getter."""
     spec = ParserSpec(
         case=Case(provider="dkb", service="giro", parser="giro0"),
         applies=MagicMock(return_value=True),
@@ -359,11 +358,11 @@ def test_get_source_files_falls_back_to_csv_getter(
 # ── run_service: no parsers registered ────────────────────────────────────────
 
 
-def test_run_service_no_parsers_registered_logs_warning(
-    tmp_path: Path, logger_config_path: Path
-):
-    """run_service must log a warning and return early when parsers_for yields
-    nothing for the requested provider/service pair."""
+def test_run_service_no_parsers_registered_logs_warning(tmp_path: Path, logger_config_path: Path):
+    """run_service must log a warning and return early when parsers_for yields nothing.
+
+    Covers the case where no parsers are registered for the requested provider/service pair.
+    """
     sources = Sources(dkb=Provider(giro=tmp_path))
     config = _config(tmp_path, sources, logger_config_path)
 

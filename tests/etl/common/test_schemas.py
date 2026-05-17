@@ -29,6 +29,7 @@ def _spec(provider: str, service: str, parser: str, precedence: int = 0) -> Pars
 
 
 def test_service_plugin_stores_name_and_parsers():
+    """Test that ServicePlugin stores name and parsers correctly."""
     spec = _spec("dkb", "giro", "giro0")
     svc = ServicePlugin(name="giro", parsers=(spec,))
 
@@ -37,11 +38,13 @@ def test_service_plugin_stores_name_and_parsers():
 
 
 def test_service_plugin_empty_parsers():
+    """Test that ServicePlugin accepts an empty parsers tuple."""
     svc = ServicePlugin(name="giro", parsers=())
     assert svc.parsers == ()
 
 
 def test_service_plugin_is_frozen():
+    """Test that ServicePlugin raises FrozenInstanceError on mutation."""
     svc = ServicePlugin(name="giro", parsers=())
     with pytest.raises(FrozenInstanceError):
         setattr(svc, "name", "credit")
@@ -51,6 +54,7 @@ def test_service_plugin_is_frozen():
 
 
 def test_provider_plugin_stores_name_and_services():
+    """Test that ProviderPlugin stores name and services correctly."""
     svc = ServicePlugin(name="giro", parsers=())
     plugin = ProviderPlugin(name="dkb", services=(svc,))
 
@@ -59,6 +63,7 @@ def test_provider_plugin_stores_name_and_services():
 
 
 def test_provider_plugin_is_frozen():
+    """Test that ProviderPlugin raises FrozenInstanceError on mutation."""
     plugin = ProviderPlugin(name="dkb", services=())
     with pytest.raises(FrozenInstanceError):
         setattr(plugin, "name", "postbank")
@@ -68,11 +73,13 @@ def test_provider_plugin_is_frozen():
 
 
 def test_all_parsers_returns_empty_for_no_services():
+    """Test that all_parsers returns empty tuple when there are no services."""
     plugin = ProviderPlugin(name="dkb", services=())
     assert plugin.all_parsers() == ()
 
 
 def test_all_parsers_returns_empty_for_services_with_no_parsers():
+    """Test that all_parsers returns empty tuple when services have no parsers."""
     plugin = ProviderPlugin(
         name="dkb",
         services=(
@@ -84,6 +91,7 @@ def test_all_parsers_returns_empty_for_services_with_no_parsers():
 
 
 def test_all_parsers_flattens_single_service():
+    """Test that all_parsers returns parsers from a single service in order."""
     spec_a = _spec("dkb", "giro", "giro0", precedence=0)
     spec_b = _spec("dkb", "giro", "giro202312", precedence=20)
     plugin = ProviderPlugin(
@@ -95,6 +103,7 @@ def test_all_parsers_flattens_single_service():
 
 
 def test_all_parsers_flattens_multiple_services_in_order():
+    """Test that all_parsers flattens parsers from multiple services in declaration order."""
     giro_spec = _spec("dkb", "giro", "giro0")
     credit_spec = _spec("dkb", "credit", "credit0")
     tagesgeld_spec = _spec("dkb", "tagesgeld", "tagesgeld0")
@@ -112,6 +121,7 @@ def test_all_parsers_flattens_multiple_services_in_order():
 
 
 def test_all_parsers_preserves_parser_order_within_service():
+    """Test that all_parsers preserves per-service parser declaration order."""
     spec_0 = _spec("dkb", "giro", "giro0", precedence=0)
     spec_10 = _spec("dkb", "giro", "giro202307", precedence=10)
     spec_20 = _spec("dkb", "giro", "giro202312", precedence=20)
@@ -129,8 +139,10 @@ def test_all_parsers_preserves_parser_order_within_service():
 
 
 def test_provider_check_path_is_valid_none():
-    """When a Provider field is explicitly set to None the validator must return None
-    without attempting to normalise or sanity-check the path."""
+    """When a Provider field is explicitly set to None the validator must return None.
+
+    Without attempting to normalise or sanity-check the path.
+    """
     provider = Provider(giro=None)
     assert provider.giro is None
 
@@ -164,8 +176,10 @@ def test_config_repr_rich(tmp_path: Path):
 
 
 def test_config_get_logger_config_path_no_config_file(tmp_path: Path):
-    """get_logger_config_path must log an error and return None when
-    logging.config_file is None (the default)."""
+    """get_logger_config_path must log an error and return None when.
+
+    logging.config_file is None (the default).
+    """
     config = Config(
         target_dir=tmp_path,
         sources=Sources(dkb=Provider(giro=tmp_path)),
@@ -189,9 +203,7 @@ def test_config_get_logger_config_path_with_config_file(tmp_path: Path):
     assert result == config_file.resolve().absolute()
 
 
-def test_config_fintl_config_env_var_is_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+def test_config_fintl_config_env_var_is_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """FINTL_CONFIG must override the default TOML path."""
     giro = tmp_path / "giro"
     giro.mkdir()

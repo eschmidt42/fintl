@@ -1,3 +1,5 @@
+"""Tests for the fintl plot CLI command."""
+
 import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -14,6 +16,7 @@ from .conftest import make_config
 
 
 def _write_balances(target_dir: Path) -> None:
+    """Write a minimal all-balances.parquet fixture to target_dir."""
     df = pl.DataFrame(
         {
             "date": [datetime.date(2024, 1, 1), datetime.date(2024, 1, 2)],
@@ -30,6 +33,7 @@ def _write_balances(target_dir: Path) -> None:
 
 
 def _plot_config(tmp_path: Path, logger_config_path: Path):
+    """Return a Config with a pre-written balances parquet for plot tests."""
     src = tmp_path / "sources" / "dkb" / "giro"
     src.mkdir(parents=True)
     config = make_config(tmp_path, Sources(dkb=Provider(giro=src)), logger_config_path)
@@ -43,6 +47,7 @@ def test_run_save_writes_html(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that fintl plot --save writes an HTML file and opens the browser."""
     config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
     mock_open = MagicMock()
@@ -62,6 +67,7 @@ def test_run_without_save_opens_browser(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that fintl plot without --save opens the browser directly."""
     config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
     mock_open = MagicMock()

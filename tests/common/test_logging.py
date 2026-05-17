@@ -1,3 +1,5 @@
+"""Tests for the fintl common logging utilities."""
+
 import io
 import json
 import logging
@@ -21,7 +23,8 @@ from fintl.common.logging import (
 )
 
 
-def test_JSONFormatter():
+def test_jsonformatter():
+    """Test that JSONFormatter produces valid JSON with message and timestamp fields."""
     logger = logging.getLogger("test")
     record = logger.makeRecord(
         name="test",
@@ -46,6 +49,7 @@ def test_JSONFormatter():
 
 
 def test_setup_logging_with_json(logger_config_path: Path):
+    """Test that setup_logging_from_json installs a DependencyFilter on the root logger."""
     # https://pytest-with-eric.com/fixtures/built-in/pytest-caplog/#Pytest-Caplog-Example
 
     logger = logging.getLogger("test")
@@ -58,6 +62,7 @@ def test_setup_logging_with_json(logger_config_path: Path):
 
 
 def test_setup_logging_with_toml():
+    """Test that setup_logging_from_toml installs a DependencyFilter on the root logger."""
     # https://pytest-with-eric.com/fixtures/built-in/pytest-caplog/#Pytest-Caplog-Example
 
     logger = logging.getLogger("test2")
@@ -71,7 +76,7 @@ def test_setup_logging_with_toml():
 # ── JSONFormatter: exc_info, stack_info, custom attributes ────────────────────
 
 
-def test_JSONFormatter_with_exc_info():
+def test_jsonformatter_with_exc_info():
     """_prepare_log_dict must include exc_info in the message when set."""
     formatter = JSONFormatter()
     try:
@@ -96,9 +101,8 @@ def test_JSONFormatter_with_exc_info():
     assert "exc_info" in parsed
 
 
-def test_JSONFormatter_with_stack_info():
+def test_jsonformatter_with_stack_info():
     """_prepare_log_dict must include stack_info in the message when set."""
-
     formatter = JSONFormatter()
     logger = logging.getLogger("test_stack")
     record = logger.makeRecord(
@@ -116,7 +120,7 @@ def test_JSONFormatter_with_stack_info():
     assert "stack_info" in parsed
 
 
-def test_JSONFormatter_with_extra_attributes():
+def test_jsonformatter_with_extra_attributes():
     """Custom attributes added to a log record must appear in the JSON output."""
     formatter = JSONFormatter()
     logger = logging.getLogger("test_extra")
@@ -139,7 +143,10 @@ def test_JSONFormatter_with_extra_attributes():
 
 
 def test_dependency_filter_allows_1st_party_logger():
-    """A logger whose name starts with 'fintl', or '__main__' must always be allowed regardless of level."""
+    """A logger whose name starts with 'fintl', or '__main__'.
+
+    Must always be allowed regardless of level.
+    """
     filter_ = DependencyFilter(param=logging.WARNING)
     for name in ("fintl.something", "__main__"):
         record = logging.LogRecord(
@@ -240,6 +247,7 @@ def test_setup_logging_from_json_with_queue_handler(logger_config_path: Path):
 
 
 def _make_record(name: str, level: int, msg: str, exc_info=None) -> logging.LogRecord:
+    """Build a LogRecord for use in tests."""
     return logging.LogRecord(
         name=name,
         level=level,
@@ -252,6 +260,7 @@ def _make_record(name: str, level: int, msg: str, exc_info=None) -> logging.LogR
 
 
 def _render(renderable) -> str:
+    """Render a Rich renderable to a plain string."""
     buf = io.StringIO()
     console = Console(file=buf, width=120, no_color=True)
     console.print(renderable)
@@ -259,6 +268,7 @@ def _render(renderable) -> str:
 
 
 def _summary_output(records: list[logging.LogRecord]) -> str:
+    """Render print_warning_summary output for the given records to a string."""
     buf = io.StringIO()
     console = Console(file=buf, width=120, no_color=True)
     print_warning_summary(records, console)
@@ -269,6 +279,7 @@ def _summary_output(records: list[logging.LogRecord]) -> str:
 
 
 def test_warning_buffer_handler_emit():
+    """Test that WarningBufferHandler stores an emitted record."""
     handler = WarningBufferHandler()
     record = _make_record("fintl.test", logging.WARNING, "watch out")
     handler.emit(record)
@@ -277,6 +288,7 @@ def test_warning_buffer_handler_emit():
 
 
 def test_warning_buffer_handler_accumulates_multiple():
+    """Test that WarningBufferHandler accumulates multiple emitted records."""
     handler = WarningBufferHandler()
     for i in range(3):
         handler.emit(_make_record("fintl.test", logging.WARNING, f"msg {i}"))
@@ -287,12 +299,14 @@ def test_warning_buffer_handler_accumulates_multiple():
 
 
 def test_build_table_contains_message():
+    """Test that _build_table renders the log message in the output."""
     record = _make_record("fintl.runner", logging.WARNING, "something bad")
     rendered = _render(_build_table([record]))
     assert "something bad" in rendered
 
 
 def test_build_table_strip_prefix():
+    """Test that _build_table strips the given prefix from logger names."""
     record = _make_record("fintl.runner", logging.WARNING, "msg")
     rendered = _render(_build_table([record], strip_prefix="fintl."))
     assert "runner" in rendered
@@ -300,12 +314,14 @@ def test_build_table_strip_prefix():
 
 
 def test_build_table_no_strip_prefix_keeps_full_name():
+    """Test that _build_table keeps the full logger name when no strip_prefix is given."""
     record = _make_record("fintl.runner", logging.WARNING, "msg")
     rendered = _render(_build_table([record]))
     assert "fintl.runner" in rendered
 
 
 def test_build_table_exc_info_appended_to_message():
+    """Test that _build_table appends exception info to the rendered message."""
     try:
         raise ValueError("something exploded")
     except ValueError:
@@ -317,6 +333,7 @@ def test_build_table_exc_info_appended_to_message():
 
 
 def test_build_table_location_column():
+    """Test that _build_table includes the file and line number in the location column."""
     record = _make_record("fintl.test", logging.WARNING, "msg")
     rendered = _render(_build_table([record]))
     assert "somefile.py:42" in rendered
@@ -326,10 +343,12 @@ def test_build_table_location_column():
 
 
 def test_print_warning_summary_empty_produces_no_output():
+    """Test that print_warning_summary produces no output for an empty record list."""
     assert _summary_output([]).strip() == ""
 
 
 def test_print_warning_summary_fintl_only_shows_fintl_panel():
+    """Test that only the fintl panel is shown when all records are from fintl loggers."""
     record = _make_record("fintl.runner", logging.WARNING, "fintl problem")
     output = _summary_output([record])
     assert "fintl warnings+" in output
@@ -337,6 +356,7 @@ def test_print_warning_summary_fintl_only_shows_fintl_panel():
 
 
 def test_print_warning_summary_third_party_only_shows_third_party_panel():
+    """Test that only the third-party panel is shown for non-fintl logger records."""
     record = _make_record("some_lib", logging.WARNING, "http warning")
     output = _summary_output([record])
     assert "third-party warnings+" in output
@@ -344,6 +364,7 @@ def test_print_warning_summary_third_party_only_shows_third_party_panel():
 
 
 def test_print_warning_summary_mixed_shows_both_panels():
+    """Test that both fintl and third-party panels are shown for mixed records."""
     records = [
         _make_record("fintl.etl", logging.ERROR, "fintl error"),
         _make_record("httpx", logging.WARNING, "http warning"),
@@ -354,6 +375,7 @@ def test_print_warning_summary_mixed_shows_both_panels():
 
 
 def test_print_warning_summary_count_in_title():
+    """Test that the panel title includes the correct record count."""
     records = [_make_record("fintl.x", logging.WARNING, f"msg {i}") for i in range(3)]
     output = _summary_output(records)
     assert "(3)" in output
@@ -363,10 +385,12 @@ def test_print_warning_summary_count_in_title():
 
 
 def test_flush_warning_summary_disabled_is_noop():
+    """Test that flush_warning_summary does nothing when enabled is False."""
     flush_warning_summary(enabled=False)  # must not raise
 
 
 def test_flush_warning_summary_with_records():
+    """Test that flush_warning_summary calls print_warning_summary with buffered records."""
     from unittest.mock import ANY, patch
 
     record = _make_record("fintl.test", logging.WARNING, "oops")
@@ -384,6 +408,7 @@ def test_flush_warning_summary_with_records():
 
 
 def test_flush_warning_summary_enabled_but_empty_records():
+    """Test that flush_warning_summary does not call print_warning_summary for empty records."""
     from unittest.mock import patch
 
     buf = WarningBufferHandler()  # records is empty

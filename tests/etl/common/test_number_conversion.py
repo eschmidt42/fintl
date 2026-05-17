@@ -1,3 +1,5 @@
+"""Tests for German number string parsing utilities."""
+
 import pytest
 
 from fintl.etl.common.number_conversion import (
@@ -8,6 +10,7 @@ from fintl.etl.common.number_conversion import (
 
 
 def test_check_if_german_number():
+    """Test that check_if_german_number correctly identifies German-formatted numbers."""
     assert check_if_german_number("1.234,56") is True
     assert check_if_german_number("1,234.56") is False
     assert check_if_german_number("1.234") is True
@@ -19,6 +22,7 @@ def test_check_if_german_number():
 
 
 def test_german_string_numbers_to_floats():
+    """Test that german_string_numbers_to_floats converts various formats correctly."""
     assert german_string_numbers_to_floats("1.234,56") == 1234.56
     assert german_string_numbers_to_floats("1.000.000,00") == 1000000.00
     assert german_string_numbers_to_floats("1,23") == 1.23
@@ -33,9 +37,7 @@ def test_german_string_numbers_to_floats():
     with pytest.raises(GermanNumberParsingError):
         german_string_numbers_to_floats("1,234.56")
 
-    assert (
-        german_string_numbers_to_floats("1.234,56 EUR", strip_currency=True) == 1234.56
-    )
+    assert german_string_numbers_to_floats("1.234,56 EUR", strip_currency=True) == 1234.56
 
 
 def test_check_if_german_number_multiple_commas():

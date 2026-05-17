@@ -1,3 +1,5 @@
+"""Tests for scalable.broker20260309 parser."""
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,25 +23,30 @@ MOCK_CURRENCY = "EUR"
 
 @pytest.fixture
 def png_fname() -> str:
+    """Return the PNG fixture filename for broker20260309 tests."""
     return "Screenshot 2026-04-27 at 08.20.00.png"
 
 
 @pytest.fixture
 def png_file(files_root_path: Path, png_fname: str) -> Path:
+    """Return the full path to the broker20260309 PNG fixture file."""
     return files_root_path / "artefacts" / "Scalable-Capital" / png_fname
 
 
 def test_files_exist(files_root_path: Path, png_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert png_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of a path."""
     return path.stat().st_mtime
 
 
 @pytest.fixture
 def mock_lm_extraction():
+    """Provide patched Ollama extraction helpers that return a fixed mock result."""
     mock_result = broker._BalanceInfoExtract(amount=MOCK_AMOUNT, currency=MOCK_CURRENCY)
     mock_client = object()  # dummy; _get_lm_extraction is also patched
     with (
@@ -51,9 +58,8 @@ def mock_lm_extraction():
         yield
 
 
-def test_main(
-    tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path
-):
+def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path):
+    """Test that the broker20260309 parser runs end-to-end and produces expected output files."""
     broker_source_dir = png_file.parent
     assert broker_source_dir.exists()
 
@@ -75,9 +81,7 @@ def test_main(
     parsed_dir = config.get_parsed_dir(broker.CASE)
     path_balance_json_single = parsed_dir / balance_htm_name_to_json(file)
     path_balance_parquet_single = parsed_dir / balance_htm_name_to_parquet(file)
-    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(
-        file
-    )
+    path_transactions_parquet_single = parsed_dir / transaction_htm_name_to_parquet(file)
     path_transactions_xlsx_single = parsed_dir / transaction_htm_name_to_xlsx(file)
 
     parser_dir = config.get_parser_dir(broker.CASE)
@@ -164,8 +168,7 @@ def test_main(
 
 
 def test_get_date_from_string_raises_when_name_does_not_match():
-    """get_date_from_string must raise ValueError for a filename that does not
-    match the expected 'Screenshot YYYY-MM-DD*.png' pattern."""
+    """get_date_from_string raises ValueError for non-matching filename."""
     import pytest
 
     from fintl.etl.providers.scalable.broker20260309 import (
@@ -224,9 +227,7 @@ def test_get_lm_extraction_raises_ollama_inference_error_on_retry_exhausted(
     dummy_file = tmp_path / png_fname
     dummy_file.write_bytes(b"\x89PNG")
 
-    with pytest.raises(
-        OllamaInferenceError, match="model runner has unexpectedly stopped"
-    ):
+    with pytest.raises(OllamaInferenceError, match="model runner has unexpectedly stopped"):
         _get_lm_extraction(dummy_file, mock_client)
 
 
@@ -241,9 +242,7 @@ def test_check_ollama_availability_raises_on_connection_failure():
         _check_ollama_availability,
     )
 
-    with patch.object(
-        httpx, "get", side_effect=httpx.ConnectError("connection refused")
-    ):
+    with patch.object(httpx, "get", side_effect=httpx.ConnectError("connection refused")):
         with pytest.raises(OllamaUnavailableError, match="not reachable"):
             _check_ollama_availability("http://localhost:11434/v1")
 
@@ -381,9 +380,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
         "_check_ollama_availability",
         side_effect=broker.OllamaUnavailableError("server down"),
     ):
-        with caplog.at_level(
-            logging.WARNING, logger="fintl.etl.scalable.broker20260309"
-        ):
+        with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(
                 broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
             )
@@ -414,9 +411,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
             side_effect=broker.OllamaModelUnavailableError("model not found"),
         ),
     ):
-        with caplog.at_level(
-            logging.WARNING, logger="fintl.etl.scalable.broker20260309"
-        ):
+        with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(
                 broker.CASE, [dummy], parsed_dir, ollama_config=OllamaConfig(model="m")
             )
@@ -491,9 +486,7 @@ def test_check_model_available_raises_on_http_error():
         _check_model_available,
     )
 
-    with patch.object(
-        httpx, "get", side_effect=httpx.ConnectError("connection refused")
-    ):
+    with patch.object(httpx, "get", side_effect=httpx.ConnectError("connection refused")):
         with pytest.raises(OllamaModelUnavailableError, match="Could not retrieve"):
             _check_model_available("http://localhost:11434/v1", "qwen3.5:27b")
 
@@ -519,6 +512,7 @@ def test_parse_new_files_continues_on_generic_error(
     call_count = 0
 
     def _raise_generic(*args, **kwargs):
+        """Increment call count and always raise ValueError."""
         nonlocal call_count
         call_count += 1
         raise ValueError("parse failed")
@@ -528,9 +522,7 @@ def test_parse_new_files_continues_on_generic_error(
         patch.object(broker, "_check_model_available"),
         patch.object(broker, "parse_image_file", side_effect=_raise_generic),
     ):
-        with caplog.at_level(
-            logging.WARNING, logger="fintl.etl.scalable.broker20260309"
-        ):
+        with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(
                 broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
             )

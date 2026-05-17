@@ -1,3 +1,5 @@
+"""Tests for the fintl etl CLI command."""
+
 from pathlib import Path
 
 import polars as pl
@@ -7,9 +9,8 @@ from typer.testing import CliRunner
 from fintl.cli.main import app
 
 
-def _write_config_toml(
-    tmp_path: Path, files_root_path: Path, logger_path: Path
-) -> Path:
+def _write_config_toml(tmp_path: Path, files_root_path: Path, logger_path: Path) -> Path:
+    """Write a fintl.toml config file and return its path."""
     target = tmp_path / "target"
     target.mkdir(parents=True, exist_ok=True)
     toml_path = tmp_path / "fintl.toml"
@@ -45,6 +46,7 @@ config_file = "{logger_path}"
 
 
 def _provider_services(path: Path) -> set[tuple[str, str]]:
+    """Return the set of (provider, service) pairs from a parquet file."""
     df = pl.read_parquet(path)
     return set(df.select(["provider", "service"]).rows())
 
@@ -56,6 +58,7 @@ def test_run_exits_zero(
     files_root_path: Path,
     logger_config_path: Path,
 ):
+    """Test that fintl etl exits with code 0 on a valid config."""
     toml_path = _write_config_toml(tmp_path, files_root_path, logger_config_path)
     monkeypatch.setenv("FINTL_CONFIG", str(toml_path))
     result = cli_runner.invoke(app, ["etl"])
@@ -69,6 +72,7 @@ def test_run_writes_parquet_outputs(
     files_root_path: Path,
     logger_config_path: Path,
 ):
+    """Test that fintl etl writes all-transactions.parquet and all-balances.parquet."""
     toml_path = _write_config_toml(tmp_path, files_root_path, logger_config_path)
     monkeypatch.setenv("FINTL_CONFIG", str(toml_path))
     cli_runner.invoke(app, ["etl"])

@@ -1,3 +1,5 @@
+"""Shared helper functions for GLS account parsers."""
+
 import datetime
 import logging
 import re
@@ -23,10 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 def detect_separator(lines: list[str]) -> str | None:
+    """Detect the CSV separator used in the given lines."""
     separator = None
     is_header_match_semicolon = any(
-        re.search(r"(Bezeichnung Auftragskonto;IBAN Auftragskonto)", line)
-        for line in lines
+        re.search(r"(Bezeichnung Auftragskonto;IBAN Auftragskonto)", line) for line in lines
     )
     logger.debug(f"{is_header_match_semicolon=}")
     if is_header_match_semicolon:
@@ -36,9 +38,9 @@ def detect_separator(lines: list[str]) -> str | None:
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     is_file_name_match = (
-        re.search(r"(DE\d{20}_\d{4}\.\d{2}\.\d{2}\.csv$)", str(file_path.name))
-        is not None
+        re.search(r"(DE\d{20}_\d{4}\.\d{2}\.\d{2}\.csv$)", str(file_path.name)) is not None
     )
     logger.debug(f"{is_file_name_match=}")
 
@@ -54,9 +56,8 @@ def check_if_parser_applies(file_path: Path) -> bool:
 def extract_transactions(
     case: Case, file_path: Path, lines: list[str], encoding: str
 ) -> pl.DataFrame:
-    transaction_pattern: str = (
-        "^(Bezeichnung Auftragskonto;IBAN)"  # start of transactions
-    )
+    """Extract and normalise transactions from parsed file lines."""
+    transaction_pattern: str = "^(Bezeichnung Auftragskonto;IBAN)"  # start of transactions
 
     date_format: str = "%d.%m.%Y"
     date_cols: list = ["Valutadatum"]
@@ -66,7 +67,7 @@ def extract_transactions(
     )
     is_empty_1st_line = len(lines[0].strip()) == 0
     logger.debug(
-        f"{file_path=} ({is_empty_1st_line=}) has {ix_start_transactions=} and {transactions_header=}"
+        f"{file_path=} ({is_empty_1st_line=}) has {ix_start_transactions=} and {transactions_header=}"  # noqa: E501
     )
 
     schema = {
@@ -92,15 +93,11 @@ def extract_transactions(
     }
     separator = detect_separator(lines)
     if separator is None:
-        raise ValueError(
-            f"{separator=} but it is not allowed to be None in the following."
-        )
+        raise ValueError(f"{separator=} but it is not allowed to be None in the following.")
 
     transactions = pl.read_csv(
         file_path,
-        skip_rows=ix_start_transactions - 1
-        if is_empty_1st_line
-        else ix_start_transactions,
+        skip_rows=ix_start_transactions - 1 if is_empty_1st_line else ix_start_transactions,
         separator=separator,
         truncate_ragged_lines=True,
         encoding=encoding,
@@ -151,16 +148,13 @@ def extract_transactions(
 
     verify_transactions(TRANSACTION_COLUMNS, transactions, file_path)
 
-    transactions = transactions.select(
-        TRANSACTION_COLUMNS + ["Saldo nach Buchung", "Waehrung"]
-    )
+    transactions = transactions.select(TRANSACTION_COLUMNS + ["Saldo nach Buchung", "Waehrung"])
 
     return transactions
 
 
-def extract_balance(
-    case: Case, transactions: pl.DataFrame, file_path: Path
-) -> BalanceInfo | None:
+def extract_balance(case: Case, transactions: pl.DataFrame, file_path: Path) -> BalanceInfo | None:
+    """Extract balance information from parsed file."""
     if len(transactions) == 0:
         return None
 
@@ -188,9 +182,8 @@ def extract_balance(
     )
 
 
-def parse_csv_file(
-    case: Case, file_path: Path
-) -> tuple[pl.DataFrame, BalanceInfo | None]:
+def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo | None]:
+    """Parse a single file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 

@@ -1,3 +1,5 @@
+"""Tests for DKB parser file-claim logic."""
+
 from pathlib import Path
 
 import pytest
@@ -19,18 +21,18 @@ from fintl.etl.providers.dkb import (
 
 @pytest.fixture
 def csv_root_dir(files_root_path: Path) -> Path:
+    """Return the root directory containing all CSV fixture files."""
     return files_root_path / "csv_files"
 
 
 def test_files_exist(files_root_path: Path, csv_root_dir: Path):
+    """Test that the required fixture directories exist on disk."""
     assert files_root_path.exists()
     assert csv_root_dir.exists()
 
 
-def test_giro_parsers_apply(
-    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
-):
-
+def test_giro_parsers_apply(tmp_path: Path, csv_root_dir: Path, logger_config_path: Path):
+    """Test that each DKB giro parser claims the correct set of fixture files."""
     dkb_giro_source_dir = csv_root_dir / "DKB" / "kontoauszug"
 
     assert dkb_giro_source_dir.exists()
@@ -48,9 +50,7 @@ def test_giro_parsers_apply(
         logging=Logging(config_file=logger_path),
     )
 
-    source_files_giro0 = get_parser_source_files(
-        giro0.CASE, config, giro0.check_if_parser_applies
-    )
+    source_files_giro0 = get_parser_source_files(giro0.CASE, config, giro0.check_if_parser_applies)
     assert len(source_files_giro0) == 1
 
     source_files_giro202307 = get_parser_source_files(
@@ -66,10 +66,8 @@ def test_giro_parsers_apply(
     runner.check_service_overlap(config, "dkb", "giro")
 
 
-def test_tagesgeld_parsers_apply(
-    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
-):
-
+def test_tagesgeld_parsers_apply(tmp_path: Path, csv_root_dir: Path, logger_config_path: Path):
+    """Test that each DKB tagesgeld parser claims the correct set of fixture files."""
     dkb_tagesgeld_source_dir = csv_root_dir / "DKB" / "tagesgeld"
 
     assert dkb_tagesgeld_source_dir.exists()
@@ -103,10 +101,8 @@ def test_tagesgeld_parsers_apply(
     runner.check_service_overlap(config, "dkb", "tagesgeld")
 
 
-def test_credit_parsers_apply(
-    tmp_path: Path, csv_root_dir: Path, logger_config_path: Path
-):
-
+def test_credit_parsers_apply(tmp_path: Path, csv_root_dir: Path, logger_config_path: Path):
+    """Test that the DKB credit parser claims the correct set of fixture files."""
     dkb_credit_source_dir = csv_root_dir / "DKB" / "credit"
 
     assert dkb_credit_source_dir.exists()

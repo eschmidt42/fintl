@@ -1,3 +1,5 @@
+"""ETL schemas, enumerations, and plugin dataclasses."""
+
 import datetime
 import logging
 from dataclasses import dataclass
@@ -14,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceEnum(str, Enum):
+    """Enumeration of supported financial service types."""
+
     # entries need to match the attributes of `Provider`
     giro = "giro"
     tagesgeld = "tagesgeld"
@@ -23,6 +27,8 @@ class ServiceEnum(str, Enum):
 
 
 class ProviderEnum(str, Enum):
+    """Enumeration of supported bank provider identifiers."""
+
     # entries need to match the attributes of `Sources`
     dkb = "dkb"
     postbank = "postbank"
@@ -31,6 +37,8 @@ class ProviderEnum(str, Enum):
 
 
 class BalanceInfo(BaseModel):
+    """Holds balance snapshot data for a single account at a point in time."""
+
     date: datetime.date
     amount: float
     currency: str
@@ -64,45 +72,63 @@ BALANCE_SCHEMA = pl.Schema(
 
 
 class DKBGiroParserEnum(str, Enum):
+    """Parser version identifiers for the DKB giro account."""
+
     giro0 = "giro0"
     giro202307 = "giro202307"
     giro202312 = "giro202312"
 
 
 class PostbankGiroParserEnum(str, Enum):
+    """Parser version identifiers for the Postbank giro account."""
+
     giro0 = "giro0"
     giro202305 = "giro202305"
 
 
 class DKBCreditParserEnum(str, Enum):
+    """Parser version identifiers for the DKB credit account."""
+
     credit0 = "credit0"
 
 
 class DKBFestgeltParserEnum(str, Enum):
+    """Parser version identifiers for the DKB Festgeld (fixed-term deposit) account."""
+
     festgeld0 = "festgeld0"
 
 
 class DKBTagesgeldParserEnum(str, Enum):
+    """Parser version identifiers for the DKB Tagesgeld (overnight money) account."""
+
     tagesgeld0 = "tagesgeld0"
     tagesgeld202307 = "tagesgeld202307"
     tagesgeld202312 = "tagesgeld202312"
 
 
 class GLSGiroParserEnum(str, Enum):
+    """Parser version identifiers for the GLS giro account."""
+
     giro0 = "giro0"
 
 
 class GLSCreditParserEnum(str, Enum):
+    """Parser version identifiers for the GLS credit account."""
+
     credit0 = "credit0"
 
 
 class ScalableBrokerParserEnum(str, Enum):
+    """Parser version identifiers for the Scalable Capital broker account."""
+
     broker0 = "broker0"
     broker20231028 = "broker20231028"
     broker20260309 = "broker20260309"
 
 
 class TransactionColumnsEnum(str, Enum):
+    """Enumeration of standard transaction column names."""
+
     source = "source"
     recipient = "recipient"
     amount = "amount"
@@ -160,9 +186,9 @@ class ParserSpec:
     applies: Callable[[Path], bool]
     run: Callable[["Config"], None]
     precedence: int = 0
-    source_files_getter: (
-        Callable[[Case, "Config", Callable[[Path], bool]], list[Path]] | None
-    ) = None
+    source_files_getter: Callable[[Case, "Config", Callable[[Path], bool]], list[Path]] | None = (
+        None
+    )
 
 
 @dataclass(frozen=True)

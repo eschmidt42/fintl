@@ -1,3 +1,5 @@
+"""I/O helpers for loading, concatenating, and storing transaction records."""
+
 import logging
 from pathlib import Path
 
@@ -28,7 +30,6 @@ def postprocess_old_and_new_transactions(transactions: pl.DataFrame) -> pl.DataF
     Returns:
         The postprocessed DataFrame, sorted by date with unique hashes.
     """
-
     transactions = transactions.unique(subset=["hash"], maintain_order=True)
     transactions = transactions.sort("date")
 
@@ -76,17 +77,13 @@ def process_new_transactions(
     Returns:
         A single concatenated DataFrame containing only the standard TRANSACTION_COLUMNS.
     """
-    newly_parsed_transactions = [
-        df.select(TRANSACTION_COLUMNS) for df in newly_parsed_transactions
-    ]
+    newly_parsed_transactions = [df.select(TRANSACTION_COLUMNS) for df in newly_parsed_transactions]
 
     single_transactions_list = pl.concat(newly_parsed_transactions)
     return single_transactions_list
 
 
-def load_transactions(
-    parsed_dir: Path, new_files_to_parse: list[Path]
-) -> list[pl.DataFrame]:
+def load_transactions(parsed_dir: Path, new_files_to_parse: list[Path]) -> list[pl.DataFrame]:
     """Loads newly parsed transaction DataFrames from Parquet files.
 
     Args:
@@ -96,7 +93,6 @@ def load_transactions(
     Returns:
         A list of Polars DataFrames containing the newly loaded transactions.
     """
-
     newly_parsed_transactions: list[pl.DataFrame] = []
 
     for file_path in new_files_to_parse:
@@ -132,7 +128,6 @@ def concatenate_new_transactions(
             - The combined DataFrame of old and new transactions, or None if no new data.
             - The count of newly added transactions.
     """
-
     all_transactions_file = parser_dir / "transactions.parquet"
 
     newly_parsed_transactions = load_transactions(parsed_dir, new_files_to_parse)
@@ -177,12 +172,8 @@ def concatenate_transactions_history(
         logger.warning(f"{transactions=}, skipping writing to disk.")
         return
 
-    transactions = transactions.unique(
-        subset=["hash"], maintain_order=True, keep="first"
-    )
-    transactions = transactions.sort(
-        TransactionColumnsEnum.date.value, descending=False
-    )
+    transactions = transactions.unique(subset=["hash"], maintain_order=True, keep="first")
+    transactions = transactions.sort(TransactionColumnsEnum.date.value, descending=False)
 
     transactions_parquet_path = parser_dir / "transactions.parquet"
     logger.info(f"Writing {n_new_lines=:_d} to {transactions_parquet_path=}")
@@ -193,9 +184,7 @@ def concatenate_transactions_history(
     transactions.write_excel(excel_path)
 
 
-def store_transactions(
-    parsed_dir: Path, file_path: Path, transactions: pl.DataFrame
-) -> None:
+def store_transactions(parsed_dir: Path, file_path: Path, transactions: pl.DataFrame) -> None:
     """Stores a transaction DataFrame to the parsed directory as Parquet and Excel.
 
     Args:

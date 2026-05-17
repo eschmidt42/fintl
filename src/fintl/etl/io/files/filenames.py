@@ -1,3 +1,5 @@
+"""Functions for converting source file names to output file names."""
+
 from pathlib import Path
 
 
@@ -41,11 +43,7 @@ def balance_name_to_parquet(file: Path) -> str:
     """
     if file.name.endswith("csv"):
         return balance_csv_name_to_parquet(file)
-    elif (
-        file.name.endswith("htm")
-        or file.name.endswith("html")
-        or file.name.endswith("png")
-    ):
+    elif file.name.endswith("htm") or file.name.endswith("html") or file.name.endswith("png"):
         return balance_htm_name_to_parquet(file)
     else:
         raise ValueError(f"Unexpected suffix of {file=}")
@@ -58,7 +56,8 @@ def transaction_csv_name_to_parquet(file: Path) -> str:
         file: The input CSV file path.
 
     Returns:
-        The name of the corresponding Parquet file (e.g., 'export.csv' -> 'export-transactions.parquet').
+        The name of the corresponding Parquet file,
+        e.g. 'export.csv' -> 'export-transactions.parquet'.
     """
     return file.name.replace(".csv", "-transactions.parquet")
 
@@ -91,11 +90,7 @@ def transaction_name_to_parquet(file: Path) -> str:
     """
     if file.name.endswith("csv"):
         return transaction_csv_name_to_parquet(file)
-    elif (
-        file.name.endswith("htm")
-        or file.name.endswith("html")
-        or file.name.endswith("png")
-    ):
+    elif file.name.endswith("htm") or file.name.endswith("html") or file.name.endswith("png"):
         return transaction_htm_name_to_parquet(file)
     else:
         raise ValueError(f"Unexpected suffix of {file=}")

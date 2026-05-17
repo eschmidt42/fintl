@@ -1,3 +1,5 @@
+"""Scalable broker account parser for PNG screenshots from 2026-03-09 onwards (broker20260309)."""
+
 import datetime
 import logging
 import re
@@ -52,10 +54,8 @@ class OllamaInferenceError(Exception):
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
-    "Example: Screenshot 2026-03-02 at 14.30.53.png"
-    pattern_result = re.search(
-        r"^Screenshot \d{4}-\d{2}-\d{2}.*\.png$", str(file_path.name)
-    )
+    """Return True if the filename matches the expected screenshot pattern."""
+    pattern_result = re.search(r"^Screenshot \d{4}-\d{2}-\d{2}.*\.png$", str(file_path.name))
     is_file_name_match = pattern_result is not None
 
     return is_file_name_match
@@ -67,6 +67,7 @@ class _BalanceInfoExtract(BaseModel):
 
 
 def get_date_from_string(name: str) -> datetime.date:
+    """Extract a date from a screenshot filename string."""
     date_match = re.match(r"^Screenshot (\d{4}-\d{2}-\d{2}).*\.png$", name)
     if date_match:
         date = date_match.group(1)
@@ -92,9 +93,7 @@ def _check_ollama_availability(base_url: str) -> None:
     try:
         httpx.get(root_url, timeout=5.0).raise_for_status()
     except Exception as exc:
-        raise OllamaUnavailableError(
-            f"Ollama is not reachable at {base_url}: {exc}"
-        ) from exc
+        raise OllamaUnavailableError(f"Ollama is not reachable at {base_url}: {exc}") from exc
 
 
 def _check_model_available(base_url: str, model: str) -> None:
@@ -129,14 +128,14 @@ def _check_model_available(base_url: str, model: str) -> None:
             return
 
     raise OllamaModelUnavailableError(
-        f"Model '{model}' is not available in ollama. "
-        f"Pull it first with: ollama pull {model}"
+        f"Model '{model}' is not available in ollama. Pull it first with: ollama pull {model}"
     )
 
 
 def _get_ollama_client(
     *, model: str, ollama_base_url: str = "http://localhost:11434/v1"
 ) -> instructor.Instructor:
+    """Create and return an Instructor client configured for the given ollama model."""
     return instructor.from_provider(
         f"ollama/{model}",
         base_url=ollama_base_url,
@@ -145,14 +144,13 @@ def _get_ollama_client(
     )
 
 
-_SYSTEM_PROMPT = (
-    "You are a Scraper for data contained in a screenshot of a broker web app."
-)
+_SYSTEM_PROMPT = "You are a Scraper for data contained in a screenshot of a broker web app."
 
 
 def _get_lm_extraction(
     file_path: Path, extraction_client: instructor.Instructor
 ) -> _BalanceInfoExtract:
+    """Run LM inference to extract balance information from an image file."""
     from instructor.core.exceptions import InstructorRetryException
 
     try:
@@ -171,14 +169,15 @@ def _get_lm_extraction(
         )
     except InstructorRetryException as exc:
         last = exc.failed_attempts[-1].exception if exc.failed_attempts else exc
+        # explicitly cutting of the traceback here for readability.
+        # remove `from None` if you need to debug.
         raise OllamaInferenceError(
             f"Ollama inference failed for {file_path.name}: {last}"
-        ) from None  # explicitly cutting of the traceback here for readability. remove `from None` if you need to debug.
+        ) from None
 
 
-def extract_balance(
-    case: Case, file_path: Path, *, ollama_config: OllamaConfig
-) -> BalanceInfo:
+def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig) -> BalanceInfo:
+    """Extract balance information from a PNG screenshot using ollama."""
     extraction_client = _get_ollama_client(
         model=ollama_config.model, ollama_base_url=ollama_config.base_url
     )
@@ -202,6 +201,7 @@ def extract_balance(
 def parse_image_file(
     case: Case, file_path: Path, *, ollama_config: OllamaConfig
 ) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single PNG file and return transactions and balance."""
     transactions = extract_transactions()
     balance = extract_balance(case, file_path, ollama_config=ollama_config)
 
@@ -253,9 +253,7 @@ def parse_new_files(
     for file_path in new_files_to_parse:
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
         try:
-            transactions, balance = parse_image_file(
-                case, file_path, ollama_config=ollama_config
-            )
+            transactions, balance = parse_image_file(case, file_path, ollama_config=ollama_config)
         except Exception:
             logger.warning("Failed to parse %s", file_path.name, exc_info=True)
             continue
@@ -269,21 +267,18 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

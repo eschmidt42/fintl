@@ -1,3 +1,5 @@
+"""Tests verifying that Postbank parsers claim the correct source files."""
+
 from pathlib import Path
 
 import pytest
@@ -14,6 +16,7 @@ from fintl.etl.providers.postbank import (
 
 @pytest.fixture
 def csv_file(files_root_path: Path) -> Path:
+    """Return the path to the Postbank giro fixture CSV file."""
     return (
         files_root_path
         / "csv_files"
@@ -23,12 +26,13 @@ def csv_file(files_root_path: Path) -> Path:
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def test_giro_parsers_apply(tmp_path: Path, csv_file: Path, logger_config_path: Path):
-
+    """Test that each Postbank giro parser claims exactly the expected source files."""
     postbank_giro_source_dir = csv_file.parent
 
     assert postbank_giro_source_dir.exists()
@@ -44,9 +48,7 @@ def test_giro_parsers_apply(tmp_path: Path, csv_file: Path, logger_config_path: 
         logging=Logging(config_file=logger_path),
     )
 
-    source_files_giro0 = get_parser_source_files(
-        giro0.CASE, config, giro0.check_if_parser_applies
-    )
+    source_files_giro0 = get_parser_source_files(giro0.CASE, config, giro0.check_if_parser_applies)
     assert len(source_files_giro0) == 1
 
     source_files_giro202305 = get_parser_source_files(

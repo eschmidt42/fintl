@@ -1,3 +1,5 @@
+"""Tests for the DKB tagesgeld202312 parser."""
+
 import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -8,8 +10,8 @@ import pytest
 from fintl.common import Config, Provider, Sources
 from fintl.common.logging import Logging
 from fintl.etl.common.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
+    ExtractBalanceError,
+    ExtractTransactionsError,
 )
 from fintl.etl.io.files.filenames import (
     balance_csv_name_to_json,
@@ -22,21 +24,24 @@ from fintl.etl.providers.dkb import tagesgeld202312 as tagesgeld
 
 @pytest.fixture
 def csv_fname() -> str:
+    """Return the DKB tagesgeld202312 CSV fixture filename."""
     return "02-12-2023_Umsatzliste_Tagesgeld_DE01234567890123456789.csv"
 
 
 @pytest.fixture
 def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    """Return the path to the DKB tagesgeld202312 CSV fixture file."""
     return files_root_path / "csv_files" / "DKB" / "tagesgeld" / csv_fname
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that the required fixture files exist on disk."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def test_extract_balance_with_xa0_character(tmp_path: Path):
-    """Regression test: extract_balance must handle \xa0 (non-breaking space) in the total field."""
+    r"""extract_balance must handle \xa0 (non-breaking space) in the total field."""
     # \xa0 between amount and currency, as produced by some DKB exports
     lines = [
         '""',
@@ -51,26 +56,29 @@ def test_extract_balance_with_xa0_character(tmp_path: Path):
 
 
 def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractTransactionsException on bad transactions."""
     with patch(
         "fintl.etl.providers.dkb.tagesgeld202312.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
-        with pytest.raises(ExtractTransactionsException) as exc_info:
+        with pytest.raises(ExtractTransactionsError) as exc_info:
             tagesgeld.parse_csv_file(tagesgeld.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
 def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractBalanceException on bad balance data."""
     with patch(
         "fintl.etl.providers.dkb.tagesgeld202312.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
-        with pytest.raises(ExtractBalanceException) as exc_info:
+        with pytest.raises(ExtractBalanceError) as exc_info:
             tagesgeld.parse_csv_file(tagesgeld.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
 
 def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    """Test that parse_new_files skips a failing file and processes the remaining ones."""
     good_file = tmp_path / "good.csv"
     bad_file = tmp_path / "bad.csv"
     good_file.touch()
@@ -82,7 +90,7 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
     def _parse_csv_file(case, file_path):
         if file_path == bad_file:
-            raise ExtractTransactionsException("bad file")
+            raise ExtractTransactionsError("bad file")
         return good_transactions, good_balance
 
     with (
@@ -90,9 +98,7 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
             "fintl.etl.providers.dkb.tagesgeld202312.parse_csv_file",
             side_effect=_parse_csv_file,
         ),
-        patch(
-            "fintl.etl.providers.dkb.tagesgeld202312.store_transactions"
-        ) as mock_store_t,
+        patch("fintl.etl.providers.dkb.tagesgeld202312.store_transactions") as mock_store_t,
         patch("fintl.etl.providers.dkb.tagesgeld202312.store_balance") as mock_store_b,
     ):
         tagesgeld.parse_new_files(tagesgeld.CASE, [bad_file, good_file], parsed_dir)
@@ -102,10 +108,12 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of the given path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
+    """Test that tagesgeld202312.main parses files and skips already-processed ones."""
     tagesgeld_source_dir = csv_file.parent
     assert tagesgeld_source_dir.exists()
 
@@ -127,18 +135,12 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
     copied_file_paths = [raw_dir / f for f in files]
 
     parsed_dir = config.get_parsed_dir(tagesgeld.CASE)
-    paths_balance_json_single = [
-        parsed_dir / balance_csv_name_to_json(f) for f in files
-    ]
-    paths_balance_parquet_single = [
-        parsed_dir / balance_csv_name_to_parquet(f) for f in files
-    ]
+    paths_balance_json_single = [parsed_dir / balance_csv_name_to_json(f) for f in files]
+    paths_balance_parquet_single = [parsed_dir / balance_csv_name_to_parquet(f) for f in files]
     paths_transactions_parquet_single = [
         parsed_dir / transaction_csv_name_to_parquet(f) for f in files
     ]
-    paths_transactions_xlsx_single = [
-        parsed_dir / transaction_csv_name_to_xlsx(f) for f in files
-    ]
+    paths_transactions_xlsx_single = [parsed_dir / transaction_csv_name_to_xlsx(f) for f in files]
 
     parser_dir = config.get_parser_dir(tagesgeld.CASE)
     path_balances_xlsx_parser = parser_dir / "balances.xlsx"
@@ -182,9 +184,7 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
     ts_raw = [get_time(f) for f in copied_file_paths]
     ts_balance_json_single = [get_time(f) for f in paths_balance_json_single]
     ts_balance_parquet_single = [get_time(f) for f in paths_balance_parquet_single]
-    ts_transactions_parquet_single = [
-        get_time(f) for f in paths_transactions_parquet_single
-    ]
+    ts_transactions_parquet_single = [get_time(f) for f in paths_transactions_parquet_single]
     ts_transactions_xlsx_single = [get_time(f) for f in paths_transactions_xlsx_single]
 
     n_balances = len(pl.read_parquet(path_balances_parquet_parser))

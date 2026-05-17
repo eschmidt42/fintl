@@ -1,3 +1,5 @@
+"""DKB Festgeld (fixed-term deposit) statement parser."""
+
 import logging
 import re
 from pathlib import Path
@@ -6,8 +8,8 @@ import polars as pl
 
 from fintl.common import Case, Config
 from fintl.etl.common.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
+    ExtractBalanceError,
+    ExtractTransactionsError,
 )
 from fintl.etl.common.number_conversion import german_string_numbers_to_floats
 from fintl.etl.common.schemas import (
@@ -53,6 +55,7 @@ CASE = Case(
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     is_file_name_match = re.search(r"(DE\d{20}\.csv$)", str(file_path.name)) is not None
     logger.debug(f"{is_file_name_match=}")
 
@@ -68,6 +71,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
 def extract_transactions(
     case: Case, file_path: Path, lines: list[str], encoding: str
 ) -> pl.DataFrame:
+    """Extract and normalise transactions from parsed CSV lines."""
     transaction_pattern: str = '^("?Buchungsdatum)'  # start of transactions
 
     date_format: str = "%d.%m.%y"
@@ -78,7 +82,7 @@ def extract_transactions(
     )
     is_empty_1st_line = len(lines[0].strip()) == 0
     logger.debug(
-        f"{file_path=} ({is_empty_1st_line=}) has {ix_start_transactions=} and {transactions_header=}"
+        f"{file_path=} ({is_empty_1st_line=}) has {ix_start_transactions=} and {transactions_header=}"  # noqa: E501
     )
 
     schema = {
@@ -97,15 +101,11 @@ def extract_transactions(
     }
     separator = detect_separator(lines)
     if separator is None:
-        raise ValueError(
-            f"{separator=} but it is not allowed to be None in the following."
-        )
+        raise ValueError(f"{separator=} but it is not allowed to be None in the following.")
 
     transactions = pl.read_csv(
         file_path,
-        skip_rows=ix_start_transactions - 1
-        if is_empty_1st_line
-        else ix_start_transactions,
+        skip_rows=ix_start_transactions - 1 if is_empty_1st_line else ix_start_transactions,
         separator=separator,
         truncate_ragged_lines=True,
         encoding=encoding,
@@ -162,6 +162,7 @@ def extract_transactions(
 
 
 def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single CSV file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 
@@ -172,14 +173,14 @@ def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceIn
     except Exception as e:
         msg = f"failed to parse {case=} transactions: {file_path=}"
         logger.error(msg)
-        raise ExtractTransactionsException(msg) from e
+        raise ExtractTransactionsError(msg) from e
 
     try:
         balance = extract_balance(case, file_path, lines)
     except Exception as e:
         msg = f"failed to parse {case=} balance: {file_path=}"
         logger.error(msg)
-        raise ExtractBalanceException(msg) from e
+        raise ExtractBalanceError(msg) from e
 
     return transactions, balance
 
@@ -189,6 +190,7 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
 ):
+    """Parse all newly discovered files for this account type."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
         return
@@ -203,7 +205,7 @@ def parse_new_files(
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
         try:
             transactions, balance = parse_csv_file(case, file_path)
-        except (ExtractBalanceException, ExtractTransactionsException):
+        except (ExtractBalanceError, ExtractTransactionsError):
             continue  # already logged in parse_csv_file
 
         store_transactions(parsed_dir, file_path, transactions)
@@ -213,21 +215,18 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

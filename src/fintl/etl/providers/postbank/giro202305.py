@@ -1,3 +1,5 @@
+"""Postbank giro account parser for the 2023-05 format (giro202305)."""
+
 import datetime
 import logging
 import re
@@ -7,8 +9,8 @@ import polars as pl
 
 from fintl.common import Case, Config
 from fintl.etl.common.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
+    ExtractBalanceError,
+    ExtractTransactionsError,
 )
 from fintl.etl.common.number_conversion import german_string_numbers_to_floats
 from fintl.etl.common.schemas import (
@@ -51,6 +53,7 @@ CASE = Case(
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     is_file_name_match = (
         re.search(
             r"(Kontoumsaetze_\d{3}_\d{7}_\d{2}_\d{8}_\d{6}.*\.csv)$",
@@ -67,6 +70,7 @@ def extract_transactions(
     lines: list[str],
     encoding: str,
 ) -> pl.DataFrame:
+    """Extract and normalise transactions from parsed file lines."""
     transaction_pattern: str = "^(Buchungstag;Wert)"  # start of transactions
     transaction_end_pattern: str = "^(Kontostand)"  # start of transactions
 
@@ -76,13 +80,9 @@ def extract_transactions(
     ix_start_transactions, transactions_header = find_line_with_pattern(
         lines, pattern=transaction_pattern
     )
-    ix_end_transactions, _ = find_line_with_pattern(
-        lines, pattern=transaction_end_pattern
-    )
+    ix_end_transactions, _ = find_line_with_pattern(lines, pattern=transaction_end_pattern)
     n_rows = ix_end_transactions - ix_start_transactions - 1
-    logger.debug(
-        f"{file_path=} has {ix_start_transactions=} and {transactions_header=}"
-    )
+    logger.debug(f"{file_path=} has {ix_start_transactions=} and {transactions_header=}")
 
     schema = {
         "Buchungstag": pl.Utf8,
@@ -118,9 +118,7 @@ def extract_transactions(
     )
 
     transactions = transactions.with_columns(
-        pl.col("Betrag").map_elements(
-            german_string_numbers_to_floats, return_dtype=pl.Float64
-        ),
+        pl.col("Betrag").map_elements(german_string_numbers_to_floats, return_dtype=pl.Float64),
     )
     transactions = transactions.with_columns(
         amount=pl.col("Betrag"),
@@ -152,10 +150,9 @@ def extract_balance(
     file_path: Path,
     lines: list[str],
 ) -> BalanceInfo:
+    """Extract balance information from parsed file."""
     balance_info_pattern: str = "^(Letzter Kontostand)"  # start of balance info
-    ix_start_balance, balance_line = find_line_with_pattern(
-        lines, pattern=balance_info_pattern
-    )
+    ix_start_balance, balance_line = find_line_with_pattern(lines, pattern=balance_info_pattern)
 
     logger.debug(f"{file_path=} has {ix_start_balance=} and {balance_line=}")
 
@@ -189,6 +186,7 @@ def extract_balance(
 
 
 def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 
@@ -199,14 +197,14 @@ def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceIn
     except Exception as e:
         msg = f"failed to parse {case=} transactions: {file_path=}"
         logger.error(msg)
-        raise ExtractTransactionsException(msg) from e
+        raise ExtractTransactionsError(msg) from e
 
     try:
         balance = extract_balance(case, file_path, lines)
     except Exception as e:
         msg = f"failed to parse {case=} balance: {file_path=}"
         logger.error(msg)
-        raise ExtractBalanceException(msg) from e
+        raise ExtractBalanceError(msg) from e
 
     return transactions, balance
 
@@ -216,6 +214,7 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
 ):
+    """Parse all newly discovered files for this account type."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
         return
@@ -230,7 +229,7 @@ def parse_new_files(
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
         try:
             transactions, balance = parse_csv_file(case, file_path)
-        except (ExtractBalanceException, ExtractTransactionsException):
+        except (ExtractBalanceError, ExtractTransactionsError):
             continue  # already logged in parse_csv_file
 
         store_transactions(parsed_dir, file_path, transactions)
@@ -240,21 +239,18 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files
-    relevant_source_files = get_parser_source_files(
-        CASE, config, check_if_parser_applies
-    )
+    relevant_source_files = get_parser_source_files(CASE, config, check_if_parser_applies)
 
     # scan target files
     raw_dir = config.get_raw_dir(CASE)
     relevant_target_files = detect_relevant_target_files(raw_dir)
 
     # select new source files to be processed
-    new_files_to_copy = select_files_to_copy(
-        relevant_source_files, relevant_target_files
-    )
+    new_files_to_copy = select_files_to_copy(relevant_source_files, relevant_target_files)
 
     # copy new source files
     copy_new_files(raw_dir, new_files_to_copy)

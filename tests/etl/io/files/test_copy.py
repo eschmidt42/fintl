@@ -1,3 +1,5 @@
+"""Tests for the file copy utility."""
+
 from pathlib import Path
 
 from fintl.etl.io.files.copy import copy_new_files

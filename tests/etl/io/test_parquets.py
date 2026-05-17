@@ -1,3 +1,5 @@
+"""Tests for Parquet concatenation utilities."""
+
 import logging
 from pathlib import Path
 
@@ -36,6 +38,7 @@ def _create_empty_transactions_parquet(config: Config, case: Case):
 def test_concatenate_parquets_warns_on_empty_parquet(
     tmp_path: Path, caplog: pytest.LogCaptureFixture, logger_config_path: Path
 ):
+    """Test that concatenate_parquets logs a warning when the result has zero rows."""
     config = _config(tmp_path, logger_config_path)
 
     case = Case(provider="dkb", service="giro", parser="giro0")
@@ -43,9 +46,7 @@ def test_concatenate_parquets_warns_on_empty_parquet(
     _create_empty_transactions_parquet(config, case)
 
     with caplog.at_level(logging.WARNING, logger="fintl.etl.io.parquets"):
-        result = concatenate_parquets(
-            "transactions.parquet", config, [case], ["amount"]
-        )
+        result = concatenate_parquets("transactions.parquet", config, [case], ["amount"])
 
     assert result is None
     assert any("n_rows=0" in m for m in caplog.messages)
@@ -54,6 +55,7 @@ def test_concatenate_parquets_warns_on_empty_parquet(
 def test_concatenate_parquets_no_warning_on_empty_scalable_broker(
     tmp_path: Path, caplog: pytest.LogCaptureFixture, logger_config_path: Path
 ):
+    """Test that concatenate_parquets suppresses the empty-rows warning for the scalable broker."""
     config = _config(tmp_path, logger_config_path)
 
     case = Case(provider="scalable", service="broker", parser="broker0")
@@ -61,9 +63,7 @@ def test_concatenate_parquets_no_warning_on_empty_scalable_broker(
     _create_empty_transactions_parquet(config, case)
 
     with caplog.at_level(logging.WARNING, logger="fintl.etl.io.parquets"):
-        result = concatenate_parquets(
-            "transactions.parquet", config, [case], ["amount"]
-        )
+        result = concatenate_parquets("transactions.parquet", config, [case], ["amount"])
 
     assert result is None
     assert not any("n_rows=0" in m for m in caplog.messages)
