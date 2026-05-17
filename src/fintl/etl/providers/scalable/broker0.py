@@ -59,7 +59,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
         with file_path.open("r") as f:
             lines = f.readlines()
 
-        is_content_match = any(["€" in line for line in lines])
+        is_content_match = any("€" in line for line in lines)
 
     return is_file_name_match and is_content_match
 

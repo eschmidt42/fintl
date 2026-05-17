@@ -66,7 +66,7 @@ def schema_and_other_cols() -> tuple[pl.Schema, list[str]]:
             "date": pl.Date,
             "amount": pl.Float64,
             "hash": pl.UInt64,
-            **{c: pl.Utf8 for c in other_cols},
+            **dict.fromkeys(other_cols, pl.Utf8),
         }
     )
     return schema, other_cols
@@ -517,7 +517,7 @@ def test_stack_old_and_new_transactions_merges_with_old(tmp_path: Path):
     old_file = tmp_path / "transactions.parquet"
     old_df = pl.DataFrame(
         {col: ["old"] for col in TRANSACTION_COLUMNS},
-        schema={c: pl.Utf8 for c in TRANSACTION_COLUMNS},
+        schema=dict.fromkeys(TRANSACTION_COLUMNS, pl.Utf8),
     ).with_columns(
         [
             pl.lit(date(2020, 1, 1)).alias("date"),
@@ -529,7 +529,7 @@ def test_stack_old_and_new_transactions_merges_with_old(tmp_path: Path):
 
     new_df = pl.DataFrame(
         {col: ["new"] for col in TRANSACTION_COLUMNS},
-        schema={c: pl.Utf8 for c in TRANSACTION_COLUMNS},
+        schema=dict.fromkeys(TRANSACTION_COLUMNS, pl.Utf8),
     ).with_columns(
         [
             pl.lit(date(2023, 1, 1)).alias("date"),

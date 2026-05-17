@@ -22,7 +22,7 @@ def detect_present_parsed_files(parsed_dir: Path) -> list[Path]:
     Returns:
         A list of paths to existing parsed .xlsx files.
     """
-    present_parsed_files = [file_path for file_path in parsed_dir.glob("**/*.xlsx")]
+    present_parsed_files = list(parsed_dir.glob("**/*.xlsx"))
     logger.info(f"Detected {len(present_parsed_files):_} present parsed files @ {parsed_dir=}.")
     return present_parsed_files
 
@@ -56,7 +56,7 @@ def detect_new_parsed_files(
 
         already_stored_files = all_balances["file"].unique().to_list()
 
-        already_stored_files = set([Path(f).stem for f in already_stored_files])
+        already_stored_files = {Path(f).stem for f in already_stored_files}
     else:
         already_stored_files = set()
 
@@ -127,7 +127,7 @@ def detect_new_raw_files(
 
 def detect_relevant_target_files(raw_dir: Path) -> list[Path]:
     """Detects relevant raw files in the given target directory."""
-    relevant_target_files = [file_path for file_path in raw_dir.glob("**/*.csv")]
+    relevant_target_files = list(raw_dir.glob("**/*.csv"))
     logger.info(f"Detected {len(relevant_target_files):_} relevant source files @ {raw_dir=}.")
     return relevant_target_files
 
