@@ -1,3 +1,5 @@
+"""Postbank giro account parser for the 2023-05 format (giro202305)."""
+
 import datetime
 import logging
 import re
@@ -51,6 +53,7 @@ CASE = Case(
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     is_file_name_match = (
         re.search(
             r"(Kontoumsaetze_\d{3}_\d{7}_\d{2}_\d{8}_\d{6}.*\.csv)$",
@@ -67,6 +70,7 @@ def extract_transactions(
     lines: list[str],
     encoding: str,
 ) -> pl.DataFrame:
+    """Extract and normalise transactions from parsed file lines."""
     transaction_pattern: str = "^(Buchungstag;Wert)"  # start of transactions
     transaction_end_pattern: str = "^(Kontostand)"  # start of transactions
 
@@ -146,6 +150,7 @@ def extract_balance(
     file_path: Path,
     lines: list[str],
 ) -> BalanceInfo:
+    """Extract balance information from parsed file."""
     balance_info_pattern: str = "^(Letzter Kontostand)"  # start of balance info
     ix_start_balance, balance_line = find_line_with_pattern(lines, pattern=balance_info_pattern)
 
@@ -181,6 +186,7 @@ def extract_balance(
 
 
 def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 
@@ -208,6 +214,7 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
 ):
+    """Parse all newly discovered files for this account type."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
         return
@@ -232,6 +239,7 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files

@@ -1,3 +1,5 @@
+"""Tests for postbank.giro0 parser."""
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,6 +23,7 @@ from fintl.etl.providers.postbank import giro0 as giro
 
 @pytest.fixture
 def csv_file(files_root_path: Path) -> Path:
+    """Return the path to the Postbank giro0 CSV fixture file."""
     return (
         files_root_path
         / "csv_files"
@@ -30,15 +33,18 @@ def csv_file(files_root_path: Path) -> Path:
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of a path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
+    """Test that the Postbank giro0 parser runs end-to-end and produces expected output files."""
     giro_source_dir = csv_file.parent
     assert giro_source_dir.exists()
 
@@ -138,6 +144,7 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
 
 
 def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractTransactionsException on bad transactions."""
     with patch(
         "fintl.etl.providers.postbank.giro0.extract_transactions",
         side_effect=ValueError("malformed transactions"),
@@ -148,6 +155,7 @@ def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
 
 
 def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractBalanceException on bad balance."""
     with patch(
         "fintl.etl.providers.postbank.giro0.extract_balance",
         side_effect=ValueError("malformed balance"),
@@ -158,6 +166,7 @@ def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
 
 
 def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    """Test that parse_new_files skips a failing file and processes remaining files."""
     good_file = tmp_path / "good.csv"
     bad_file = tmp_path / "bad.csv"
     good_file.touch()
@@ -168,6 +177,7 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
     good_balance = object()
 
     def _parse_csv_file(case, file_path):
+        """Parse CSV and raise for the bad file, return good data otherwise."""
         if file_path == bad_file:
             raise ExtractTransactionsException("bad file")
         return good_transactions, good_balance

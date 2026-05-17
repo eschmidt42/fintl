@@ -1,3 +1,5 @@
+"""Tests for the DKB giro0 parser."""
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,24 +23,29 @@ from fintl.etl.providers.dkb import giro0 as giro
 
 @pytest.fixture
 def csv_fname() -> str:
+    """Return the DKB giro0 CSV fixture filename."""
     return "0123456789_2022-09-15_to_2022-10-15.csv"
 
 
 @pytest.fixture
 def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    """Return the path to the DKB giro0 CSV fixture file."""
     return files_root_path / "csv_files" / "DKB" / "kontoauszug" / csv_fname
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that the required fixture files exist on disk."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of the given path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path, csv_fname: str):
+    """Test that giro0.main parses files and skips already-processed ones."""
     giro_source_dir = csv_file.parent
     assert giro_source_dir.exists()
 
@@ -138,6 +145,7 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path, csv_fnam
 
 
 def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractTransactionsException on bad transactions."""
     with patch(
         "fintl.etl.providers.dkb.giro0.extract_transactions",
         side_effect=ValueError("malformed transactions"),
@@ -148,6 +156,7 @@ def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
 
 
 def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractBalanceException on bad balance data."""
     with patch(
         "fintl.etl.providers.dkb.giro0.extract_balance",
         side_effect=ValueError("malformed balance"),
@@ -158,6 +167,7 @@ def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
 
 
 def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    """Test that parse_new_files skips a failing file and processes the remaining ones."""
     good_file = tmp_path / "good.csv"
     bad_file = tmp_path / "bad.csv"
     good_file.touch()

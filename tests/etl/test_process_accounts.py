@@ -1,3 +1,5 @@
+"""Integration tests for the process_accounts ETL orchestration layer."""
+
 import shutil
 from pathlib import Path
 from typing import TypedDict
@@ -16,15 +18,19 @@ from fintl.etl.common.schemas import (
 # ── Shared fixture paths ───────────────────────────────────────────────────────
 @pytest.fixture
 def csv_dir(files_root_path: Path) -> Path:
+    """Return the root directory for CSV test fixtures."""
     return files_root_path / "csv_files"
 
 
 @pytest.fixture
 def artefact_dir(files_root_path: Path) -> Path:
+    """Return the root directory for artefact test fixtures (HTML, PNG)."""
     return files_root_path / "artefacts"
 
 
 class Dirs(TypedDict):
+    """Typed dict of provider source directories used across integration tests."""
+
     dkb_giro: Path
     dkb_tagesgeld: Path
     dkb_credit: Path
@@ -37,6 +43,7 @@ class Dirs(TypedDict):
 
 @pytest.fixture
 def dirs(csv_dir: Path, artefact_dir: Path) -> Dirs:
+    """Return a mapping of provider names to their source directories."""
     return {
         "dkb_giro": csv_dir / "DKB" / "kontoauszug",
         "dkb_tagesgeld": csv_dir / "DKB" / "tagesgeld",
@@ -51,6 +58,7 @@ def dirs(csv_dir: Path, artefact_dir: Path) -> Dirs:
 
 @pytest.fixture
 def dkb_giro0_file() -> str:
+    """Return the filename of a DKB giro0-format CSV fixture."""
     return "0123456789_2022-09-15_to_2022-10-15.csv"
 
 
@@ -101,13 +109,14 @@ def _assert_labelled_output(config: Config) -> None:
 
 
 def test_dirs_exist(dirs: Dirs):
+    """All provider source directories must exist on disk."""
     for p in dirs.values():
         assert isinstance(p, Path)
         assert p.exists()
 
 
 def test_dkb_giro(tmp_path: Path, dirs: Dirs, logger_config_path: Path):
-
+    """DKB giro-only ETL run produces all expected output files and is idempotent."""
     logger_path = logger_config_path
     assert logger_path.exists()
 
@@ -151,7 +160,7 @@ def test_dkb_giro(tmp_path: Path, dirs: Dirs, logger_config_path: Path):
 
 
 def test_all(tmp_path: Path, dirs: Dirs, logger_config_path: Path):
-
+    """Full multi-provider ETL run produces all output files and is idempotent."""
     logger_path = logger_config_path
     assert logger_path.exists()
 
@@ -416,8 +425,10 @@ def test_mixed_dkb_giro_versions(tmp_path: Path, logger_config_path: Path, dirs:
 def test_concatenate_all_providers_balances_none(
     tmp_path: Path, logger_config_path: Path, dirs: Dirs
 ):
-    """When concatenate_parquets returns None for balances the warning branch is
-    exercised and no balances parquet/xlsx files are written."""
+    """When concatenate_parquets returns None for balances, no balances files are written.
+
+    The warning branch is exercised and no balances parquet/xlsx files are written.
+    """
     from unittest.mock import patch
 
     import polars as pl

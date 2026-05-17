@@ -1,3 +1,5 @@
+"""Helper classes and functions for the store command."""
+
 from pathlib import Path
 
 import typer
@@ -10,7 +12,10 @@ from fintl.etl.io.store import FileOperation
 
 
 class Prompter:
+    """Interactive prompter for confirming file operations during the store command."""
+
     def __init__(self, *, yes: bool, copy: bool, op_label: str, config: Config, console: Console):
+        """Initialise Prompter."""
         self.yes = yes
         self.copy = copy
         self.op_label = op_label
@@ -18,7 +23,7 @@ class Prompter:
         self.console = console
 
     def confirm(self, prompt: str, op: FileOperation) -> bool:
-
+        """Prompt the user to confirm a file operation, or auto-confirm when yes=True."""
         if self.yes:
             self.console.print(Text(f"✔ {self.op_label}d:", style="green", overflow="fold"))
             self.console.print(f"  | {prompt}", style="green")
@@ -31,7 +36,7 @@ class Prompter:
         return typer.confirm(f"  {action_word} this file?", default=(not self.copy))
 
     def choose(self, file: Path, specs: list[ParserSpec]) -> ParserSpec | None:
-
+        """Prompt the user to select one parser when a file matches multiple, or skip."""
         if self.yes:
             self.console.print(
                 Text(
@@ -72,6 +77,7 @@ class Prompter:
 
 
 def display_results_to_console(op_label: str, counts: dict[str, int], console: Console):
+    """Print a summary of store operation counts to the console."""
     console.print()
     console.print(
         f"[bold]Done.[/bold] "
@@ -95,6 +101,7 @@ def display_results_to_console(op_label: str, counts: dict[str, int], console: C
 
 
 def get_operation(copy: bool) -> tuple[FileOperation, str]:
+    """Return the FileOperation and its label string based on the copy flag."""
     if copy:
         return FileOperation.COPYING, "Copied"
     return FileOperation.MOVING, "Moved"

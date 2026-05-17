@@ -1,3 +1,5 @@
+"""Tests for scalable.broker0 parser."""
+
 from pathlib import Path
 
 import polars as pl
@@ -16,24 +18,29 @@ from fintl.etl.providers.scalable import broker0 as broker
 
 @pytest.fixture
 def html_fname() -> str:
+    """Return the HTML fixture filename for broker0 tests."""
     return "2022-08-12.html"
 
 
 @pytest.fixture
 def html_file_path(files_root_path: Path, html_fname: str) -> Path:
+    """Return the full path to the broker0 HTML fixture file."""
     return files_root_path / "artefacts" / "Scalable-Capital" / html_fname
 
 
 def test_paths_exist(files_root_path: Path, html_file_path: Path):
+    """Test that required fixture paths exist."""
     assert files_root_path.exists()
     assert html_file_path.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of a path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, html_file_path: Path, logger_config_path: Path):
+    """Test that the broker0 parser runs end-to-end and produces expected output files."""
     broker_source_dir = html_file_path.parent
     assert broker_source_dir.exists()
 
@@ -136,9 +143,11 @@ def test_main(tmp_path: Path, html_file_path: Path, logger_config_path: Path):
 
 
 def test_check_if_parser_applies_date_none_raises(tmp_path: Path):
-    """check_if_parser_applies must raise ValueError when the inner date regex
-    returns None (defensive check that cannot normally be triggered without
-    mocking, since the outer pattern already requires the date format)."""
+    """check_if_parser_applies must raise ValueError when the inner date regex returns None.
+
+    This is a defensive check that cannot normally be triggered without mocking,
+    since the outer pattern already requires the date format.
+    """
     from unittest.mock import MagicMock, patch
 
     file_path = tmp_path / "2022-08-12.html"
@@ -185,8 +194,10 @@ def test_extract_balance_raises_when_suffix_missing(tmp_path: Path, html_fname: 
 
 
 def test_extract_balance_currency_none_falls_back_to_empty_string(tmp_path: Path, html_fname: str):
-    """When suffix > div has multiple string children .string returns None;
-    currency must fall back to ''."""
+    """When suffix div has multiple string children, currency must fall back to ''.
+
+    BeautifulSoup .string returns None when there are multiple string children.
+    """
     # Two spans inside the inner div → BeautifulSoup .string returns None
     html = (
         "<html><body>"

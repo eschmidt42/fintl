@@ -1,3 +1,5 @@
+"""Functions for converting source file names to output file names."""
+
 from pathlib import Path
 
 

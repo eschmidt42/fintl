@@ -1,3 +1,5 @@
+"""Tests for gls.helper utilities."""
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,31 +14,37 @@ _CASE = Case(provider="gls", service="giro", parser="giro0")
 
 
 def test_detect_separator_semicolon():
+    """Test that detect_separator returns semicolon for a GLS header line."""
     lines = ["Bezeichnung Auftragskonto;IBAN Auftragskonto;..."]
     assert fintl.etl.providers.gls.helper.detect_separator(lines) == ";"
 
 
 def test_detect_separator_no_match():
+    """Test that detect_separator returns None when no known header is found."""
     lines = ["Some other header"]
     assert fintl.etl.providers.gls.helper.detect_separator(lines) is None
 
 
 def test_detect_separator_empty_lines():
+    """Test that detect_separator returns None for a list of empty strings."""
     lines = ["", ""]
     assert fintl.etl.providers.gls.helper.detect_separator(lines) is None
 
 
 def test_detect_separator_mixed_lines():
+    """Test that detect_separator finds the separator even when not on the first line."""
     lines = ["Some other header", "Bezeichnung Auftragskonto;IBAN Auftragskonto;..."]
     assert fintl.etl.providers.gls.helper.detect_separator(lines) == ";"
 
 
 def test_detect_separator_empty_file():
+    """Test that detect_separator returns None for an empty file."""
     lines: list[str] = []
     assert fintl.etl.providers.gls.helper.detect_separator(lines) is None
 
 
 def test_check_if_parser_applies_valid_file(tmp_path: Path):
+    """Test that check_if_parser_applies returns True for a valid GLS file."""
     # Create a dummy file with the expected name and content
     file_path = tmp_path / "DE12345678901234567890_2023.10.26.csv"
     file_path.write_text("Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);...")
@@ -45,6 +53,7 @@ def test_check_if_parser_applies_valid_file(tmp_path: Path):
 
 
 def test_check_if_parser_applies_invalid_file_name(tmp_path: Path):
+    """Test that check_if_parser_applies returns False for a file with an invalid name."""
     # Create a dummy file with an invalid name
     file_path = tmp_path / "invalid_file_name.csv"
     file_path.write_text("Bezeichnung Auftragskonto;IBAN Auftragskonto;...\nBetrag (€);...")
@@ -53,6 +62,7 @@ def test_check_if_parser_applies_invalid_file_name(tmp_path: Path):
 
 
 def test_check_if_parser_applies_invalid_separator(tmp_path: Path):
+    """Test that check_if_parser_applies returns False when the separator is wrong."""
     # Create a dummy file with the expected name but an invalid separator
     file_path = tmp_path / "DE12345678901234567890_2023.10.26.csv"
     file_path.write_text("Bezeichnung Auftragskonto,IBAN Auftragskonto,...\nBetrag (€),...")
@@ -61,6 +71,7 @@ def test_check_if_parser_applies_invalid_separator(tmp_path: Path):
 
 
 def test_check_if_parser_applies_empty_file(tmp_path: Path):
+    """Test that check_if_parser_applies returns False for an empty file."""
     # Create an empty dummy file with the expected name
     file_path = tmp_path / "DE12345678901234567890_2023.10.26.csv"
     file_path.write_text("")
@@ -92,9 +103,7 @@ def test_extract_transactions_raises_on_invalid_date(tmp_path: Path):
 
 
 def test_extract_balance_raises_when_date_is_not_datetime_date(tmp_path: Path):
-    """extract_balance must raise ValueError when the date column entry is not
-    a datetime.date instance."""
-
+    """extract_balance must raise ValueError "date" is not a datetime.date instance."""
     transactions = pl.DataFrame(
         {
             "date": ["2024-01-01"],

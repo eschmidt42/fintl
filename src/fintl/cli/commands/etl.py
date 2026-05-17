@@ -1,3 +1,5 @@
+"""CLI command that runs the full accounts ETL pipeline."""
+
 from typing import Annotated
 
 import typer

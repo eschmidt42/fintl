@@ -1,3 +1,5 @@
+"""File I/O utilities for Scalable broker parsers."""
+
 import logging
 from pathlib import Path
 from typing import Callable
@@ -34,6 +36,7 @@ def detect_relevant_source_files(source_dir: Path, check_if_parser_applies: Call
 def get_parser_source_files(
     case: Case, config: Config, check_if_parser_applies: Callable
 ) -> list[Path]:
+    """Return source files applicable to this parser from the configured source directory."""
     source_dir = config.get_source_dir(case.provider, case.service)
     relevant_source_files = detect_relevant_source_files(source_dir, check_if_parser_applies)
     return relevant_source_files
@@ -63,6 +66,7 @@ def detect_raw_files(raw_dir: Path, check_if_parser_applies: Callable) -> list[P
 
 
 def select_files_to_parse(present_parsed_files: list[Path], raw_files: list[Path]):
+    """Select raw files that have not yet been parsed."""
     parsed_files = [file_path.name for file_path in present_parsed_files]
     files_to_parse = [
         file_path
@@ -82,6 +86,7 @@ def detect_new_raw_files(
     provider: str,
     service: str,
 ) -> list[Path]:
+    """Detect raw files that have not yet been parsed for the given provider and service."""
     logger.info(f"Detecting new raw files for {provider=} -> {service=}")
 
     raw_files = detect_raw_files(raw_dir, check_if_parser_applies)
@@ -98,6 +103,7 @@ def detect_new_raw_files(
 
 
 def store_transactions(parsed_dir: Path, file_path: Path, transactions: pl.DataFrame):
+    """Write transactions to Excel and Parquet files in the parsed directory."""
     excel_file = parsed_dir / transaction_htm_name_to_xlsx(file_path)
     logger.debug(f"Writing {excel_file=}")
     transactions.write_excel(excel_file)
@@ -108,6 +114,7 @@ def store_transactions(parsed_dir: Path, file_path: Path, transactions: pl.DataF
 
 
 def store_balance(parsed_dir: Path, file_path: Path, balance: BalanceInfo):
+    """Write balance information to JSON and Parquet files in the parsed directory."""
     json_file = parsed_dir / balance_htm_name_to_json(file_path)
     logger.debug(f"Writing {json_file=}")
     d = balance.model_dump_json(indent=4)

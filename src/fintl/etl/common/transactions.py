@@ -1,3 +1,5 @@
+"""Utilities for hashing and validating transaction DataFrames."""
+
 import logging
 from pathlib import Path
 

@@ -26,6 +26,8 @@ _CANDIDATE_PATTERNS = ("*.csv", "*.htm", "*.html", "*.png")
 
 
 class FileOperation(StrEnum):
+    """Supported file routing operations."""
+
     MOVING = "moving"
     COPYING = "copying"
 
@@ -166,7 +168,6 @@ def store_files(
         *matched* counts files with exactly one parser match.
         *ambiguous* counts files that matched more than one provider-service configuration, e.g. DKB giro and DKB credit.
     """  # noqa: E501
-
     candidates = find_candidate_files(source_dir)
     logger.info("Scanning %d candidate file(s) in %s", len(candidates), source_dir)
 

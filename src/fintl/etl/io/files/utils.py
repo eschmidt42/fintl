@@ -1,3 +1,5 @@
+"""Shared utility functions for ETL file I/O operations."""
+
 import logging
 from pathlib import Path
 
@@ -51,7 +53,6 @@ def find_common_columns(dfs: list[pl.DataFrame]) -> None:
     Args:
         dfs: A list of Polars DataFrames to compare.
     """
-
     common_columns, discarded_columns = None, []
 
     for transaction_df in dfs:

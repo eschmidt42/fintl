@@ -77,6 +77,7 @@ def _config_two_services(tmp_path: Path) -> Config:
 
 
 def test_find_candidate_files_returns_expected_extensions(tmp_path: Path):
+    """Test that find_candidate_files includes csv/html/htm/png and excludes other extensions."""
     (tmp_path / "a.csv").touch()
     (tmp_path / "b.html").touch()
     (tmp_path / "c.htm").touch()
@@ -90,10 +91,12 @@ def test_find_candidate_files_returns_expected_extensions(tmp_path: Path):
 
 
 def test_find_candidate_files_empty_dir(tmp_path: Path):
+    """Test that find_candidate_files returns an empty list for an empty directory."""
     assert find_candidate_files(tmp_path) == []
 
 
 def test_find_candidate_files_returns_sorted(tmp_path: Path):
+    """Test that find_candidate_files returns files in sorted order."""
     for name in ("z.csv", "a.png", "m.htm"):
         (tmp_path / name).touch()
     result = find_candidate_files(tmp_path)
@@ -104,6 +107,7 @@ def test_find_candidate_files_returns_sorted(tmp_path: Path):
 
 
 def test_match_file_to_parsers_single_match(tmp_path: Path):
+    """Test that match_file_to_parsers returns the one matching parser spec."""
     f = tmp_path / "file.csv"
     f.touch()
     parsers = [_spec("dkb", "giro", "giro0", applies_result=True)]
@@ -113,6 +117,7 @@ def test_match_file_to_parsers_single_match(tmp_path: Path):
 
 
 def test_match_file_to_parsers_no_match(tmp_path: Path):
+    """Test that match_file_to_parsers returns an empty list when no parser applies."""
     f = tmp_path / "file.csv"
     f.touch()
     parsers = [_spec("dkb", "giro", "giro0", applies_result=False)]
@@ -120,6 +125,7 @@ def test_match_file_to_parsers_no_match(tmp_path: Path):
 
 
 def test_match_file_to_parsers_multiple_matches(tmp_path: Path):
+    """Test that match_file_to_parsers returns all parsers whose applies() returns True."""
     f = tmp_path / "file.csv"
     f.touch()
     parsers = [
@@ -132,6 +138,7 @@ def test_match_file_to_parsers_multiple_matches(tmp_path: Path):
 
 
 def test_match_file_to_parsers_swallows_exceptions(tmp_path: Path):
+    """Test that match_file_to_parsers skips parsers whose applies() raises an exception."""
     f = tmp_path / "file.csv"
     f.touch()
 
@@ -153,15 +160,18 @@ def test_match_file_to_parsers_swallows_exceptions(tmp_path: Path):
 
 
 def test_deduplicate_empty_list():
+    """Test that deduplicate_by_provider_service returns an empty list for empty input."""
     assert deduplicate_by_provider_service([]) == []
 
 
 def test_deduplicate_single_spec():
+    """Test that deduplicate_by_provider_service returns the single spec unchanged."""
     spec = _spec("dkb", "giro", "giro0")
     assert deduplicate_by_provider_service([spec]) == [spec]
 
 
 def test_deduplicate_same_provider_service_keeps_lower_precedence():
+    """Test that deduplication keeps the spec with the lowest precedence."""
     low = _spec("dkb", "giro", "giro0", precedence=0)
     high = _spec("dkb", "giro", "giro202312", precedence=1)
     assert deduplicate_by_provider_service([low, high]) == [low]
@@ -169,12 +179,14 @@ def test_deduplicate_same_provider_service_keeps_lower_precedence():
 
 
 def test_deduplicate_same_precedence_keeps_first():
+    """Test that deduplication keeps the first spec when precedence values are equal."""
     first = _spec("dkb", "giro", "giro0", precedence=0)
     second = _spec("dkb", "giro", "giro202312", precedence=0)
     assert deduplicate_by_provider_service([first, second]) == [first]
 
 
 def test_deduplicate_different_provider_service_keeps_both():
+    """Test that specs for different provider/service pairs are both retained."""
     spec_a = _spec("dkb", "giro", "giro0")
     spec_b = _spec("dkb", "credit", "credit0")
     result = deduplicate_by_provider_service([spec_a, spec_b])
@@ -182,6 +194,7 @@ def test_deduplicate_different_provider_service_keeps_both():
 
 
 def test_deduplicate_preserves_insertion_order():
+    """Test that deduplicate_by_provider_service preserves the original insertion order."""
     spec_a = _spec("dkb", "giro", "giro0")
     spec_b = _spec("dkb", "credit", "credit0")
     spec_c = _spec("postbank", "giro", "giro0")
@@ -193,6 +206,7 @@ def test_deduplicate_preserves_insertion_order():
 
 
 def test_route_file_copies_to_raw_dir(tmp_path: Path):
+    """Test that _route_file copies the source file to the raw directory."""
     src = tmp_path / "src" / "file.csv"
     src.parent.mkdir()
     src.write_text("data")
@@ -205,6 +219,7 @@ def test_route_file_copies_to_raw_dir(tmp_path: Path):
 
 
 def test_route_file_skips_existing(tmp_path: Path):
+    """Test that _route_file returns False and does not overwrite an already-copied file."""
     src = tmp_path / "file.csv"
     src.write_text("new")
     raw_dir = tmp_path / "raw"
@@ -218,6 +233,7 @@ def test_route_file_skips_existing(tmp_path: Path):
 
 
 def test_route_file_creates_raw_dir(tmp_path: Path):
+    """Test that _route_file creates missing intermediate directories."""
     src = tmp_path / "file.csv"
     src.touch()
     raw_dir = tmp_path / "deep" / "nested" / "raw"
@@ -229,6 +245,7 @@ def test_route_file_creates_raw_dir(tmp_path: Path):
 
 
 def test_route_file_moves_file(tmp_path: Path):
+    """Test that _route_file moves the source file when operation is MOVING."""
     src = tmp_path / "src" / "file.csv"
     src.parent.mkdir()
     src.write_text("data")
@@ -245,6 +262,7 @@ def test_route_file_moves_file(tmp_path: Path):
 
 
 def test_store_files_copies_confirmed(tmp_path: Path):
+    """Test that store_files copies a matched file when the user confirms."""
     (tmp_path / "downloads").mkdir()
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
@@ -269,6 +287,7 @@ def test_store_files_copies_confirmed(tmp_path: Path):
 
 
 def test_store_files_skips_on_rejection(tmp_path: Path):
+    """Test that store_files skips the copy when the user rejects the confirmation."""
     (tmp_path / "downloads").mkdir()
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
@@ -292,6 +311,7 @@ def test_store_files_skips_on_rejection(tmp_path: Path):
 
 
 def test_store_files_counts_unmatched(tmp_path: Path):
+    """Test that store_files increments the unmatched counter for files no parser claims."""
     (tmp_path / "downloads").mkdir()
     (tmp_path / "downloads" / "unknown.csv").write_text("?")
 
@@ -312,6 +332,7 @@ def test_store_files_counts_unmatched(tmp_path: Path):
 
 
 def test_store_files_no_candidates(tmp_path: Path):
+    """Test that store_files returns zero counts when the source directory is empty."""
     source_dir = tmp_path / "empty"
     source_dir.mkdir()
     config = _config(tmp_path)
@@ -341,7 +362,9 @@ def test_store_files_ambiguous_counts_and_skips_when_choose_returns_none(
     tmp_path: Path,
 ):
     """A file matching multiple parsers is counted as ambiguous, not matched.
-    When choose returns None the file is not copied."""
+
+    When choose returns None the file is not copied.
+    """
     (tmp_path / "downloads").mkdir()
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
@@ -402,7 +425,7 @@ def test_store_files_ambiguous_choose_copies_selected_spec_only(tmp_path: Path):
 
 
 def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
-    """confirm must never be invoked for a multi-match file; only choose is called."""
+    """Confirm must never be invoked for a multi-match file; only choose is called."""
     (tmp_path / "downloads").mkdir()
     (tmp_path / "downloads" / "export.csv").write_text("data")
 
@@ -425,8 +448,10 @@ def test_store_files_confirm_not_called_for_ambiguous_files(tmp_path: Path):
 
 
 def test_store_files_ambiguous_choose_skips_when_copy_already_exists(tmp_path: Path):
-    """Ambiguous path: when choose returns a spec but _copy_file returns False
-    (file already at destination), skipped count is incremented."""
+    """Ambiguous path: when choose returns a spec but _copy_file returns False.
+
+    If the file already at destination, skipped count is incremented.
+    """
     (tmp_path / "downloads").mkdir()
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")
@@ -455,8 +480,10 @@ def test_store_files_ambiguous_choose_skips_when_copy_already_exists(tmp_path: P
 
 
 def test_store_files_single_match_skips_when_copy_already_exists(tmp_path: Path):
-    """Single-match path: when confirm returns True but _copy_file returns False
-    (file already at destination), skipped count is incremented."""
+    """Single-match path: when confirm returns True but _copy_file returns False.
+
+    If the file already at destination, skipped count is incremented.
+    """
     (tmp_path / "downloads").mkdir()
     src_file = tmp_path / "downloads" / "export.csv"
     src_file.write_text("data")

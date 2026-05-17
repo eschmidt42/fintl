@@ -1,3 +1,5 @@
+"""Tests for gls.credit0 parser."""
+
 import datetime
 from pathlib import Path
 
@@ -26,6 +28,7 @@ from fintl.etl.providers.gls.credit0 import CASE
 
 @pytest.fixture
 def csv_file(files_root_path: Path) -> Path:
+    """Return the path to the GLS credit CSV fixture file."""
     return (
         files_root_path
         / "csv_files"
@@ -36,12 +39,14 @@ def csv_file(files_root_path: Path) -> Path:
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 @pytest.fixture
 def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
+    """Provide a Config instance pointing to the GLS credit fixture directory."""
     credit_source_dir = csv_file.parent
     assert credit_source_dir.exists()
 
@@ -57,10 +62,12 @@ def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of a path."""
     return path.stat().st_mtime
 
 
 def get_files() -> list[Path]:
+    """Return the list of GLS credit fixture file names."""
     files = [
         Path("Umsaetze_DE01234567890123456789_2024.03.23.csv"),
         Path("Umsaetze_DE01234567890123456789_2024.04.13.csv"),
@@ -69,6 +76,7 @@ def get_files() -> list[Path]:
 
 
 def test_main(config: Config):
+    """Test that the credit parser runs end-to-end and produces expected output files."""
     raw_dir = config.get_raw_dir(credit.CASE)
 
     files = get_files()
@@ -194,6 +202,7 @@ def test_main(config: Config):
 
 
 def test_extract_transactions_valid_data(config: Config):
+    """Test that extract_transactions returns a correctly shaped DataFrame."""
     files = get_files()
 
     file_path = config.get_source_dir("gls", "credit") / files[1]
@@ -221,6 +230,7 @@ def test_extract_transactions_valid_data(config: Config):
 
 
 def test_extract_balance_normal(config: Config):
+    """Test that extract_balance returns a valid BalanceInfo for a normal credit file."""
     files = get_files()
     file_path = config.get_source_dir("gls", "credit") / files[1]
     lines = file_path.read_text().splitlines()

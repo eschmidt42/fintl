@@ -1,3 +1,5 @@
+"""Helper utilities for the search command."""
+
 from functools import cache
 from pathlib import Path
 
@@ -6,6 +8,7 @@ import polars as pl
 
 @cache
 def get_transactions(path_root: Path) -> pl.DataFrame:
+    """Load and sort transactions from parquet, caching the result."""
     path_transactions = path_root / "all-transactions.parquet"
     assert path_transactions.exists()
 

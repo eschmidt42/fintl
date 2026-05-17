@@ -1,3 +1,5 @@
+"""Shared helper functions for GLS account parsers."""
+
 import datetime
 import logging
 import re
@@ -23,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def detect_separator(lines: list[str]) -> str | None:
+    """Detect the CSV separator used in the given lines."""
     separator = None
     is_header_match_semicolon = any(
         re.search(r"(Bezeichnung Auftragskonto;IBAN Auftragskonto)", line) for line in lines
@@ -35,6 +38,7 @@ def detect_separator(lines: list[str]) -> str | None:
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     is_file_name_match = (
         re.search(r"(DE\d{20}_\d{4}\.\d{2}\.\d{2}\.csv$)", str(file_path.name)) is not None
     )
@@ -52,6 +56,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
 def extract_transactions(
     case: Case, file_path: Path, lines: list[str], encoding: str
 ) -> pl.DataFrame:
+    """Extract and normalise transactions from parsed file lines."""
     transaction_pattern: str = "^(Bezeichnung Auftragskonto;IBAN)"  # start of transactions
 
     date_format: str = "%d.%m.%Y"
@@ -149,6 +154,7 @@ def extract_transactions(
 
 
 def extract_balance(case: Case, transactions: pl.DataFrame, file_path: Path) -> BalanceInfo | None:
+    """Extract balance information from parsed file."""
     if len(transactions) == 0:
         return None
 
@@ -177,6 +183,7 @@ def extract_balance(case: Case, transactions: pl.DataFrame, file_path: Path) -> 
 
 
 def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo | None]:
+    """Parse a single file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 

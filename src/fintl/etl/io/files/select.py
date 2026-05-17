@@ -1,3 +1,5 @@
+"""Helpers for selecting files that still need to be copied or parsed."""
+
 import logging
 from pathlib import Path
 

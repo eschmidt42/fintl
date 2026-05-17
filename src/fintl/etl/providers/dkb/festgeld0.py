@@ -1,3 +1,5 @@
+"""DKB Festgeld (fixed-term deposit) statement parser."""
+
 import logging
 import re
 from pathlib import Path
@@ -53,6 +55,7 @@ CASE = Case(
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
+    """Return True if this parser handles the given file."""
     is_file_name_match = re.search(r"(DE\d{20}\.csv$)", str(file_path.name)) is not None
     logger.debug(f"{is_file_name_match=}")
 
@@ -68,6 +71,7 @@ def check_if_parser_applies(file_path: Path) -> bool:
 def extract_transactions(
     case: Case, file_path: Path, lines: list[str], encoding: str
 ) -> pl.DataFrame:
+    """Extract and normalise transactions from parsed CSV lines."""
     transaction_pattern: str = '^("?Buchungsdatum)'  # start of transactions
 
     date_format: str = "%d.%m.%y"
@@ -158,6 +162,7 @@ def extract_transactions(
 
 
 def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single CSV file and return transactions and balance."""
     encoding = detect_encoding(file_path)
     logger.debug(f"{file_path=} has {encoding=}")
 
@@ -185,6 +190,7 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
 ):
+    """Parse all newly discovered files for this account type."""
     if len(new_files_to_parse) == 0:
         logger.info("No new files to parse")
         return
@@ -209,6 +215,7 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files

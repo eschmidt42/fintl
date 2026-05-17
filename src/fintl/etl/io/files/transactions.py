@@ -1,3 +1,5 @@
+"""I/O helpers for loading, concatenating, and storing transaction records."""
+
 import logging
 from pathlib import Path
 
@@ -28,7 +30,6 @@ def postprocess_old_and_new_transactions(transactions: pl.DataFrame) -> pl.DataF
     Returns:
         The postprocessed DataFrame, sorted by date with unique hashes.
     """
-
     transactions = transactions.unique(subset=["hash"], maintain_order=True)
     transactions = transactions.sort("date")
 
@@ -92,7 +93,6 @@ def load_transactions(parsed_dir: Path, new_files_to_parse: list[Path]) -> list[
     Returns:
         A list of Polars DataFrames containing the newly loaded transactions.
     """
-
     newly_parsed_transactions: list[pl.DataFrame] = []
 
     for file_path in new_files_to_parse:
@@ -128,7 +128,6 @@ def concatenate_new_transactions(
             - The combined DataFrame of old and new transactions, or None if no new data.
             - The count of newly added transactions.
     """
-
     all_transactions_file = parser_dir / "transactions.parquet"
 
     newly_parsed_transactions = load_transactions(parsed_dir, new_files_to_parse)

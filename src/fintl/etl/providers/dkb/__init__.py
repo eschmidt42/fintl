@@ -1,0 +1,1 @@
+"""DKB bank provider plugin."""

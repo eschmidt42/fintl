@@ -1,3 +1,5 @@
+"""Tests for the label assignment and expression building utilities."""
+
 import polars as pl
 import pytest
 
@@ -219,6 +221,7 @@ LABEL_RULES: list[LabelRule] = [
 
 
 def test_assign_labels():
+    """Test that assign_labels correctly assigns labels to transactions."""
     # Create a sample DataFrame for testing
     data = [
         {
@@ -429,8 +432,10 @@ def test_build_label_expr_empty_rules():
 
 
 def test_build_label_expr_multi_condition_first_rule():
-    """The AND-combining loop inside build_label_expr must be exercised
-    when the *first* rule has more than one condition."""
+    """The AND-combining loop inside build_label_expr must be exercised.
+
+    When the *first* rule has more than one condition.
+    """
     rules = [
         LabelRule(
             label="match",
@@ -448,7 +453,9 @@ def test_build_label_expr_multi_condition_first_rule():
 
 def test_condition_expr_no_case_matches_returns_none():
     """_condition_expr must return None (implicit) when op matches no case arm.
-    This covers the unreachable match-exit branch of the last case."""
+
+    This covers the unreachable match-exit branch of the last case.
+    """
     from typing import cast
 
     from fintl.etl.common.labels import LabelConditionOp, _condition_expr

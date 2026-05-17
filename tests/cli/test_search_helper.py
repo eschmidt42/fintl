@@ -1,3 +1,5 @@
+"""Tests for the search helper get_transactions function."""
+
 import datetime
 from pathlib import Path
 
@@ -9,16 +11,19 @@ from fintl.cli.commands.search.helper import get_transactions
 
 @pytest.fixture(autouse=True)
 def clear_cache():
+    """Clear the get_transactions LRU cache before and after each test."""
     get_transactions.cache_clear()
     yield
     get_transactions.cache_clear()
 
 
 def _write_transactions(tmp_path: Path, df: pl.DataFrame) -> None:
+    """Write a DataFrame as all-transactions.parquet into tmp_path."""
     df.write_parquet(tmp_path / "all-transactions.parquet")
 
 
 def test_get_transactions_drops_file_and_hash(tmp_path: Path):
+    """Test that get_transactions removes the file and hash columns."""
     df = pl.DataFrame(
         {
             "source": ["me"],
@@ -42,6 +47,7 @@ def test_get_transactions_drops_file_and_hash(tmp_path: Path):
 
 
 def test_get_transactions_sorted_descending(tmp_path: Path):
+    """Test that get_transactions returns rows sorted by date descending."""
     df = pl.DataFrame(
         {
             "source": ["me", "me"],

@@ -1,3 +1,5 @@
+"""Utilities for reading and concatenating per-case Parquet files."""
+
 import logging
 
 import polars as pl

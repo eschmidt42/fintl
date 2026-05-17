@@ -1,3 +1,5 @@
+"""CLI command for plotting bank account balances."""
+
 import pathlib
 from typing import Annotated, Optional
 

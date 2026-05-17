@@ -1,3 +1,5 @@
+"""Tests for the DKB tagesgeld202312 parser."""
+
 import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -22,21 +24,24 @@ from fintl.etl.providers.dkb import tagesgeld202312 as tagesgeld
 
 @pytest.fixture
 def csv_fname() -> str:
+    """Return the DKB tagesgeld202312 CSV fixture filename."""
     return "02-12-2023_Umsatzliste_Tagesgeld_DE01234567890123456789.csv"
 
 
 @pytest.fixture
 def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    """Return the path to the DKB tagesgeld202312 CSV fixture file."""
     return files_root_path / "csv_files" / "DKB" / "tagesgeld" / csv_fname
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that the required fixture files exist on disk."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def test_extract_balance_with_xa0_character(tmp_path: Path):
-    """Regression test: extract_balance must handle \xa0 (non-breaking space) in the total field."""
+    r"""extract_balance must handle \xa0 (non-breaking space) in the total field."""
     # \xa0 between amount and currency, as produced by some DKB exports
     lines = [
         '""',
@@ -51,6 +56,7 @@ def test_extract_balance_with_xa0_character(tmp_path: Path):
 
 
 def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractTransactionsException on bad transactions."""
     with patch(
         "fintl.etl.providers.dkb.tagesgeld202312.extract_transactions",
         side_effect=ValueError("malformed transactions"),
@@ -61,6 +67,7 @@ def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
 
 
 def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractBalanceException on bad balance data."""
     with patch(
         "fintl.etl.providers.dkb.tagesgeld202312.extract_balance",
         side_effect=ValueError("malformed balance"),
@@ -71,6 +78,7 @@ def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
 
 
 def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    """Test that parse_new_files skips a failing file and processes the remaining ones."""
     good_file = tmp_path / "good.csv"
     bad_file = tmp_path / "bad.csv"
     good_file.touch()
@@ -100,10 +108,12 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of the given path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
+    """Test that tagesgeld202312.main parses files and skips already-processed ones."""
     tagesgeld_source_dir = csv_file.parent
     assert tagesgeld_source_dir.exists()
 

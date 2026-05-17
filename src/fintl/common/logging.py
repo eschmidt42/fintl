@@ -1,4 +1,4 @@
-"""Logging
+"""Logging utilities: JSON formatter, warning buffer, and setup helpers.
 
 Based on: https://github.com/mCodingLLC/VideosSampleCode/blob/master/videos/135_modern_logging
 """

@@ -1,3 +1,5 @@
+"""Scalable broker account parser for PNG screenshots from 2026-03-09 onwards (broker20260309)."""
+
 import datetime
 import logging
 import re
@@ -52,7 +54,7 @@ class OllamaInferenceError(Exception):
 
 
 def check_if_parser_applies(file_path: Path) -> bool:
-    "Example: Screenshot 2026-03-02 at 14.30.53.png"
+    """Return True if the filename matches the expected screenshot pattern."""
     pattern_result = re.search(r"^Screenshot \d{4}-\d{2}-\d{2}.*\.png$", str(file_path.name))
     is_file_name_match = pattern_result is not None
 
@@ -65,6 +67,7 @@ class _BalanceInfoExtract(BaseModel):
 
 
 def get_date_from_string(name: str) -> datetime.date:
+    """Extract a date from a screenshot filename string."""
     date_match = re.match(r"^Screenshot (\d{4}-\d{2}-\d{2}).*\.png$", name)
     if date_match:
         date = date_match.group(1)
@@ -132,6 +135,7 @@ def _check_model_available(base_url: str, model: str) -> None:
 def _get_ollama_client(
     *, model: str, ollama_base_url: str = "http://localhost:11434/v1"
 ) -> instructor.Instructor:
+    """Create and return an Instructor client configured for the given ollama model."""
     return instructor.from_provider(
         f"ollama/{model}",
         base_url=ollama_base_url,
@@ -146,6 +150,7 @@ _SYSTEM_PROMPT = "You are a Scraper for data contained in a screenshot of a brok
 def _get_lm_extraction(
     file_path: Path, extraction_client: instructor.Instructor
 ) -> _BalanceInfoExtract:
+    """Run LM inference to extract balance information from an image file."""
     from instructor.core.exceptions import InstructorRetryException
 
     try:
@@ -172,6 +177,7 @@ def _get_lm_extraction(
 
 
 def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig) -> BalanceInfo:
+    """Extract balance information from a PNG screenshot using ollama."""
     extraction_client = _get_ollama_client(
         model=ollama_config.model, ollama_base_url=ollama_config.base_url
     )
@@ -195,6 +201,7 @@ def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig)
 def parse_image_file(
     case: Case, file_path: Path, *, ollama_config: OllamaConfig
 ) -> tuple[pl.DataFrame, BalanceInfo]:
+    """Parse a single PNG file and return transactions and balance."""
     transactions = extract_transactions()
     balance = extract_balance(case, file_path, ollama_config=ollama_config)
 
@@ -260,6 +267,7 @@ def parse_new_files(
 
 
 def main(config: Config):
+    """Run the full ETL pipeline for this parser."""
     logger.info(f"Processing {CASE=}")
 
     # scan source files

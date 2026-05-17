@@ -1,3 +1,5 @@
+"""Utilities for parsing German-formatted number strings."""
+
 import logging
 
 logger = logging.getLogger(__name__)

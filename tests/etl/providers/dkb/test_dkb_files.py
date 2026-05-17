@@ -28,6 +28,7 @@ from fintl.etl.io.files.utils import (
 
 
 def test_balance_name_to_parquet_unsupported_suffix_raises():
+    """Test that balance_name_to_parquet raises ValueError for unsupported file suffixes."""
     with pytest.raises(ValueError, match="Unexpected suffix"):
         balance_name_to_parquet(Path("export.txt"))
 
@@ -36,6 +37,7 @@ def test_balance_name_to_parquet_unsupported_suffix_raises():
 
 
 def test_transaction_name_to_parquet_unsupported_suffix_raises():
+    """Test that transaction_name_to_parquet raises ValueError for unsupported file suffixes."""
     with pytest.raises(ValueError, match="Unexpected suffix"):
         transaction_name_to_parquet(Path("export.txt"))
 
@@ -57,6 +59,7 @@ def _make_transactions(extra_col: str | None = None) -> pl.DataFrame:
 
 @pytest.fixture
 def schema_and_other_cols() -> tuple[pl.Schema, list[str]]:
+    """Return a Polars schema and the list of non-key transaction column names."""
     other_cols = [col for col in TRANSACTION_COLUMNS if col not in ["date", "amount", "hash"]]
     schema = pl.Schema(
         {
@@ -300,8 +303,10 @@ def test_concatenate_new_transactions_empty_file_list_returns_none(tmp_path: Pat
 
 
 def test_concatenate_new_transactions_column_mismatch_logs_warning(tmp_path: Path):
-    """When two parsed parquets have different columns the extra columns must be
-    discarded and a warning issued (no crash)."""
+    """When two parsed parquets have different columns, extra columns must be discarded.
+
+    A warning must be issued and the function must not crash.
+    """
     parser_dir = tmp_path / "parser"
     parser_dir.mkdir()
     parsed_dir = tmp_path / "parsed"
@@ -333,9 +338,10 @@ def test_concatenate_new_transactions_column_mismatch_logs_warning(tmp_path: Pat
 def test_concatenate_transactions_history_returns_early_when_no_transactions(
     tmp_path: Path,
 ):
-    """When concatenate_new_transactions returns None (all parquets missing),
-    concatenate_transactions_history must log a warning and return without
-    writing any file."""
+    """When concatenate_new_transactions returns None, no file must be written.
+
+    concatenate_transactions_history must log a warning and return without writing any file.
+    """
     parser_dir = tmp_path / "parser"
     parser_dir.mkdir()
     parsed_dir = tmp_path / "parsed"
@@ -351,6 +357,7 @@ def test_concatenate_transactions_history_returns_early_when_no_transactions(
 
 
 def test_find_common_columns_logs_kept_columns(caplog: pytest.LogCaptureFixture):
+    """Test that find_common_columns logs the kept column names at INFO level."""
     caplog.set_level(logging.INFO)
     find_common_columns(
         [
@@ -362,6 +369,7 @@ def test_find_common_columns_logs_kept_columns(caplog: pytest.LogCaptureFixture)
 
 
 def test_find_common_columns_logs_discarded_columns(caplog: pytest.LogCaptureFixture):
+    """Test that find_common_columns logs discarded column names."""
     find_common_columns(
         [
             pl.DataFrame({"a": [1], "b": [2]}),
@@ -375,6 +383,7 @@ def test_find_common_columns_logs_discarded_columns(caplog: pytest.LogCaptureFix
 
 
 def test_load_transactions_returns_loaded_dataframes(tmp_path: Path):
+    """Test that load_transactions returns a list of DataFrames for existing parquet files."""
     parsed_dir = tmp_path / "parsed"
     parsed_dir.mkdir()
 
@@ -402,6 +411,7 @@ def test_load_transactions_returns_loaded_dataframes(tmp_path: Path):
 
 
 def test_load_transactions_skips_missing_parquet(tmp_path: Path, caplog: pytest.LogCaptureFixture):
+    """Test that load_transactions skips missing parquet files and logs a warning."""
     parsed_dir = tmp_path / "parsed"
     parsed_dir.mkdir()
 
@@ -429,6 +439,7 @@ def test_load_transactions_skips_missing_parquet(tmp_path: Path, caplog: pytest.
 
 
 def test_load_transactions_returns_empty_list_when_no_files(tmp_path: Path):
+    """Test that load_transactions returns an empty list when no files are provided."""
     parsed_dir = tmp_path / "parsed"
     parsed_dir.mkdir()
 
@@ -440,6 +451,7 @@ def test_load_transactions_returns_empty_list_when_no_files(tmp_path: Path):
 
 
 def test_process_new_transactions_filters_to_standard_columns(tmp_path: Path):
+    """Test that process_new_transactions drops non-standard columns from input frames."""
     non_standard = pl.DataFrame(
         {
             "date": ["2023-01-01"],
@@ -462,6 +474,7 @@ def test_process_new_transactions_filters_to_standard_columns(tmp_path: Path):
 
 
 def test_process_new_transactions_concatenates_multiple_frames():
+    """Test that process_new_transactions concatenates multiple DataFrames correctly."""
     df1 = pl.DataFrame(
         {
             "date": ["2023-01-01"],
@@ -500,6 +513,7 @@ def test_process_new_transactions_concatenates_multiple_frames():
 
 
 def test_stack_old_and_new_transactions_merges_with_old(tmp_path: Path):
+    """Test that stack_old_and_new_transactions merges new rows with existing data."""
     old_file = tmp_path / "transactions.parquet"
     old_df = pl.DataFrame(
         {col: ["old"] for col in TRANSACTION_COLUMNS},
@@ -532,6 +546,7 @@ def test_stack_old_and_new_transactions_merges_with_old(tmp_path: Path):
 
 
 def test_stack_old_and_new_transactions_handles_missing_old_file(tmp_path: Path):
+    """Test that stack_old_and_new_transactions handles a missing existing parquet file."""
     new_df = pl.DataFrame(
         {
             "date": ["2023-01-01"],
@@ -559,6 +574,7 @@ def test_stack_old_and_new_transactions_handles_missing_old_file(tmp_path: Path)
 
 
 def test_postprocess_old_and_new_transactions_sorts_by_date():
+    """Test that postprocess_old_and_new_transactions sorts the result by date ascending."""
     data = {
         "hash": [3, 2, 1],
         "date": [
@@ -587,6 +603,7 @@ def test_postprocess_old_and_new_transactions_sorts_by_date():
 
 
 def test_postprocess_old_and_new_transactions_removes_duplicates_by_hash():
+    """Test that postprocess_old_and_new_transactions deduplicates rows by hash."""
     data = {
         "hash": [1, 1, 2],
         "date": [date(2023, 1, 1), date(2023, 6, 1), date(2023, 3, 1)],

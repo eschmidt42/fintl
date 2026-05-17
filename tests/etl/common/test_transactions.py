@@ -1,3 +1,5 @@
+"""Tests for transaction hashing and verification utilities."""
+
 from pathlib import Path
 
 import polars as pl
@@ -10,6 +12,7 @@ from fintl.etl.common.transactions import (
 
 
 def test_hash_transactions():
+    """Test that hash_transactions adds a hash column to the DataFrame."""
     data = {"col1": [1, 2, 3], "col2": ["a", "b", "c"]}
     transactions = pl.DataFrame(data)
     hash_columns = ["col1", "col2"]
@@ -19,6 +22,7 @@ def test_hash_transactions():
 
 
 def test_verify_transactions(tmp_path: Path):
+    """Test that verify_transactions raises ValueError for missing columns."""
     data = {"col1": [1, 2, 3], "col2": ["a", "b", "c"]}
     transactions = pl.DataFrame(data)
     transaction_columns = ["col1", "col2"]

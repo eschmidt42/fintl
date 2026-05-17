@@ -1,3 +1,5 @@
+"""Orchestrates file discovery and history concatenation for a parser run."""
+
 import logging
 from pathlib import Path
 from typing import Callable

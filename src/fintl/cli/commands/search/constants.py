@@ -1,3 +1,5 @@
+"""Constants for the search command TUI."""
+
 WAIT_TIME = 1  # seconds
 MAX_COLUMN_WIDTH = 24
 _FILTERABLE_INPUT_IDS = [

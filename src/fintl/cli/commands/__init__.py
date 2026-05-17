@@ -1,3 +1,5 @@
+"""CLI command implementations for fintl."""
+
 from fintl.cli.commands.etl import run as run_etl
 from fintl.cli.commands.plot.core import run as run_plot
 from fintl.cli.commands.search.core import run as run_search

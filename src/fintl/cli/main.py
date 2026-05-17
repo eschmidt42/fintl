@@ -1,3 +1,5 @@
+"""Entry point for the fintl CLI application."""
+
 import typer
 
 from fintl.cli.commands import run_etl, run_plot, run_search, run_store

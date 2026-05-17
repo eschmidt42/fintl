@@ -1,3 +1,5 @@
+"""Helpers for discovering raw, parsed, and source files on disk."""
+
 import logging
 import re
 from pathlib import Path
@@ -194,7 +196,6 @@ def find_line_with_pattern(lines: list[str], pattern: str) -> tuple[int, str]:
     Raises:
         ValueError: If no line matches the pattern.
     """
-
     ix_match = None
     matched_line = ""
     for i, line in enumerate(lines):

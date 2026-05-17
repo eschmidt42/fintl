@@ -1,3 +1,5 @@
+"""Orchestrates the full ETL pipeline: run parsers, consolidate, and label."""
+
 import logging
 from pathlib import Path
 
@@ -29,7 +31,6 @@ def concatenate_all_providers(config: Config) -> None:
     Returns:
         None
     """
-
     logger.info("Concatenating all providers")
 
     cases = runner.all_cases()

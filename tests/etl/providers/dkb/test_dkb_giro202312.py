@@ -1,3 +1,5 @@
+"""Tests for the DKB giro202312 parser."""
+
 import logging
 from pathlib import Path
 from unittest.mock import patch
@@ -37,25 +39,30 @@ from fintl.etl.providers.dkb.giro202312 import (
 
 @pytest.fixture
 def csv_fname() -> str:
+    """Return the DKB giro202312 CSV fixture filename."""
     return "09-12-2023_Umsatzliste_Girokonto_DE01234567890123456789.csv"
 
 
 @pytest.fixture
 def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    """Return the path to the DKB giro202312 CSV fixture file."""
     return files_root_path / "csv_files" / "DKB" / "kontoauszug" / csv_fname
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that the required fixture files exist on disk."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of the given path."""
     return path.stat().st_mtime
 
 
 @pytest.fixture
 def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
+    """Return a Config pointing at the giro202312 fixture source directory."""
     giro_source_dir = csv_file.parent
     assert giro_source_dir.exists()
 
@@ -71,6 +78,7 @@ def config(tmp_path: Path, csv_file: Path, logger_config_path: Path) -> Config:
 
 
 def get_files() -> list[Path]:
+    """Return the list of giro202312 CSV fixture file paths."""
     files = [
         Path("09-12-2023_Umsatzliste_Girokonto_DE01234567890123456789.csv"),
         Path("24-02-2024_Umsatzliste_Girokonto_DE01234567890123456789.csv"),
@@ -79,6 +87,7 @@ def get_files() -> list[Path]:
 
 
 def test_main(config: Config):
+    """Test that giro202312.main parses files and skips already-processed ones."""
     raw_dir = config.get_raw_dir(giro.CASE)
 
     files = get_files()
@@ -204,39 +213,46 @@ def test_main(config: Config):
 
 
 def test_detect_separator_semicolon():
+    """Test that detect_separator returns semicolon for semicolon-delimited lines."""
     lines = ['"yp";"IBAN";"Betrag (€)";"Glä"']
     assert detect_separator(lines) == ";"
 
 
 def test_detect_separator_comma():
+    """Test that detect_separator returns comma for comma-delimited lines."""
     lines = ['"yp","IBAN","Betrag (€)","Glä"']
     assert detect_separator(lines) == ","
 
 
 def test_detect_separator_none():
+    """Test that detect_separator returns None when no recognized delimiter is found."""
     lines = ["some random line"]
     assert detect_separator(lines) is None
 
 
 def test_check_if_parser_applies_true(tmp_path: Path):
+    """Test that check_if_parser_applies returns True for a valid giro202312 file."""
     file_path = tmp_path / "DE12345678901234567890.csv"
     file_path.write_text('"yp";"IBAN";"Betrag (€)";"Glä"')
     assert check_if_parser_applies(file_path) is True
 
 
 def test_check_if_parser_applies_false_filename(tmp_path: Path):
+    """Test that check_if_parser_applies returns False for a wrong filename."""
     file_path = tmp_path / "wrong_filename.csv"
     file_path.write_text('"yp";"IBAN";"Betrag (€)";"Glä"')
     assert check_if_parser_applies(file_path) is False
 
 
 def test_check_if_parser_applies_false_content(tmp_path: Path):
+    """Test that check_if_parser_applies returns False when file content does not match."""
     file_path = tmp_path / "DE12345678901234567890.csv"
     file_path.write_text("some random content")
     assert check_if_parser_applies(file_path) is False
 
 
 def test_extract_transactions(config: Config, caplog):
+    """Test that extract_transactions parses the giro202312 CSV into the expected DataFrame."""
     caplog.set_level(logging.DEBUG)
     files = get_files()
     file_path = config.get_source_dir("dkb", "giro") / files[0]
@@ -256,6 +272,7 @@ def test_extract_transactions(config: Config, caplog):
 
 
 def test_extract_transactions_invalid_date(tmp_path: Path):
+    """Test that extract_transactions raises InvalidOperationError for unparseable dates."""
     file_path = tmp_path / "test.csv"
     file_path.write_text(
         """""
@@ -278,6 +295,7 @@ def test_extract_transactions_invalid_date(tmp_path: Path):
 
 
 def test_case_enum():
+    """Test that CASE enum values match the expected provider, service, and parser."""
     assert CASE.provider == ProviderEnum.dkb.value
     assert CASE.service == ServiceEnum.giro.value
     assert CASE.parser == DKBGiroParserEnum.giro202312.value
@@ -298,6 +316,7 @@ def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
 
 
 def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractTransactionsException on bad transactions."""
     with patch(
         "fintl.etl.providers.dkb.giro202312.extract_transactions",
         side_effect=ValueError("malformed transactions"),
@@ -308,6 +327,7 @@ def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
 
 
 def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractBalanceException on bad balance data."""
     with patch(
         "fintl.etl.providers.dkb.giro202312.extract_balance",
         side_effect=ValueError("malformed balance"),
@@ -318,6 +338,7 @@ def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
 
 
 def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    """Test that parse_new_files skips a failing file and processes the remaining ones."""
     good_file = tmp_path / "good.csv"
     bad_file = tmp_path / "bad.csv"
     good_file.touch()

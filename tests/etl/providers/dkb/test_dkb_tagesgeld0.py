@@ -1,3 +1,5 @@
+"""Tests for the DKB tagesgeld0 parser."""
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,24 +23,29 @@ from fintl.etl.providers.dkb import tagesgeld0 as tagesgeld
 
 @pytest.fixture
 def csv_fname() -> str:
+    """Return the DKB tagesgeld0 CSV fixture filename."""
     return "0123456789_2023-04-16.csv"
 
 
 @pytest.fixture
 def csv_file(files_root_path: Path, csv_fname: str) -> Path:
+    """Return the path to the DKB tagesgeld0 CSV fixture file."""
     return files_root_path / "csv_files" / "DKB" / "tagesgeld" / csv_fname
 
 
 def test_files_exist(files_root_path: Path, csv_file: Path):
+    """Test that the required fixture files exist on disk."""
     assert files_root_path.exists()
     assert csv_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of the given path."""
     return path.stat().st_mtime
 
 
 def test_main(tmp_path: Path, csv_file: Path, csv_fname: str, logger_config_path: Path):
+    """Test that tagesgeld0.main parses files and skips already-processed ones."""
     tagesgeld_source_dir = csv_file.parent
     assert tagesgeld_source_dir.exists()
 
@@ -138,8 +145,10 @@ def test_main(tmp_path: Path, csv_file: Path, csv_fname: str, logger_config_path
 
 
 def test_extract_transactions_returns_empty_dataframe_when_no_data_rows(tmp_path: Path):
-    """When the header line is the last line (no transaction rows), extract_transactions
-    must return an empty DataFrame rather than raising."""
+    """When the header line is the last line, extract_transactions must return an empty DataFrame.
+
+    No transaction rows are present; the function must not raise.
+    """
     from fintl.etl.providers.dkb.tagesgeld0 import CASE, extract_transactions
 
     # The header pattern is '^("?Buchungstag";"Wertstellung")'
@@ -156,6 +165,7 @@ def test_extract_transactions_returns_empty_dataframe_when_no_data_rows(tmp_path
 
 
 def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractTransactionsException on bad transactions."""
     with patch(
         "fintl.etl.providers.dkb.tagesgeld0.extract_transactions",
         side_effect=ValueError("malformed transactions"),
@@ -166,6 +176,7 @@ def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
 
 
 def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
+    """Test that parse_csv_file raises ExtractBalanceException on bad balance data."""
     with patch(
         "fintl.etl.providers.dkb.tagesgeld0.extract_balance",
         side_effect=ValueError("malformed balance"),
@@ -176,6 +187,7 @@ def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
 
 
 def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
+    """Test that parse_new_files skips a failing file and processes the remaining ones."""
     good_file = tmp_path / "good.csv"
     bad_file = tmp_path / "bad.csv"
     good_file.touch()

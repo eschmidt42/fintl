@@ -1,3 +1,5 @@
+"""Tests for scalable.broker20260309 parser."""
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,25 +23,30 @@ MOCK_CURRENCY = "EUR"
 
 @pytest.fixture
 def png_fname() -> str:
+    """Return the PNG fixture filename for broker20260309 tests."""
     return "Screenshot 2026-04-27 at 08.20.00.png"
 
 
 @pytest.fixture
 def png_file(files_root_path: Path, png_fname: str) -> Path:
+    """Return the full path to the broker20260309 PNG fixture file."""
     return files_root_path / "artefacts" / "Scalable-Capital" / png_fname
 
 
 def test_files_exist(files_root_path: Path, png_file: Path):
+    """Test that required fixture files exist."""
     assert files_root_path.exists()
     assert png_file.exists()
 
 
 def get_time(path: Path) -> float:
+    """Return the modification time of a path."""
     return path.stat().st_mtime
 
 
 @pytest.fixture
 def mock_lm_extraction():
+    """Provide patched Ollama extraction helpers that return a fixed mock result."""
     mock_result = broker._BalanceInfoExtract(amount=MOCK_AMOUNT, currency=MOCK_CURRENCY)
     mock_client = object()  # dummy; _get_lm_extraction is also patched
     with (
@@ -52,6 +59,7 @@ def mock_lm_extraction():
 
 
 def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path):
+    """Test that the broker20260309 parser runs end-to-end and produces expected output files."""
     broker_source_dir = png_file.parent
     assert broker_source_dir.exists()
 
@@ -160,8 +168,7 @@ def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_
 
 
 def test_get_date_from_string_raises_when_name_does_not_match():
-    """get_date_from_string must raise ValueError for a filename that does not
-    match the expected 'Screenshot YYYY-MM-DD*.png' pattern."""
+    """get_date_from_string raises ValueError for non-matching filename."""
     import pytest
 
     from fintl.etl.providers.scalable.broker20260309 import (
@@ -505,6 +512,7 @@ def test_parse_new_files_continues_on_generic_error(
     call_count = 0
 
     def _raise_generic(*args, **kwargs):
+        """Increment call count and always raise ValueError."""
         nonlocal call_count
         call_count += 1
         raise ValueError("parse failed")

@@ -1,3 +1,5 @@
+"""I/O helpers for reading, writing, and concatenating balance records."""
+
 import logging
 from pathlib import Path
 

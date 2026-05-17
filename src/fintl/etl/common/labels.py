@@ -1,4 +1,4 @@
-"""Assign labels to transactions
+"""Assign labels to transactions.
 
 Reads data/all-transactions.xlsx/parquet and creates
 data/all-transactions-labelled.xlsx/parquet with label columns.
@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class LabelConditionOp(StrEnum):
+    """Supported comparison operators for label conditions."""
+
     contains = "contains"
     not_contains = "not_contains"
     equals = "equals"
@@ -46,12 +48,16 @@ def _condition_expr(col: str, op: LabelConditionOp, value: str) -> pl.Expr:
 
 
 class LabelCondition(BaseModel):
+    """A single condition to evaluate for labelling a transaction."""
+
     column: Literal["source", "recipient", "description", "provider"]
     op: LabelConditionOp
     value: str
 
 
 class LabelRule(BaseModel):
+    """A labelling rule combining one or more conditions with a target label."""
+
     label: str
     conditions: list[LabelCondition]
 

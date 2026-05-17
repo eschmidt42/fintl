@@ -1,3 +1,5 @@
+"""Utilities for copying new files into the raw data directory."""
+
 import logging
 import shutil
 from pathlib import Path

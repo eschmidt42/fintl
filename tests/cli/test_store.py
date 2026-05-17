@@ -1,3 +1,5 @@
+"""Tests for the fintl store CLI command."""
+
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -12,6 +14,7 @@ from .conftest import make_config
 
 
 def _store_config_multi(tmp_path: Path, logger_config_path: Path):
+    """Return a Config with DKB giro and credit source directories."""
     giro_src = tmp_path / "sources" / "dkb" / "giro"
     credit_src = tmp_path / "sources" / "dkb" / "credit"
     giro_src.mkdir(parents=True)
@@ -31,6 +34,7 @@ def _spec(
     applies: bool = True,
     precedence: int = 0,
 ) -> ParserSpec:
+    """Build a mock ParserSpec with the given provider/service/parser identity."""
     return ParserSpec(
         case=Case(provider=provider, service=service, parser=parser),
         applies=MagicMock(return_value=applies),
@@ -40,6 +44,7 @@ def _spec(
 
 
 def _store_config(tmp_path: Path, logger_config_path: Path):
+    """Return a Config with a single DKB giro source directory."""
     giro_src = tmp_path / "sources" / "dkb" / "giro"
     giro_src.mkdir(parents=True)
     return make_config(tmp_path, Sources(dkb=Provider(giro=giro_src)), logger_config_path)
@@ -51,6 +56,7 @@ def test_run_copies_matched_file(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that a file matched by a parser is copied to the correct source directory."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
@@ -74,6 +80,7 @@ def test_run_skips_unmatched_file(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that a file not matched by any parser is reported as unmatched."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "unknown.csv").write_text("data\n")
@@ -95,6 +102,7 @@ def test_run_already_copied_file_is_not_duplicated(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that a file already present in the destination is not copied again."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
@@ -121,6 +129,7 @@ def test_run_interactive_confirm_accepts(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that pressing Enter at the interactive prompt confirms the move action."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
@@ -146,6 +155,7 @@ def test_run_interactive_confirm_declines(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that entering 'n' at the interactive prompt skips the file."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     stub = downloads / "export.csv"
@@ -170,6 +180,7 @@ def test_run_interactive_confirm_copy_label(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that --copy changes the interactive prompt action label to 'Copy'."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")
@@ -192,6 +203,7 @@ def test_run_ambiguous_with_yes_skips(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that a file matched by multiple parsers is skipped when --yes is passed."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")
@@ -216,6 +228,7 @@ def test_run_ambiguous_interactive_selects_parser(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that an ambiguous file can be resolved interactively by selecting a parser."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")
@@ -240,6 +253,7 @@ def test_run_ambiguous_interactive_user_skips(
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
+    """Test that entering 0 interactively skips an ambiguous file."""
     downloads = tmp_path / "downloads"
     downloads.mkdir()
     (downloads / "export.csv").write_text("data\n")

@@ -1,0 +1,1 @@
+"""Postbank provider plugin."""

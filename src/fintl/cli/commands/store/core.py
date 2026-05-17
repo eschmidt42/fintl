@@ -1,3 +1,5 @@
+"""Core logic for the store command that copies bank files to ETL input directories."""
+
 import logging
 from pathlib import Path
 
