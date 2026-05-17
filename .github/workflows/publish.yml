@@ -3,7 +3,7 @@ name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 
 # Shared variables
 env:
-  UV_VERSION: "0.10.10"
+  UV_VERSION: "0.11.14"
   PYTHON_VERSION: "3.13"
 
 # only push on tag creation
