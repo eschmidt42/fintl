@@ -83,3 +83,6 @@ select = ["I", "F", "E"]
 
 [tool.uv]
 exclude-newer = "1 week"
+
+[tool.uv.audit]
+ignore-until-fixed = ["GHSA-w8v5-vhqr-4h9v"]
