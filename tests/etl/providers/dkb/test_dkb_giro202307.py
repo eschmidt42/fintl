@@ -10,8 +10,8 @@ import pytest
 from fintl.common import Config, Provider, Sources
 from fintl.common.logging import Logging
 from fintl.etl.common.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
+    ExtractBalanceError,
+    ExtractTransactionsError,
 )
 from fintl.etl.io.files.filenames import (
     balance_csv_name_to_json,
@@ -189,7 +189,7 @@ def test_parse_csv_file_raises_extract_transactions_exception(csv_file: Path):
         "fintl.etl.providers.dkb.giro202307.extract_transactions",
         side_effect=ValueError("malformed transactions"),
     ):
-        with pytest.raises(ExtractTransactionsException) as exc_info:
+        with pytest.raises(ExtractTransactionsError) as exc_info:
             giro.parse_csv_file(giro.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
@@ -200,7 +200,7 @@ def test_parse_csv_file_raises_extract_balance_exception(csv_file: Path):
         "fintl.etl.providers.dkb.giro202307.extract_balance",
         side_effect=ValueError("malformed balance"),
     ):
-        with pytest.raises(ExtractBalanceException) as exc_info:
+        with pytest.raises(ExtractBalanceError) as exc_info:
             giro.parse_csv_file(giro.CASE, csv_file)
     assert isinstance(exc_info.value.__cause__, ValueError)
 
@@ -218,7 +218,7 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
     def _parse_csv_file(case, file_path):
         if file_path == bad_file:
-            raise ExtractTransactionsException("bad file")
+            raise ExtractTransactionsError("bad file")
         return good_transactions, good_balance
 
     with (

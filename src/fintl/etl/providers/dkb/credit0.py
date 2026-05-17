@@ -9,8 +9,8 @@ import polars as pl
 
 from fintl.common import Case, Config
 from fintl.etl.common.exceptions import (
-    ExtractBalanceException,
-    ExtractTransactionsException,
+    ExtractBalanceError,
+    ExtractTransactionsError,
 )
 from fintl.etl.common.number_conversion import german_string_numbers_to_floats
 from fintl.etl.common.schemas import (
@@ -172,14 +172,14 @@ def parse_csv_file(case: Case, file_path: Path) -> tuple[pl.DataFrame, BalanceIn
     except Exception as e:
         msg = f"failed to parse {case=} transactions: {file_path=}"
         logger.error(msg)
-        raise ExtractTransactionsException(msg) from e
+        raise ExtractTransactionsError(msg) from e
 
     try:
         balance = extract_balance(case, file_path, lines)
     except Exception as e:
         msg = f"failed to parse {case=} balance: {file_path=}"
         logger.error(msg)
-        raise ExtractBalanceException(msg) from e
+        raise ExtractBalanceError(msg) from e
 
     return transactions, balance
 
@@ -204,7 +204,7 @@ def parse_new_files(
         logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
         try:
             transactions, balance = parse_csv_file(case, file_path)
-        except (ExtractBalanceException, ExtractTransactionsException):
+        except (ExtractBalanceError, ExtractTransactionsError):
             continue  # already logged in parse_csv_file
 
         store_transactions(parsed_dir, file_path, transactions)

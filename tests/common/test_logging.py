@@ -23,7 +23,7 @@ from fintl.common.logging import (
 )
 
 
-def test_JSONFormatter():
+def test_jsonformatter():
     """Test that JSONFormatter produces valid JSON with message and timestamp fields."""
     logger = logging.getLogger("test")
     record = logger.makeRecord(
@@ -76,7 +76,7 @@ def test_setup_logging_with_toml():
 # ── JSONFormatter: exc_info, stack_info, custom attributes ────────────────────
 
 
-def test_JSONFormatter_with_exc_info():
+def test_jsonformatter_with_exc_info():
     """_prepare_log_dict must include exc_info in the message when set."""
     formatter = JSONFormatter()
     try:
@@ -101,7 +101,7 @@ def test_JSONFormatter_with_exc_info():
     assert "exc_info" in parsed
 
 
-def test_JSONFormatter_with_stack_info():
+def test_jsonformatter_with_stack_info():
     """_prepare_log_dict must include stack_info in the message when set."""
     formatter = JSONFormatter()
     logger = logging.getLogger("test_stack")
@@ -120,7 +120,7 @@ def test_JSONFormatter_with_stack_info():
     assert "stack_info" in parsed
 
 
-def test_JSONFormatter_with_extra_attributes():
+def test_jsonformatter_with_extra_attributes():
     """Custom attributes added to a log record must appear in the JSON output."""
     formatter = JSONFormatter()
     logger = logging.getLogger("test_extra")

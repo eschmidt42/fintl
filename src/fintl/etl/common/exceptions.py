@@ -1,9 +1,9 @@
 """Custom exceptions for ETL extraction failures."""
 
 
-class ExtractTransactionsException(Exception):
+class ExtractTransactionsError(Exception):
     """Exception for any unexpected issues during the transaction extraction."""
 
 
-class ExtractBalanceException(Exception):
+class ExtractBalanceError(Exception):
     """Exception for any unexpected issues during the balance extraction."""
