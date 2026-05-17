@@ -241,17 +241,17 @@ class TableApp(App):
 
     def action_clear_filters(self) -> None:
         """Clear all filter inputs and expand the filter panel."""
-        for input in self.query(".filter-input").results(Input):
-            input.clear()
+        for _input in self.query(".filter-input").results(Input):
+            _input.clear()
         collapsible = self.query_one("#filter-container", Collapsible)
         collapsible.collapsed = False
 
     def _all_inputs_valid(self) -> bool:
         """Return True if every validated filter input is currently valid."""
         return all(
-            input.is_valid
-            for input in self.query(".filter-input").results(Input)
-            if input.validators  # only check inputs that have validators attached
+            _input.is_valid
+            for _input in self.query(".filter-input").results(Input)
+            if _input.validators  # only check inputs that have validators attached
         )
 
     def on_input_changed(self, event: Input.Changed) -> None:
