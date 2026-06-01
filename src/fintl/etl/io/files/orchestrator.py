@@ -5,16 +5,14 @@ from pathlib import Path
 from typing import Callable
 
 from fintl.common import Case, Config
-from fintl.etl.io.files.balances import concatenate_balances_history
+from fintl.etl.io.files.balances import update_balances_history
 from fintl.etl.io.files.detect import detect_relevant_source_files
-from fintl.etl.io.files.transactions import concatenate_transactions_history
+from fintl.etl.io.files.transactions import update_transactions_history
 
 logger = logging.getLogger(__name__)
 
 
-def concatenate_new_information_to_history(
-    parser_dir: Path, parsed_dir: Path, new_files_to_parse: list[Path]
-) -> None:
+def update_history(parser_dir: Path, parsed_dir: Path, new_files_to_parse: list[Path]) -> None:
     """Concatenates new parsed files to the existing transaction and balance history.
 
     Appends newly parsed data to the existing Parquet and Excel history files
@@ -34,9 +32,9 @@ def concatenate_new_information_to_history(
         logger.info("There were no new files parsed, returning.")
         return
 
-    concatenate_transactions_history(parser_dir, parsed_dir, new_files_to_parse)
+    update_transactions_history(parser_dir, parsed_dir, new_files_to_parse)
 
-    concatenate_balances_history(parser_dir, parsed_dir, new_files_to_parse)
+    update_balances_history(parser_dir, parsed_dir, new_files_to_parse)
 
     logger.info("Done concatenating information to history")
 

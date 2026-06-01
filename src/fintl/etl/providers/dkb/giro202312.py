@@ -34,8 +34,8 @@ from fintl.etl.io.files.detect import (
     find_line_with_pattern,
 )
 from fintl.etl.io.files.orchestrator import (
-    concatenate_new_information_to_history,
     get_parser_source_files,
+    update_history,
 )
 from fintl.etl.io.files.select import select_files_to_copy
 from fintl.etl.io.files.transactions import store_transactions
@@ -262,6 +262,6 @@ def main(config: Config):
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)
     new_parsed_files = detect_new_parsed_files(raw_dir, parser_dir, parsed_dir)
-    concatenate_new_information_to_history(parser_dir, parsed_dir, new_parsed_files)
+    update_history(parser_dir, parsed_dir, new_parsed_files)
 
     logger.info(f"Done processing {CASE=}")

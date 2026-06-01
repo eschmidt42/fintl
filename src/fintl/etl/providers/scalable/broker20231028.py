@@ -18,7 +18,7 @@ from fintl.etl.common.schemas import (
 from fintl.etl.io.files.copy import copy_new_files
 from fintl.etl.io.files.detect import detect_encoding
 from fintl.etl.io.files.orchestrator import (
-    concatenate_new_information_to_history,
+    update_history,
 )
 from fintl.etl.io.files.select import select_files_to_copy
 from fintl.etl.io.files.utils import (
@@ -167,6 +167,6 @@ def main(config: Config):
 
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)
-    concatenate_new_information_to_history(parser_dir, parsed_dir, new_files_to_parse)
+    update_history(parser_dir, parsed_dir, new_files_to_parse)
 
     logger.info(f"Done processing {CASE=}")

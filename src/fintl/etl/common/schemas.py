@@ -1,16 +1,20 @@
 """ETL schemas, enumerations, and plugin dataclasses."""
 
+from __future__ import annotations
+
 import datetime
 import logging
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import polars as pl
 from pydantic import BaseModel
 
-from fintl.common import Case, Config
+if TYPE_CHECKING:
+    from fintl.common.config import Case, Config
+
 
 logger = logging.getLogger(__name__)
 
