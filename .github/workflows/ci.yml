@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Security audit (pip-audit)
+      - name: Security audit
         run: uv audit
 
       - name: Install the project
