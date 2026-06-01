@@ -109,7 +109,7 @@ def load_transactions(parsed_dir: Path, new_files_to_parse: list[Path]) -> list[
     return newly_parsed_transactions
 
 
-def concatenate_new_transactions(
+def merge_transactions(
     parser_dir: Path, parsed_dir: Path, new_files_to_parse: list[Path]
 ) -> tuple[pl.DataFrame | None, int]:
     """Loads, processes, and concatenates new transaction data with existing history.
@@ -152,7 +152,7 @@ def concatenate_new_transactions(
     return transactions, n_added
 
 
-def concatenate_transactions_history(
+def update_transactions_history(
     parser_dir: Path, parsed_dir: Path, new_files_to_parse: list[Path]
 ) -> None:
     """Processes new transaction files and updates the transaction history.
@@ -165,9 +165,7 @@ def concatenate_transactions_history(
         parsed_dir: Directory containing newly parsed transaction files.
         new_files_to_parse: List of paths to new transaction files to process.
     """
-    transactions, n_new_lines = concatenate_new_transactions(
-        parser_dir, parsed_dir, new_files_to_parse
-    )
+    transactions, n_new_lines = merge_transactions(parser_dir, parsed_dir, new_files_to_parse)
     if transactions is None:
         logger.warning(f"{transactions=}, skipping writing to disk.")
         return

@@ -19,7 +19,7 @@ from fintl.etl.io.files.filenames import (
 logger = logging.getLogger(__name__)
 
 
-def concatenate_new_balances(
+def merge_balances(
     parser_dir: Path, parsed_dir: Path, new_files_to_parse: list[Path]
 ) -> tuple[pl.DataFrame, int]:
     """Loads and concatenates new balance records with existing history.
@@ -49,13 +49,13 @@ def concatenate_new_balances(
     else:
         balances = newly_parsed_balances
 
-    balances = balances.sort("date")
     balances = balances.unique(subset=["date", "provider", "service", "parser"])
+    balances = balances.sort("date")
     n_new = len(balances)
     return balances, n_new - n_old
 
 
-def concatenate_balances_history(
+def update_balances_history(
     parser_dir: Path, parsed_dir: Path, new_files_to_parse: list[Path]
 ) -> None:
     """Processes new balance files and updates the balance history.
@@ -68,7 +68,7 @@ def concatenate_balances_history(
         parsed_dir: Directory containing newly parsed balance files.
         new_files_to_parse: List of paths to new balance files to process.
     """
-    balances, n_new_lines = concatenate_new_balances(parser_dir, parsed_dir, new_files_to_parse)
+    balances, n_new_lines = merge_balances(parser_dir, parsed_dir, new_files_to_parse)
     balances = balances.sort(TransactionColumnsEnum.date.value, descending=False)
 
     balances_parquet_path = parser_dir / "balances.parquet"
