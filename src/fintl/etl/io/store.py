@@ -17,7 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Callable
 
-from fintl.common import Config
+from fintl.common import Config, FileCounts
 from fintl.etl.common.schemas import ParserSpec
 
 logger = logging.getLogger(__name__)
@@ -141,7 +141,7 @@ def store_files(
     operation: FileOperation,
     confirm: Callable[[str, FileOperation], bool],
     choose: Callable[[Path, list[ParserSpec]], ParserSpec | None],
-) -> dict[str, int]:
+) -> FileCounts:
     """Scan *source_dir*, match files to parsers, and route on confirmation.
 
     Files that match **exactly one** parser are presented to the caller via
@@ -169,9 +169,9 @@ def store_files(
         *ambiguous* counts files that matched more than one provider-service configuration, e.g. DKB giro and DKB credit.
     """  # noqa: E501
     candidates = find_candidate_files(source_dir)
-    logger.info("Scanning %d candidate file(s) in %s", len(candidates), source_dir)
+    logger.info(f"Scanning {len(candidates):_} candidate file(s) in {source_dir}")
 
-    counts = {"matched": 0, "copied": 0, "skipped": 0, "unmatched": 0, "ambiguous": 0}
+    counts: FileCounts = {"matched": 0, "copied": 0, "skipped": 0, "unmatched": 0, "ambiguous": 0}
 
     for file in candidates:
         matches = match_file_to_parsers(file, parsers)

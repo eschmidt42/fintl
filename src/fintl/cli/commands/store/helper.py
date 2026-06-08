@@ -6,7 +6,7 @@ import typer
 from rich.console import Console
 from rich.text import Text
 
-from fintl.common import Config
+from fintl.common import Config, FileCounts
 from fintl.etl.common.schemas import ParserSpec
 from fintl.etl.io.store import FileOperation
 
@@ -76,7 +76,7 @@ class Prompter:
             self.console.print(f"  Please enter a number between 0 and {len(specs)}.")
 
 
-def display_results_to_console(op_label: str, counts: dict[str, int], console: Console):
+def display_results_to_console(op_label: str, counts: FileCounts, console: Console):
     """Print a summary of store operation counts to the console."""
     console.print()
     console.print(
