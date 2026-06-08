@@ -247,3 +247,36 @@ def test_extract_balance_normal(config: Config):
     assert balance_info.service == ServiceEnum.credit.value
     assert balance_info.parser == GLSCreditParserEnum.credit0.value
     assert balance_info.file == str(file_path)
+
+
+def test_parse_new_files_happy_path(tmp_path: Path, csv_file: Path):
+    """parse_new_files parses a real fixture file and produces output parquets."""
+    from fintl.etl.io.files.filenames import (
+        balance_csv_name_to_parquet,
+        transaction_csv_name_to_parquet,
+    )
+    from fintl.etl.providers.gls import credit0
+
+    parsed_dir = tmp_path / "parsed"
+    credit0.parse_new_files(credit0.CASE, [csv_file], parsed_dir)
+
+    assert (parsed_dir / balance_csv_name_to_parquet(csv_file)).exists()
+    assert (parsed_dir / transaction_csv_name_to_parquet(csv_file)).exists()
+
+
+def test_parse_new_files_error_propagates(tmp_path: Path):
+    """parse_new_files does not suppress exceptions from parse_csv_file."""
+    from unittest.mock import patch
+
+    from fintl.etl.providers.gls import credit0
+
+    file1 = tmp_path / "file1.csv"
+    file1.touch()
+    parsed_dir = tmp_path / "parsed"
+
+    with patch(
+        "fintl.etl.providers.gls.credit0.parse_csv_file",
+        side_effect=ValueError("parse failed"),
+    ):
+        with pytest.raises(ValueError, match="parse failed"):
+            credit0.parse_new_files(credit0.CASE, [file1], parsed_dir)
