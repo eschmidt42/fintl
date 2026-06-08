@@ -105,22 +105,22 @@ def deduplicate_by_provider_service(matches: list[ParserSpec]) -> list[ParserSpe
     return list(deduplicated_matches.values())
 
 
-def _route_file(file: Path, raw_dir: Path, operation: FileOperation) -> bool:
-    """Route *file* into *raw_dir*, skipping if already present.
+def _route_file(file: Path, dst_dir: Path, operation: FileOperation) -> bool:
+    """Route *file* into *dst_dir*, skipping if already present.
 
     Args:
         file: Source file to copy or move.
-        raw_dir: Destination directory (created if absent).
+        dst_dir: Destination directory (created if absent).
         operation: The file operation to perform (moving or copying).
 
     Returns:
         ``True`` if the file was routed, ``False`` if it was already present.
     """
-    dest = raw_dir / file.name
+    dest = dst_dir / file.name
     if dest.exists():
         logger.info("Already present, skipping: %s", dest)
         return False
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    dst_dir.mkdir(parents=True, exist_ok=True)
 
     match operation:
         case FileOperation.MOVING:
@@ -211,7 +211,7 @@ def store_files(
 
         prompt = (
             f"{file.name}  →  {spec.case.provider} / {spec.case.service} / {spec.case.parser}\n"
-            f"    target: {raw_dir}"
+            f"    target (raw dir): {raw_dir}"
         )
         if confirm(prompt, operation):
             if _route_file(file, raw_dir, operation):
