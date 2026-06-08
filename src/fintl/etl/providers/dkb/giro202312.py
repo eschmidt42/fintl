@@ -24,8 +24,8 @@ from fintl.etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
+from fintl.etl.engine import parse_utils
 from fintl.etl.io.files.applies import check_applies
-from fintl.etl.io.files.balances import store_balance
 from fintl.etl.io.files.copy import copy_new_files
 from fintl.etl.io.files.detect import (
     detect_encoding,
@@ -39,7 +39,6 @@ from fintl.etl.io.files.orchestrator import (
     update_history,
 )
 from fintl.etl.io.files.select import select_files_to_copy
-from fintl.etl.io.files.transactions import store_transactions
 from fintl.etl.io.files.utils import (
     load_lines,
 )
@@ -206,27 +205,13 @@ def parse_new_files(
     parsed_dir: Path,
 ):
     """Parse all newly discovered files for this account type."""
-    if len(new_files_to_parse) == 0:
-        logger.info("No new files to parse")
-        return
-
-    if not parsed_dir.exists():
-        logger.info(f"Creating {parsed_dir=}")
-        parsed_dir.mkdir(parents=True, exist_ok=True)
-
-    logger.info(f"Parsing {len(new_files_to_parse):_} new files to {parsed_dir=}")
-
-    for file_path in new_files_to_parse:
-        logger.debug(f"Parsing {file_path=} to {parsed_dir=}")
-        try:
-            transactions, balance = parse_csv_file(case, file_path)
-        except (ExtractBalanceError, ExtractTransactionsError):
-            continue  # already logged in parse_csv_file
-
-        store_transactions(parsed_dir, file_path, transactions)
-        store_balance(parsed_dir, file_path, balance)
-
-    logger.info(f"Finished parsing {len(new_files_to_parse):_d} new files")
+    return parse_utils.parse_new_files(
+        case,
+        new_files_to_parse,
+        parsed_dir,
+        parse_fn=parse_csv_file,
+        catch_errors=(ExtractBalanceError, ExtractTransactionsError),
+    )
 
 
 def main(config: Config):

@@ -207,8 +207,8 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
             "fintl.etl.providers.dkb.tagesgeld0.parse_csv_file",
             side_effect=_parse_csv_file,
         ),
-        patch("fintl.etl.providers.dkb.tagesgeld0.store_transactions") as mock_store_t,
-        patch("fintl.etl.providers.dkb.tagesgeld0.store_balance") as mock_store_b,
+        patch("fintl.etl.engine.parse_utils.store_transactions") as mock_store_t,
+        patch("fintl.etl.engine.parse_utils.store_balance") as mock_store_b,
     ):
         tagesgeld.parse_new_files(tagesgeld.CASE, [bad_file, good_file], parsed_dir)
 
