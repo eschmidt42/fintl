@@ -194,3 +194,10 @@ def test_parse_new_files_skips_failing_file_and_continues(tmp_path: Path):
 
     mock_store_t.assert_called_once_with(parsed_dir, good_file, good_transactions)
     mock_store_b.assert_called_once_with(parsed_dir, good_file, good_balance)
+
+
+def test_check_if_parser_applies_non_csv_file(tmp_path: Path):
+    """Passing a non-CSV file (e.g. PNG) returns False without reading file content."""
+    file_path = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    file_path.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00binary")
+    assert tagesgeld.check_if_parser_applies(file_path) is False

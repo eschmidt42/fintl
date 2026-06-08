@@ -250,3 +250,10 @@ def test_main(tmp_path: Path, csv_file: Path, logger_config_path: Path):
         assert ts_balance_parquet_single[i] < get_time(f_balance_parquet)
         assert ts_transactions_parquet_single[i] < get_time(f_trans_parquet)
         assert ts_transactions_xlsx_single[i] < get_time(f_trans_xlsx)
+
+
+def test_check_if_parser_applies_non_csv_file(tmp_path: Path):
+    """Passing a non-CSV file (e.g. PNG) returns False without reading file content."""
+    file_path = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    file_path.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00binary")
+    assert tagesgeld.check_if_parser_applies(file_path) is False

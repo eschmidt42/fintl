@@ -61,6 +61,8 @@ def check_if_parser_applies(file_path: Path) -> bool:
         )
         is not None
     )
+    if not is_file_name_match:
+        return False
 
     encoding = detect_encoding(file_path)
     lines = load_lines(file_path, encoding)

@@ -230,6 +230,13 @@ def test_check_if_parser_applies_false_content(tmp_path: Path, csv_fname: str):
     assert check_if_parser_applies(file_path) is False
 
 
+def test_check_if_parser_applies_non_csv_file(tmp_path: Path):
+    """Passing a non-CSV file (e.g. PNG) returns False without reading file content."""
+    file_path = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    file_path.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00binary")
+    assert check_if_parser_applies(file_path) is False
+
+
 def test_extract_transactions(config: Config, csv_fname: str):
     """Test that extract_transactions parses the festgeld CSV into the expected DataFrame."""
     files = get_files(csv_fname)

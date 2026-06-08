@@ -55,6 +55,8 @@ CASE = Case(
 def check_if_parser_applies(file_path: Path) -> bool:
     """Return True if this parser handles the given file."""
     is_file_name_match = re.search(r"(DE\d{20}\.csv$)", str(file_path.name)) is not None
+    if not is_file_name_match:
+        return False
 
     encoding = detect_encoding(file_path)
     lines = load_lines(file_path, encoding)

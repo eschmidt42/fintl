@@ -79,6 +79,13 @@ def test_check_if_parser_applies_empty_file(tmp_path: Path):
     assert fintl.etl.providers.gls.helper.check_if_parser_applies(file_path) is False
 
 
+def test_check_if_parser_applies_non_csv_file(tmp_path: Path):
+    """Passing a non-CSV file (e.g. PNG) returns False without reading file content."""
+    file_path = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
+    file_path.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00binary")
+    assert fintl.etl.providers.gls.helper.check_if_parser_applies(file_path) is False
+
+
 def test_extract_transactions_raises_when_separator_is_none(tmp_path: Path):
     """extract_transactions must raise ValueError when detect_separator returns None."""
     lines = ["Bezeichnung Auftragskonto;IBAN Auftragskonto;...\n", "data;row\n"]

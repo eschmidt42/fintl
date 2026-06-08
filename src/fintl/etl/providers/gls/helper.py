@@ -43,6 +43,8 @@ def check_if_parser_applies(file_path: Path) -> bool:
         re.search(r"(DE\d{20}_\d{4}\.\d{2}\.\d{2}\.csv$)", str(file_path.name)) is not None
     )
     logger.debug(f"{is_file_name_match=}")
+    if not is_file_name_match:
+        return False
 
     # check if the csv file at file_path contains "Betrag (€)"
     encoding = detect_encoding(file_path)
