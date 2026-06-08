@@ -1,4 +1,4 @@
-"""Functionality to counts things."""
+"""Functionality for counting things."""
 
 from enum import StrEnum, auto
 from typing import TypedDict
