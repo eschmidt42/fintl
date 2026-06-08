@@ -25,6 +25,7 @@ from fintl.etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
+from fintl.etl.io.files.applies import check_applies
 from fintl.etl.io.files.balances import store_balance
 from fintl.etl.io.files.copy import copy_new_files
 from fintl.etl.io.files.detect import (
@@ -54,26 +55,17 @@ CASE = Case(
 
 def check_if_parser_applies(file_path: Path) -> bool:
     """Return True if this parser handles the given file."""
-    is_file_name_match = (
-        re.search(
-            r"^(\d{2}-\d{2}-\d{4}\_Umsatzliste\_Tagesgeld.*\.csv)",
-            str(file_path.name),
-        )
-        is not None
+    return check_applies(
+        file_path,
+        r"^\d{2}-\d{2}-\d{4}\_Umsatzliste\_Tagesgeld.*\.csv",
+        lambda lines: any(
+            re.search(
+                r'"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige\*r";"Zahlungsempfänger\*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag \(€\)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"',  # noqa: E501
+                line,
+            )
+            for line in lines
+        ),
     )
-    if not is_file_name_match:
-        return False
-
-    encoding = detect_encoding(file_path)
-    lines = load_lines(file_path, encoding)
-    is_header_match = any(
-        re.search(
-            r'"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige\*r";"Zahlungsempfänger\*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag \(€\)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"',  # noqa: E501
-            line,
-        )
-        for line in lines
-    )
-    return is_file_name_match and is_header_match
 
 
 def extract_transactions(

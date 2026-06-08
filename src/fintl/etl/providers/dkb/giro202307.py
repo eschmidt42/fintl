@@ -25,6 +25,7 @@ from fintl.etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
+from fintl.etl.io.files.applies import check_applies
 from fintl.etl.io.files.balances import store_balance
 from fintl.etl.io.files.copy import copy_new_files
 from fintl.etl.io.files.detect import (
@@ -54,15 +55,11 @@ CASE = Case(
 
 def check_if_parser_applies(file_path: Path) -> bool:
     """Return True if this parser handles the given file."""
-    is_file_name_match = re.search(r"(DE\d{20}\.csv$)", str(file_path.name)) is not None
-    if not is_file_name_match:
-        return False
-
-    encoding = detect_encoding(file_path)
-    lines = load_lines(file_path, encoding)
-    is_header_match = any(re.search(r'("Umsatztyp";"Betrag";"Glä)', line) for line in lines)
-
-    return is_file_name_match and is_header_match
+    return check_applies(
+        file_path,
+        r"DE\d{20}\.csv$",
+        lambda lines: any(re.search(r'("Umsatztyp";"Betrag";"Glä)', line) for line in lines),
+    )
 
 
 def extract_transactions(
