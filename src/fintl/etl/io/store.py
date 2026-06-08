@@ -17,7 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Callable
 
-from fintl.common import Config
+from fintl.common import Config, FileCounts, FileOutcome
 from fintl.etl.common.schemas import ParserSpec
 
 logger = logging.getLogger(__name__)
@@ -105,22 +105,22 @@ def deduplicate_by_provider_service(matches: list[ParserSpec]) -> list[ParserSpe
     return list(deduplicated_matches.values())
 
 
-def _route_file(file: Path, raw_dir: Path, operation: FileOperation) -> bool:
-    """Route *file* into *raw_dir*, skipping if already present.
+def _route_file(file: Path, dst_dir: Path, operation: FileOperation) -> bool:
+    """Route *file* into *dst_dir*, skipping if already present.
 
     Args:
         file: Source file to copy or move.
-        raw_dir: Destination directory (created if absent).
+        dst_dir: Destination directory (created if absent).
         operation: The file operation to perform (moving or copying).
 
     Returns:
         ``True`` if the file was routed, ``False`` if it was already present.
     """
-    dest = raw_dir / file.name
+    dest = dst_dir / file.name
     if dest.exists():
         logger.info("Already present, skipping: %s", dest)
         return False
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    dst_dir.mkdir(parents=True, exist_ok=True)
 
     match operation:
         case FileOperation.MOVING:
@@ -133,6 +133,57 @@ def _route_file(file: Path, raw_dir: Path, operation: FileOperation) -> bool:
     return True
 
 
+def _process_single_file(
+    file: Path,
+    config: Config,
+    parsers: list[ParserSpec],
+    *,
+    operation: FileOperation,
+    confirm: Callable[[str, FileOperation], bool],
+    choose: Callable[[Path, list[ParserSpec]], ParserSpec | None],
+) -> tuple[FileOutcome, ...]:
+    """Processing a single file based on user input."""
+    matches = match_file_to_parsers(file, parsers)
+    matches = deduplicate_by_provider_service(matches)
+
+    if not matches:
+        logger.debug("No parser matched %s", file.name)
+        return (FileOutcome.unmatched,)
+
+    if len(matches) > 1:
+        _parsers_msg = ", ".join(s.case.name for s in matches)
+        logger.warning(
+            f"{file.name} matched {len(matches):_} parsers ({_parsers_msg}) "
+            f"— ambiguous; requesting user selection."
+        )
+
+        chosen = choose(file, matches)
+
+        if chosen is None:
+            logger.debug(f"Ambiguous file skipped by user: {file.name}")
+            return (FileOutcome.ambiguous,)
+
+        if _route_file(file, config.get_source_dir_from_case(chosen.case), operation):
+            return (FileOutcome.ambiguous, FileOutcome.copied)
+        else:
+            return (FileOutcome.ambiguous, FileOutcome.skipped)
+
+    spec = matches[0]
+    raw_dir = config.get_source_dir_from_case(spec.case)
+
+    prompt = (
+        f"{file.name}  →  {spec.case.provider} / {spec.case.service} / {spec.case.parser}\n"
+        f"    target (raw dir): {raw_dir}"
+    )
+    if confirm(prompt, operation):
+        if _route_file(file, raw_dir, operation):
+            return (FileOutcome.matched, FileOutcome.copied)
+        else:
+            return (FileOutcome.matched, FileOutcome.skipped)
+    else:
+        return (FileOutcome.matched, FileOutcome.skipped)
+
+
 def store_files(
     source_dir: Path,
     config: Config,
@@ -141,7 +192,7 @@ def store_files(
     operation: FileOperation,
     confirm: Callable[[str, FileOperation], bool],
     choose: Callable[[Path, list[ParserSpec]], ParserSpec | None],
-) -> dict[str, int]:
+) -> FileCounts:
     """Scan *source_dir*, match files to parsers, and route on confirmation.
 
     Files that match **exactly one** parser are presented to the caller via
@@ -169,56 +220,15 @@ def store_files(
         *ambiguous* counts files that matched more than one provider-service configuration, e.g. DKB giro and DKB credit.
     """  # noqa: E501
     candidates = find_candidate_files(source_dir)
-    logger.info("Scanning %d candidate file(s) in %s", len(candidates), source_dir)
+    logger.info(f"Scanning {len(candidates):_} candidate file(s) in {source_dir}")
 
-    counts = {"matched": 0, "copied": 0, "skipped": 0, "unmatched": 0, "ambiguous": 0}
+    counts: FileCounts = {"matched": 0, "copied": 0, "skipped": 0, "unmatched": 0, "ambiguous": 0}
 
     for file in candidates:
-        matches = match_file_to_parsers(file, parsers)
-        matches = deduplicate_by_provider_service(matches)
-
-        if not matches:
-            counts["unmatched"] += 1
-            logger.debug("No parser matched %s", file.name)
-            continue
-
-        if len(matches) > 1:
-            counts["ambiguous"] += 1
-
-            logger.warning(
-                "%s matched %d parsers (%s) — ambiguous; requesting user selection.",
-                file.name,
-                len(matches),
-                ", ".join(s.case.name for s in matches),
-            )
-
-            chosen = choose(file, matches)
-
-            if chosen is None:
-                logger.debug("Ambiguous file skipped by user: %s", file.name)
-                continue
-
-            if _route_file(file, config.get_source_dir_from_case(chosen.case), operation):
-                counts["copied"] += 1
-            else:
-                counts["skipped"] += 1
-            continue
-
-        counts["matched"] += 1
-
-        spec = matches[0]
-        raw_dir = config.get_source_dir_from_case(spec.case)
-
-        prompt = (
-            f"{file.name}  →  {spec.case.provider} / {spec.case.service} / {spec.case.parser}\n"
-            f"    target: {raw_dir}"
+        outcomes = _process_single_file(
+            file, config, parsers, operation=operation, confirm=confirm, choose=choose
         )
-        if confirm(prompt, operation):
-            if _route_file(file, raw_dir, operation):
-                counts["copied"] += 1
-            else:
-                counts["skipped"] += 1
-        else:
-            counts["skipped"] += 1
+        for o in outcomes:
+            counts[o.value] += 1
 
     return counts
