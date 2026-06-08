@@ -3,6 +3,7 @@
 import logging
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 
@@ -14,6 +15,7 @@ from fintl.etl.io.files.transactions import store_transactions
 logger = logging.getLogger(__name__)
 
 ParseFn = Callable[[Case, Path], tuple[pl.DataFrame, BalanceInfo | None]]
+StoreFn = Callable[[Path, Path, Any], None]
 
 
 def parse_new_files(
@@ -22,6 +24,8 @@ def parse_new_files(
     parsed_dir: Path,
     parse_fn: ParseFn,
     *,
+    store_transactions_fn: StoreFn | None = None,
+    store_balance_fn: StoreFn | None = None,
     catch_errors: tuple[type[Exception], ...] | None = None,
     log_parse_errors: bool = False,
 ) -> list[Path]:
@@ -33,11 +37,20 @@ def parse_new_files(
         parsed_dir: Directory to write per-file parquet output into.
         parse_fn: Callable ``(case, file_path) -> (transactions_df, balance)``
             that does the actual parsing for one file.
+        store_transactions_fn: Callable to persist the transactions DataFrame.
+            Defaults to the CSV-based store; HTML/PNG parsers pass their own.
+        store_balance_fn: Callable to persist the balance record.
+            Defaults to the CSV-based store; HTML/PNG parsers pass their own.
         catch_errors: Exception types to catch per-file and skip silently.
             When ``None`` (default) no exceptions are suppressed.
         log_parse_errors: When ``True``, log a WARNING with traceback for each
             caught per-file error. Has no effect when ``catch_errors`` is ``None``.
     """
+    _store_t: StoreFn = (
+        store_transactions_fn if store_transactions_fn is not None else store_transactions
+    )
+    _store_b: StoreFn = store_balance_fn if store_balance_fn is not None else store_balance
+
     if not new_files_to_parse:
         logger.info("No new files to parse")
         return []
@@ -59,8 +72,8 @@ def parse_new_files(
                 logger.warning("Failed to parse %s", file_path.name, exc_info=True)
             continue
 
-        store_transactions(parsed_dir, file_path, transactions)
-        store_balance(parsed_dir, file_path, balance)
+        _store_t(parsed_dir, file_path, transactions)
+        _store_b(parsed_dir, file_path, balance)
         parsed.append(file_path)
 
     logger.info(f"Finished parsing {len(parsed):_d} new files")
