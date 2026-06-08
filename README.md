@@ -114,13 +114,13 @@ Set the `FINTL_CONFIG` env var to point at any TOML file instead of `~/.config/p
 To try the CLI commands, run:
 
 ```bash
-mkdir /private/tmp/fintl-dev
+mkdir /tmp/fintl-dev
 ```
 
 Then you can run one of
 
 ```bash
-rm -fr /private/tmp/fintl-dev/*
+rm -fr /tmp/fintl-dev/*
 FINTL_CONFIG=dev-config.toml fintl etl
 FINTL_CONFIG=dev-config.toml fintl plot
 FINTL_CONFIG=dev-config.toml fintl store --from-dir <dir> --yes --copy
