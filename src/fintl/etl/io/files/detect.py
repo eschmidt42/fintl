@@ -160,7 +160,7 @@ def detect_encoding(path: Path, encoding_default: str = "utf-8") -> str:
     Returns:
         The detected encoding string, or the default if detection fails.
     """
-    with open(path, "rb") as f:
+    with path.open("rb") as f:
         res = chardet.detect(f.read())
     logger.debug(f"detect encoding: {res}")
     enc = res["encoding"]

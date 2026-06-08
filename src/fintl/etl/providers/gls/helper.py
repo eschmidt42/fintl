@@ -18,6 +18,7 @@ from fintl.etl.common.transactions import (
     hash_transactions,
     verify_transactions,
 )
+from fintl.etl.io.files.applies import check_applies
 from fintl.etl.io.files.detect import detect_encoding, find_line_with_pattern
 from fintl.etl.io.files.utils import load_lines
 
@@ -39,18 +40,11 @@ def detect_separator(lines: list[str]) -> str | None:
 
 def check_if_parser_applies(file_path: Path) -> bool:
     """Return True if this parser handles the given file."""
-    is_file_name_match = (
-        re.search(r"(DE\d{20}_\d{4}\.\d{2}\.\d{2}\.csv$)", str(file_path.name)) is not None
+    return check_applies(
+        file_path,
+        r"DE\d{20}_\d{4}\.\d{2}\.\d{2}\.csv$",
+        lambda lines: detect_separator(lines) == ";",
     )
-    logger.debug(f"{is_file_name_match=}")
-
-    # check if the csv file at file_path contains "Betrag (€)"
-    encoding = detect_encoding(file_path)
-    lines = load_lines(file_path, encoding)
-
-    separator = detect_separator(lines)
-    is_expected_separator = separator is not None and separator == ";"
-    return is_file_name_match and is_expected_separator
 
 
 def extract_transactions(
