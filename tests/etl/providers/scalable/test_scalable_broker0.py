@@ -210,3 +210,33 @@ def test_extract_balance_currency_none_falls_back_to_empty_string(tmp_path: Path
     file_path.write_text(html)
     balance = broker.extract_balance(broker.CASE, file_path, [])
     assert balance.currency == ""
+
+
+def test_parse_new_files_happy_path(tmp_path: Path, html_file_path: Path):
+    """parse_new_files parses a real fixture file and produces output parquets."""
+    from fintl.etl.io.files.filenames import (
+        balance_htm_name_to_parquet,
+        transaction_htm_name_to_parquet,
+    )
+
+    parsed_dir = tmp_path / "parsed"
+    broker.parse_new_files(broker.CASE, [html_file_path], parsed_dir)
+
+    assert (parsed_dir / balance_htm_name_to_parquet(html_file_path)).exists()
+    assert (parsed_dir / transaction_htm_name_to_parquet(html_file_path)).exists()
+
+
+def test_parse_new_files_error_propagates(tmp_path: Path, html_fname: str):
+    """parse_new_files does not suppress exceptions from parse_html_file."""
+    from unittest.mock import patch
+
+    file1 = tmp_path / html_fname
+    file1.touch()
+    parsed_dir = tmp_path / "parsed"
+
+    with patch(
+        "fintl.etl.providers.scalable.broker0.parse_html_file",
+        side_effect=ValueError("parse failed"),
+    ):
+        with pytest.raises(ValueError, match="parse failed"):
+            broker.parse_new_files(broker.CASE, [file1], parsed_dir)
