@@ -18,7 +18,7 @@ classifiers = [
 authors = [
     { name = "eschmidt42", email = "11818904+eschmidt42@users.noreply.github.com" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.13, <3.14"
 dependencies = [
     "aiohttp>=3.13.4",
     "altair>=6.0.0",
@@ -155,7 +155,7 @@ convention = "google"
 
 [tool.uv]
 exclude-newer = "1 week"
-exclude-newer-package = { "fintl" = false } # exempt package so the testpypi sanity check works
+exclude-newer-package = { "fintl" = false, "aiohttp" = false } # exempt package so the testpypi sanity check works
 
 [tool.uv.audit]
-ignore-until-fixed = ["GHSA-w8v5-vhqr-4h9v"]
+ignore-until-fixed = []
