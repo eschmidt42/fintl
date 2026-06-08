@@ -36,7 +36,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Security audit
-        run: uv audit
+        run: uv audit --preview-features audit
 
       - name: Install the project
         run: uv sync --all-extras --dev
