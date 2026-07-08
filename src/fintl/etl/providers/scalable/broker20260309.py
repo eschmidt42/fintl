@@ -8,6 +8,16 @@ from pathlib import Path
 import polars as pl
 
 from fintl.common import Case, Config, OllamaConfig
+from fintl.common.extraction.errors import (
+    OllamaModelUnavailableError,
+    OllamaUnavailableError,
+)
+from fintl.common.extraction.ollama import (
+    _check_model_available,
+    _check_ollama_availability,
+    _get_lm_extraction,
+    _get_ollama_client,
+)
 from fintl.etl.common.schemas import (
     BalanceInfo,
     ProviderEnum,
@@ -21,16 +31,6 @@ from fintl.etl.io.files.orchestrator import (
 )
 from fintl.etl.io.files.select import select_files_to_copy
 from fintl.etl.providers.scalable.broker0 import extract_transactions
-from fintl.etl.providers.scalable.extraction.errors import (
-    OllamaModelUnavailableError,
-    OllamaUnavailableError,
-)
-from fintl.etl.providers.scalable.extraction.ollama import (
-    _check_model_available,
-    _check_ollama_availability,
-    _get_lm_extraction,
-    _get_ollama_client,
-)
 from fintl.etl.providers.scalable.files import (
     detect_new_raw_files,
     detect_relevant_target_files,

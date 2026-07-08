@@ -6,7 +6,7 @@ from unittest.mock import patch
 import polars as pl
 import pytest
 
-import fintl.etl.providers.scalable.extraction.ollama
+import fintl.common.extraction.ollama
 from fintl.common import Config, OllamaConfig, Provider, Sources
 from fintl.common.logging import Logging
 from fintl.etl.io.files.filenames import (
@@ -36,7 +36,7 @@ def get_time(path: Path) -> float:
 @pytest.fixture
 def mock_lm_extraction():
     """Provide patched Ollama extraction helpers that return a fixed mock result."""
-    mock_result = fintl.etl.providers.scalable.extraction.ollama._BalanceInfoExtract(
+    mock_result = fintl.common.extraction.ollama._BalanceInfoExtract(
         amount=MOCK_AMOUNT, currency=MOCK_CURRENCY
     )
     mock_client = object()  # dummy; _get_lm_extraction is also patched
@@ -212,9 +212,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     with patch.object(
         broker,
         "_check_ollama_availability",
-        side_effect=fintl.etl.providers.scalable.extraction.ollama.OllamaUnavailableError(
-            "server down"
-        ),
+        side_effect=fintl.common.extraction.ollama.OllamaUnavailableError("server down"),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(
@@ -244,7 +242,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
         patch.object(
             broker,
             "_check_model_available",
-            side_effect=fintl.etl.providers.scalable.extraction.ollama.OllamaModelUnavailableError(
+            side_effect=fintl.common.extraction.ollama.OllamaModelUnavailableError(
                 "model not found"
             ),
         ),

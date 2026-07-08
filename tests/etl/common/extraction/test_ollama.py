@@ -7,16 +7,16 @@ import httpx
 import pytest
 from instructor.core.exceptions import FailedAttempt, InstructorRetryException
 
-from fintl.etl.providers.scalable.extraction import ollama
-from fintl.etl.providers.scalable.extraction.context import (
+from fintl.common.extraction import ollama
+from fintl.common.extraction.context import (
     _BalanceInfoExtract,
 )
-from fintl.etl.providers.scalable.extraction.errors import (
+from fintl.common.extraction.errors import (
     OllamaInferenceError,
     OllamaModelUnavailableError,
     OllamaUnavailableError,
 )
-from fintl.etl.providers.scalable.extraction.ollama import (
+from fintl.common.extraction.ollama import (
     _check_model_available,
     _check_ollama_availability,
     _get_lm_extraction,

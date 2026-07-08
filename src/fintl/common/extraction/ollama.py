@@ -6,8 +6,8 @@ import httpx
 import instructor
 from instructor.processing.multimodal import Image
 
-from fintl.etl.providers.scalable.extraction.context import _SYSTEM_PROMPT, _BalanceInfoExtract
-from fintl.etl.providers.scalable.extraction.errors import (
+from fintl.common.extraction.context import _SYSTEM_PROMPT, _BalanceInfoExtract
+from fintl.common.extraction.errors import (
     OllamaInferenceError,
     OllamaModelUnavailableError,
     OllamaUnavailableError,
