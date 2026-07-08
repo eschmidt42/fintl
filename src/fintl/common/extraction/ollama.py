@@ -18,7 +18,7 @@ from fintl.common.extraction.errors import (
 from fintl.common.extraction.types import ExtractionOutput, ExtractionResponse
 
 
-def _check_ollama_availability(base_url: str) -> None:
+def check_provider_availability(base_url: str) -> None:
     """Check that the ollama server is reachable.
 
     Strips the ``/v1`` suffix (if present) to reach the ollama root endpoint
@@ -36,7 +36,7 @@ def _check_ollama_availability(base_url: str) -> None:
         raise OllamaUnavailableError(f"Ollama is not reachable at {base_url}: {exc}") from exc
 
 
-def _check_model_available(base_url: str, model: str) -> None:
+def check_model_availability(base_url: str, model: str) -> None:
     """Check that *model* has been pulled into the local ollama instance.
 
     Calls ``GET {root}/api/tags`` and inspects the returned model list.

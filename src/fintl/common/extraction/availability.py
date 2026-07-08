@@ -8,8 +8,10 @@ from fintl.common.extraction.errors import (
     OllamaUnavailableError,
 )
 from fintl.common.extraction.ollama import (
-    _check_model_available,
-    _check_ollama_availability,
+    check_model_availability as check_ollama_model_availability,
+)
+from fintl.common.extraction.ollama import (
+    check_provider_availability as check_ollama_availability,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,13 +26,13 @@ def check_ollama_ok(
         return False
 
     try:
-        _check_ollama_availability(ollama_config.base_url)
+        check_ollama_availability(ollama_config.base_url)
     except OllamaUnavailableError as exc:
         logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
         return False
 
     try:
-        _check_model_available(ollama_config.base_url, ollama_config.model)
+        check_ollama_model_availability(ollama_config.base_url, ollama_config.model)
     except OllamaModelUnavailableError as exc:
         logger.warning(
             "Ollama model (%s) not available, aborting PNG parsing: %s",

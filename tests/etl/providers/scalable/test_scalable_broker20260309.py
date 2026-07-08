@@ -63,8 +63,8 @@ def mock_lm_extraction(monkeypatch: pytest.MonkeyPatch):
         ),
     )
 
-    monkeypatch.setattr(availability, "_check_ollama_availability", lambda *a, **kw: None)
-    monkeypatch.setattr(availability, "_check_model_available", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "check_ollama_availability", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "check_ollama_model_availability", lambda *a, **kw: None)
     monkeypatch.setattr(ollama, "_get_ollama_client", lambda **kw: object())
     monkeypatch.setattr(
         ollama, "_get_ollama_extraction", lambda *a, **kw: (mock_extraction, mock_completion)
@@ -218,7 +218,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
 
     with patch.object(
         availability,
-        "_check_ollama_availability",
+        "check_ollama_availability",
         side_effect=OllamaUnavailableError("server down"),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
@@ -239,10 +239,10 @@ def test_parse_new_files_aborts_on_model_unavailable(
     parsed_dir = tmp_path / "parsed"
 
     with (
-        patch.object(availability, "_check_ollama_availability"),
+        patch.object(availability, "check_ollama_availability"),
         patch.object(
             availability,
-            "_check_model_available",
+            "check_ollama_model_availability",
             side_effect=OllamaModelUnavailableError("model not found"),
         ),
     ):
@@ -276,8 +276,8 @@ def test_parse_new_files_continues_on_generic_error(
         call_count += 1
         raise ValueError("parse failed")
 
-    (monkeypatch.setattr(availability, "_check_ollama_availability", lambda *a, **kw: None),)
-    (monkeypatch.setattr(availability, "_check_model_available", lambda *a, **kw: None),)
+    (monkeypatch.setattr(availability, "check_ollama_availability", lambda *a, **kw: None),)
+    (monkeypatch.setattr(availability, "check_ollama_model_availability", lambda *a, **kw: None),)
     (monkeypatch.setattr(broker, "parse_image_file", _raise_generic),)
 
     with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):

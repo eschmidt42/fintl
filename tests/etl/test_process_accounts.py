@@ -270,8 +270,8 @@ def test_scalable_broker_only(
             file=str(file_path),
         )
 
-    monkeypatch.setattr(availability, "_check_ollama_availability", lambda *a, **kw: None)
-    monkeypatch.setattr(availability, "_check_model_available", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "check_ollama_availability", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "check_ollama_model_availability", lambda *a, **kw: None)
     monkeypatch.setattr(broker20260309, "extract_balance", _fake_extract_balance)
     scalable_src = tmp_path / "scalable_src"
     scalable_src.mkdir()
