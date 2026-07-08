@@ -1,13 +1,19 @@
 """Tests for scalable.broker20260309 parser."""
 
+import logging
 from pathlib import Path
 from unittest.mock import patch
 
 import polars as pl
 import pytest
+from openai.types import CompletionUsage
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.completion_usage import CompletionTokensDetails
 
 import fintl.common.extraction.ollama
 from fintl.common import Config, OllamaConfig, Provider, Sources
+from fintl.common.extraction import ollama
+from fintl.common.extraction.constants import ModelProvider
 from fintl.common.logging import Logging
 from fintl.etl.io.files.filenames import (
     balance_htm_name_to_json,
@@ -16,6 +22,9 @@ from fintl.etl.io.files.filenames import (
     transaction_htm_name_to_xlsx,
 )
 from fintl.etl.providers.scalable import broker20260309 as broker
+from fintl.etl.providers.scalable.broker20260309 import (
+    get_date_from_string,
+)
 
 PNG_FILENAME = "Screenshot 2026-03-09 at 14.30.53.png"
 MOCK_AMOUNT = 1234.56
@@ -34,19 +43,31 @@ def get_time(path: Path) -> float:
 
 
 @pytest.fixture
-def mock_lm_extraction():
+def mock_lm_extraction(monkeypatch: pytest.MonkeyPatch):
     """Provide patched Ollama extraction helpers that return a fixed mock result."""
-    mock_result = fintl.common.extraction.ollama._BalanceInfoExtract(
+    mock_extraction = fintl.common.extraction.ollama._BalanceInfoExtract(
         amount=MOCK_AMOUNT, currency=MOCK_CURRENCY
     )
-    mock_client = object()  # dummy; _get_lm_extraction is also patched
-    with (
-        patch.object(broker, "_check_ollama_availability"),
-        patch.object(broker, "_check_model_available"),
-        patch.object(broker, "_get_ollama_client", return_value=mock_client),
-        patch.object(broker, "_get_lm_extraction", return_value=mock_result),
-    ):
-        yield
+    mock_completion = ChatCompletion.model_construct(
+        id="test-id",
+        choices=[],
+        created=0,
+        model="fake-model",
+        object="chat.completion",
+        usage=CompletionUsage.model_construct(
+            completion_tokens=1,
+            prompt_tokens=1,
+            total_tokens=2,
+            completion_tokens_details=CompletionTokensDetails.model_construct(reasoning_tokens=0),
+        ),
+    )
+
+    monkeypatch.setattr(broker, "_check_ollama_availability", lambda *a, **kw: None)
+    monkeypatch.setattr(broker, "_check_model_available", lambda *a, **kw: None)
+    monkeypatch.setattr(ollama, "_get_ollama_client", lambda **kw: object())
+    monkeypatch.setattr(
+        ollama, "_get_ollama_extraction", lambda *a, **kw: (mock_extraction, mock_completion)
+    )
 
 
 def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path):
@@ -62,6 +83,7 @@ def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_
         sources=Sources(scalable=Provider(broker=broker_source_dir)),
         logging=Logging(config_file=logger_path),
         ollama=OllamaConfig(model="fake-model"),
+        model_provider=ModelProvider.ollama,
     )
 
     # paths
@@ -160,12 +182,6 @@ def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_
 
 def test_get_date_from_string_raises_when_name_does_not_match():
     """get_date_from_string raises ValueError for non-matching filename."""
-    import pytest
-
-    from fintl.etl.providers.scalable.broker20260309 import (
-        get_date_from_string,
-    )
-
     with pytest.raises(ValueError, match="Could not extract date"):
         get_date_from_string("not_a_screenshot.txt")
 
@@ -174,15 +190,11 @@ def test_parse_new_files_skips_when_ollama_not_configured(
     tmp_path: Path, caplog: pytest.LogCaptureFixture, png_fname: str
 ):
     """parse_new_files logs a warning and returns early when ollama_config is None."""
-    import logging
-
-    from fintl.etl.providers.scalable import broker20260309 as broker
-
     dummy = tmp_path / png_fname
     dummy.write_bytes(b"\x89PNG")
 
     with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-        result = broker.parse_new_files(
+        result = broker.parse_new_files_with_ollama(
             broker.CASE, [dummy], tmp_path / "parsed", ollama_config=None
         )
 
@@ -195,12 +207,6 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ):
     """parse_new_files stops before the loop when _check_ollama_availability raises."""
-    import logging
-    from unittest.mock import patch
-
-    from fintl.common import OllamaConfig
-    from fintl.etl.providers.scalable import broker20260309 as broker
-
     files = [
         tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",
         tmp_path / "Screenshot 2026-03-10 at 14.30.53.png",
@@ -215,7 +221,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
         side_effect=fintl.common.extraction.ollama.OllamaUnavailableError("server down"),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-            broker.parse_new_files(
+            broker.parse_new_files_with_ollama(
                 broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
             )
 
@@ -227,12 +233,6 @@ def test_parse_new_files_aborts_on_model_unavailable(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ):
     """parse_new_files stops before the loop when _check_model_available raises."""
-    import logging
-    from unittest.mock import patch
-
-    from fintl.common import OllamaConfig
-    from fintl.etl.providers.scalable import broker20260309 as broker
-
     dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
     dummy.write_bytes(b"\x89PNG")
     parsed_dir = tmp_path / "parsed"
@@ -248,7 +248,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
         ),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-            broker.parse_new_files(
+            broker.parse_new_files_with_ollama(
                 broker.CASE, [dummy], parsed_dir, ollama_config=OllamaConfig(model="m")
             )
 
@@ -260,12 +260,6 @@ def test_parse_new_files_continues_on_generic_error(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ):
     """parse_new_files skips a file on generic Exception and continues with remaining files."""
-    import logging
-    from unittest.mock import patch
-
-    from fintl.common import OllamaConfig
-    from fintl.etl.providers.scalable import broker20260309 as broker
-
     files = [
         tmp_path / "Screenshot 2026-03-09 at 14.30.53.png",
         tmp_path / "Screenshot 2026-03-10 at 14.30.53.png",
@@ -288,7 +282,7 @@ def test_parse_new_files_continues_on_generic_error(
         patch.object(broker, "parse_image_file", side_effect=_raise_generic),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-            broker.parse_new_files(
+            broker.parse_new_files_with_ollama(
                 broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
             )
 
@@ -308,8 +302,6 @@ def test_main_no_ollama_png_files_exist(
     ETL should: copy PNGs to raw_dir, skip parsing (no parquets), skip history
     concatenation (nothing was parsed), and log a warning about missing ollama config.
     """
-    import logging
-
     broker_source_dir = png_file.parent
     assert broker_source_dir.exists()
 

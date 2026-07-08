@@ -1,17 +1,21 @@
 """Ollama-backed extraction utilities for Scalable Capital broker screenshots."""
 
+import time
 from pathlib import Path
+from typing import cast
 
 import httpx
 import instructor
 from instructor.processing.multimodal import Image
+from instructor.processing.multimodal import Image as InstructorImage
 
 from fintl.common.extraction.context import _SYSTEM_PROMPT, _BalanceInfoExtract
 from fintl.common.extraction.errors import (
-    OllamaInferenceError,
+    InferenceError,
     OllamaModelUnavailableError,
     OllamaUnavailableError,
 )
+from fintl.common.extraction.types import ExtractionOutput, ExtractionResponse
 
 
 def _check_ollama_availability(base_url: str) -> None:
@@ -104,6 +108,80 @@ def _get_lm_extraction(
         last = exc.failed_attempts[-1].exception if exc.failed_attempts else exc
         # explicitly cutting of the traceback here for readability.
         # remove `from None` if you need to debug.
-        raise OllamaInferenceError(
-            f"Ollama inference failed for {file_path.name}: {last}"
-        ) from None
+        raise InferenceError(f"Ollama inference failed for {file_path.name}: {last}") from None
+
+
+def _get_ollama_extraction(
+    file_path: Path, extraction_client: instructor.Instructor, timeout: int
+) -> ExtractionResponse:
+    """Run LM inference using ollama to extract balance information from an image file."""
+    from instructor.core.exceptions import InstructorRetryException
+
+    try:
+        res = extraction_client.create_with_completion(  # type: ignore
+            response_model=_BalanceInfoExtract,
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": [
+                        "Please extract data from the following image",
+                        InstructorImage.from_path(file_path),
+                    ],
+                },  # type: ignore[arg-type]
+            ],
+            timeout=timeout,
+        )
+
+        return cast(ExtractionResponse, res)
+    except InstructorRetryException as exc:
+        last = exc.failed_attempts[-1].exception if exc.failed_attempts else exc
+        # explicitly cutting of the traceback here for readability.
+        # remove `from None` if you need to debug.
+        raise InferenceError(f"Ollama inference failed for {file_path.name}: {last}") from None
+
+    else:
+        msg = "No idea how we got here, but the _get_lm_extraction failed."
+        raise RuntimeError(msg)
+
+
+class OllamaExtractionModel:
+    """Extraction model that delegates inference to a local ollama instance."""
+
+    model: str
+    base_url: str
+    client: instructor.Instructor
+    timeout: int
+
+    def __init__(
+        self, model: str, *, base_url: str = "http://localhost:11434/v1", timeout: int = 2 * 60
+    ):
+        """Initialise the ollama extraction model and create the instructor client."""
+        self.model = model
+        self.base_url = base_url
+        self.timeout = timeout
+
+        self.client = _get_ollama_client(model=model, ollama_base_url=base_url)
+
+    def predict(self, path: Path) -> ExtractionOutput:
+        """Run inference on *path* and return an ExtractionOutput with results or error info."""
+        start = time.perf_counter()
+        try:
+            extraction, completion = _get_ollama_extraction(
+                file_path=path, extraction_client=self.client, timeout=self.timeout
+            )
+            ok = True
+            error_message = ""
+        except InferenceError as ex:
+            extraction, completion = None, None
+            ok = False
+            error_message = str(ex)
+
+        elapsed = time.perf_counter() - start
+        return ExtractionOutput(
+            extraction=extraction,
+            completion=completion,
+            elapsed=elapsed,
+            ok=ok,
+            error_message=error_message,
+        )

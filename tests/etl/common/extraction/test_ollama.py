@@ -12,7 +12,7 @@ from fintl.common.extraction.context import (
     _BalanceInfoExtract,
 )
 from fintl.common.extraction.errors import (
-    OllamaInferenceError,
+    InferenceError,
     OllamaModelUnavailableError,
     OllamaUnavailableError,
 )
@@ -55,7 +55,7 @@ def test_get_lm_extraction_raises_ollama_inference_error_on_retry_exhausted(
     dummy_file = tmp_path / png_fname
     dummy_file.write_bytes(b"\x89PNG")
 
-    with pytest.raises(OllamaInferenceError, match="model runner has unexpectedly stopped"):
+    with pytest.raises(InferenceError, match="model runner has unexpectedly stopped"):
         _get_lm_extraction(dummy_file, mock_client)
 
 

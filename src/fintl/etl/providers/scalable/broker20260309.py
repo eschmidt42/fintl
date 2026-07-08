@@ -8,15 +8,16 @@ from pathlib import Path
 import polars as pl
 
 from fintl.common import Case, Config, OllamaConfig
+from fintl.common.extraction.constants import ModelProvider
 from fintl.common.extraction.errors import (
+    InferenceError,
     OllamaModelUnavailableError,
     OllamaUnavailableError,
 )
 from fintl.common.extraction.ollama import (
+    OllamaExtractionModel,
     _check_model_available,
     _check_ollama_availability,
-    _get_lm_extraction,
-    _get_ollama_client,
 )
 from fintl.etl.common.schemas import (
     BalanceInfo,
@@ -70,19 +71,36 @@ def get_date_from_string(name: str) -> datetime.date:
 
 def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig) -> BalanceInfo:
     """Extract balance information from a PNG screenshot using ollama."""
-    extraction_client = _get_ollama_client(
-        model=ollama_config.model, ollama_base_url=ollama_config.base_url
-    )
+    estimator = OllamaExtractionModel(ollama_config.model, base_url=ollama_config.base_url)
+    # extraction_client = _get_ollama_client(
+    #     model=ollama_config.model, ollama_base_url=ollama_config.base_url
+    # )
 
-    extraction = _get_lm_extraction(file_path, extraction_client)
+    # extraction = _get_lm_extraction(file_path, extraction_client)
+    _o = estimator.predict(file_path)
+
+    if _o.ok:
+        if _o.completion is None:
+            msg = "_completion is unexpectedly None"
+            raise ValueError(msg)
+
+        elif _o.completion.usage is None:
+            msg = "_completion.usage is unexpectedly None"
+            raise ValueError(msg)
+
+        if _o.completion.usage.completion_tokens_details is None:
+            msg = "_completion.usage.completion_tokens_details is unexpectedly None"
+            raise ValueError(msg)
+    else:
+        raise InferenceError(_o.error_message)
 
     # date from the file name
     date = get_date_from_string(file_path.name)
 
     return BalanceInfo(
         date=date,
-        amount=extraction.amount,
-        currency=extraction.currency,
+        amount=_o.extraction.amount,  # ty: ignore[unresolved-attribute]
+        currency=_o.extraction.currency,  # ty: ignore[unresolved-attribute]
         provider=case.provider,
         service=case.service,
         parser=case.parser,
@@ -100,7 +118,7 @@ def parse_image_file(
     return transactions, balance
 
 
-def parse_new_files(
+def parse_new_files_with_ollama(
     case: Case,
     new_files_to_parse: list[Path],
     parsed_dir: Path,
@@ -171,9 +189,14 @@ def main(config: Config):
     )
 
     # parse new files to parquet -> transactions & balance
-    actually_parsed = parse_new_files(
-        CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama
-    )
+    match config.model_provider:
+        case ModelProvider.ollama:
+            actually_parsed = parse_new_files_with_ollama(
+                CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama
+            )
+        case ModelProvider.llama_swap:
+            # TODO: implement
+            pass
 
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)
