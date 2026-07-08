@@ -65,9 +65,9 @@ def mock_lm_extraction(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(availability, "check_ollama_availability", lambda *a, **kw: None)
     monkeypatch.setattr(availability, "check_ollama_model_availability", lambda *a, **kw: None)
-    monkeypatch.setattr(ollama, "_get_ollama_client", lambda **kw: object())
+    monkeypatch.setattr(ollama, "_get_client", lambda **kw: object())
     monkeypatch.setattr(
-        ollama, "_get_ollama_extraction", lambda *a, **kw: (mock_extraction, mock_completion)
+        ollama, "_get_extraction", lambda *a, **kw: (mock_extraction, mock_completion)
     )
 
 

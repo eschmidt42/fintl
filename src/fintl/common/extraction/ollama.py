@@ -72,7 +72,7 @@ def check_model_availability(base_url: str, model: str) -> None:
     )
 
 
-def _get_ollama_client(
+def _get_client(
     *, model: str, ollama_base_url: str = "http://localhost:11434/v1"
 ) -> instructor.Instructor:
     """Create and return an Instructor client configured for the given ollama model."""
@@ -111,7 +111,7 @@ def _get_lm_extraction(
         raise InferenceError(f"Ollama inference failed for {file_path.name}: {last}") from None
 
 
-def _get_ollama_extraction(
+def _get_extraction(
     file_path: Path, extraction_client: instructor.Instructor, timeout: int
 ) -> ExtractionResponse:
     """Run LM inference using ollama to extract balance information from an image file."""
@@ -161,13 +161,13 @@ class OllamaExtractionModel:
         self.base_url = base_url
         self.timeout = timeout
 
-        self.client = _get_ollama_client(model=model, ollama_base_url=base_url)
+        self.client = _get_client(model=model, ollama_base_url=base_url)
 
     def predict(self, path: Path) -> ExtractionOutput:
         """Run inference on *path* and return an ExtractionOutput with results or error info."""
         start = time.perf_counter()
         try:
-            extraction, completion = _get_ollama_extraction(
+            extraction, completion = _get_extraction(
                 file_path=path, extraction_client=self.client, timeout=self.timeout
             )
             ok = True
