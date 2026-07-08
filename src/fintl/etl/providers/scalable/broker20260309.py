@@ -21,7 +21,7 @@ from fintl.etl.io.files.orchestrator import (
 )
 from fintl.etl.io.files.select import select_files_to_copy
 from fintl.etl.providers.scalable.broker0 import extract_transactions
-from fintl.etl.providers.scalable.extraction.exceptions import (
+from fintl.etl.providers.scalable.extraction.errors import (
     OllamaModelUnavailableError,
     OllamaUnavailableError,
 )

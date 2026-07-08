@@ -7,7 +7,7 @@ import instructor
 from instructor.processing.multimodal import Image
 
 from fintl.etl.providers.scalable.extraction.context import _SYSTEM_PROMPT, _BalanceInfoExtract
-from fintl.etl.providers.scalable.extraction.exceptions import (
+from fintl.etl.providers.scalable.extraction.errors import (
     OllamaInferenceError,
     OllamaModelUnavailableError,
     OllamaUnavailableError,

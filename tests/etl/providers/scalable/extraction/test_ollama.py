@@ -11,7 +11,7 @@ from fintl.etl.providers.scalable.extraction import ollama
 from fintl.etl.providers.scalable.extraction.context import (
     _BalanceInfoExtract,
 )
-from fintl.etl.providers.scalable.extraction.exceptions import (
+from fintl.etl.providers.scalable.extraction.errors import (
     OllamaInferenceError,
     OllamaModelUnavailableError,
     OllamaUnavailableError,
