@@ -12,8 +12,9 @@ from openai.types.completion_usage import CompletionTokensDetails
 
 import fintl.common.extraction.ollama
 from fintl.common import Config, OllamaConfig, Provider, Sources
-from fintl.common.extraction import ollama
+from fintl.common.extraction import availability, ollama
 from fintl.common.extraction.constants import ModelProvider
+from fintl.common.extraction.errors import OllamaModelUnavailableError, OllamaUnavailableError
 from fintl.common.logging import Logging
 from fintl.etl.io.files.filenames import (
     balance_htm_name_to_json,
@@ -62,8 +63,8 @@ def mock_lm_extraction(monkeypatch: pytest.MonkeyPatch):
         ),
     )
 
-    monkeypatch.setattr(broker, "_check_ollama_availability", lambda *a, **kw: None)
-    monkeypatch.setattr(broker, "_check_model_available", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "_check_ollama_availability", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "_check_model_available", lambda *a, **kw: None)
     monkeypatch.setattr(ollama, "_get_ollama_client", lambda **kw: object())
     monkeypatch.setattr(
         ollama, "_get_ollama_extraction", lambda *a, **kw: (mock_extraction, mock_completion)
@@ -199,7 +200,7 @@ def test_parse_new_files_skips_when_ollama_not_configured(
         )
 
     assert result == []
-    assert "Ollama is not configured" in caplog.text
+    assert "Ollama configuration missing" in caplog.text
     assert not (tmp_path / "parsed").exists()
 
 
@@ -216,9 +217,9 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     parsed_dir = tmp_path / "parsed"
 
     with patch.object(
-        broker,
+        availability,
         "_check_ollama_availability",
-        side_effect=fintl.common.extraction.ollama.OllamaUnavailableError("server down"),
+        side_effect=OllamaUnavailableError("server down"),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files_with_ollama(
@@ -238,13 +239,11 @@ def test_parse_new_files_aborts_on_model_unavailable(
     parsed_dir = tmp_path / "parsed"
 
     with (
-        patch.object(broker, "_check_ollama_availability"),
+        patch.object(availability, "_check_ollama_availability"),
         patch.object(
-            broker,
+            availability,
             "_check_model_available",
-            side_effect=fintl.common.extraction.ollama.OllamaModelUnavailableError(
-                "model not found"
-            ),
+            side_effect=OllamaModelUnavailableError("model not found"),
         ),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
@@ -257,7 +256,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
 
 
 def test_parse_new_files_continues_on_generic_error(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ):
     """parse_new_files skips a file on generic Exception and continues with remaining files."""
     files = [
@@ -266,6 +265,7 @@ def test_parse_new_files_continues_on_generic_error(
     ]
     for f in files:
         f.write_bytes(b"\x89PNG")
+
     parsed_dir = tmp_path / "parsed"
 
     call_count = 0
@@ -276,15 +276,14 @@ def test_parse_new_files_continues_on_generic_error(
         call_count += 1
         raise ValueError("parse failed")
 
-    with (
-        patch.object(broker, "_check_ollama_availability"),
-        patch.object(broker, "_check_model_available"),
-        patch.object(broker, "parse_image_file", side_effect=_raise_generic),
-    ):
-        with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-            broker.parse_new_files_with_ollama(
-                broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
-            )
+    (monkeypatch.setattr(availability, "_check_ollama_availability", lambda *a, **kw: None),)
+    (monkeypatch.setattr(availability, "_check_model_available", lambda *a, **kw: None),)
+    (monkeypatch.setattr(broker, "parse_image_file", _raise_generic),)
+
+    with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
+        broker.parse_new_files_with_ollama(
+            broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
+        )
 
     assert "parse failed" in caplog.text
     # Both files attempted (error is per-file, not fatal)
@@ -333,4 +332,4 @@ def test_main_no_ollama_png_files_exist(
     assert not (parser_dir / "balances.parquet").exists()
     assert not (parser_dir / "transactions.parquet").exists()
 
-    assert "Ollama is not configured" in caplog.text
+    assert "Ollama configuration missing" in caplog.text

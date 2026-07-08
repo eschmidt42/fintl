@@ -8,6 +8,7 @@ import polars as pl
 import pytest
 
 from fintl.common import Case, Config, OllamaConfig, Provider, Sources
+from fintl.common.extraction import availability
 from fintl.common.logging import Logging
 from fintl.etl import process_accounts
 from fintl.etl.common.schemas import (
@@ -269,8 +270,8 @@ def test_scalable_broker_only(
             file=str(file_path),
         )
 
-    monkeypatch.setattr(broker20260309, "_check_ollama_availability", lambda *a, **kw: None)
-    monkeypatch.setattr(broker20260309, "_check_model_available", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "_check_ollama_availability", lambda *a, **kw: None)
+    monkeypatch.setattr(availability, "_check_model_available", lambda *a, **kw: None)
     monkeypatch.setattr(broker20260309, "extract_balance", _fake_extract_balance)
     scalable_src = tmp_path / "scalable_src"
     scalable_src.mkdir()

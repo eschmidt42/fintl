@@ -8,16 +8,13 @@ from pathlib import Path
 import polars as pl
 
 from fintl.common import Case, Config, OllamaConfig
+from fintl.common.extraction.availability import check_ollama_ok
 from fintl.common.extraction.constants import ModelProvider
 from fintl.common.extraction.errors import (
     InferenceError,
-    OllamaModelUnavailableError,
-    OllamaUnavailableError,
 )
 from fintl.common.extraction.ollama import (
     OllamaExtractionModel,
-    _check_model_available,
-    _check_ollama_availability,
 )
 from fintl.etl.common.schemas import (
     BalanceInfo,
@@ -72,11 +69,7 @@ def get_date_from_string(name: str) -> datetime.date:
 def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig) -> BalanceInfo:
     """Extract balance information from a PNG screenshot using ollama."""
     estimator = OllamaExtractionModel(ollama_config.model, base_url=ollama_config.base_url)
-    # extraction_client = _get_ollama_client(
-    #     model=ollama_config.model, ollama_base_url=ollama_config.base_url
-    # )
 
-    # extraction = _get_lm_extraction(file_path, extraction_client)
     _o = estimator.predict(file_path)
 
     if _o.ok:
@@ -130,34 +123,14 @@ def parse_new_files_with_ollama(
         logger.info("No new files to parse")
         return []
 
-    if ollama_config is None:
-        logger.warning(
-            "Ollama is not configured. Skipping PNG parsing for %d file(s).",
-            len(new_files_to_parse),
-        )
-        return []
-
-    try:
-        _check_ollama_availability(ollama_config.base_url)
-    except OllamaUnavailableError as exc:
-        logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
-        return []
-
-    try:
-        _check_model_available(ollama_config.base_url, ollama_config.model)
-    except OllamaModelUnavailableError as exc:
-        logger.warning(
-            "Ollama model (%s) not available, aborting PNG parsing: %s",
-            ollama_config.model,
-            exc,
-        )
+    if not check_ollama_ok(ollama_config):
         return []
 
     return parse_utils.parse_new_files(
         case,
         new_files_to_parse,
         parsed_dir,
-        parse_fn=lambda c, path: parse_image_file(c, path, ollama_config=ollama_config),
+        parse_fn=lambda c, path: parse_image_file(c, path, ollama_config=ollama_config),  # ty: ignore
         store_transactions_fn=store_transactions,
         store_balance_fn=store_balance,
         catch_errors=(Exception,),
