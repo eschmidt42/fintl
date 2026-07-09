@@ -7,11 +7,14 @@ from pathlib import Path
 
 import polars as pl
 
-from fintl.common import Case, Config, OllamaConfig
-from fintl.common.extraction.availability import check_ollama_ok
+from fintl.common import Case, Config
+from fintl.common.extraction.availability import check_llama_swap_ok, check_ollama_ok
 from fintl.common.extraction.constants import ModelProvider
 from fintl.common.extraction.errors import (
     InferenceError,
+)
+from fintl.common.extraction.llama_swap import (
+    LlamaSwapExtractionModel,
 )
 from fintl.common.extraction.ollama import (
     OllamaExtractionModel,
@@ -66,9 +69,21 @@ def get_date_from_string(name: str) -> datetime.date:
         raise ValueError(f"Could not extract date from {name=}")
 
 
-def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig) -> BalanceInfo:
+def extract_balance(case: Case, file_path: Path, config: Config) -> BalanceInfo:
     """Extract balance information from a PNG screenshot using ollama."""
-    estimator = OllamaExtractionModel(ollama_config.model, base_url=ollama_config.base_url)
+    match config.model_provider:
+        case ModelProvider.ollama:
+            estimator = OllamaExtractionModel(
+                config.ollama.model,  # ty: ignore[unresolved-attribute]
+                base_url=config.ollama.base_url,  # ty: ignore[unresolved-attribute]
+                timeout=config.model_timeout,
+            )
+        case ModelProvider.llama_swap:
+            estimator = LlamaSwapExtractionModel(
+                config.llama_swap.model,  # ty: ignore[unresolved-attribute]
+                base_url=config.llama_swap.base_url,  # ty: ignore[unresolved-attribute]
+                timeout=config.model_timeout,
+            )
 
     _o = estimator.predict(file_path)
 
@@ -102,35 +117,40 @@ def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig)
 
 
 def parse_image_file(
-    case: Case, file_path: Path, *, ollama_config: OllamaConfig
+    case: Case, file_path: Path, config: Config
 ) -> tuple[pl.DataFrame, BalanceInfo]:
     """Parse a single PNG file and return transactions and balance."""
     transactions = extract_transactions()
-    balance = extract_balance(case, file_path, ollama_config=ollama_config)
+    balance = extract_balance(case, file_path, config=config)
 
     return transactions, balance
 
 
-def parse_new_files_with_ollama(
+def parse_new_files(
     case: Case,
     new_files_to_parse: list[Path],
     parsed_dir: Path,
     *,
-    ollama_config: OllamaConfig | None,
+    config: Config,
 ) -> list[Path]:
     """Parse PNG files and return the list of files that were successfully parsed."""
     if not new_files_to_parse:
         logger.info("No new files to parse")
         return []
 
-    if not check_ollama_ok(ollama_config):
-        return []
+    match config.model_provider:
+        case ModelProvider.ollama:
+            if not check_ollama_ok(config.ollama):
+                return []
+        case ModelProvider.llama_swap:
+            if not check_llama_swap_ok(config):
+                return []
 
     return parse_utils.parse_new_files(
         case,
         new_files_to_parse,
         parsed_dir,
-        parse_fn=lambda c, path: parse_image_file(c, path, ollama_config=ollama_config),  # ty: ignore
+        parse_fn=lambda c, path: parse_image_file(c, path, config),
         store_transactions_fn=store_transactions,
         store_balance_fn=store_balance,
         catch_errors=(Exception,),
@@ -162,14 +182,7 @@ def main(config: Config):
     )
 
     # parse new files to parquet -> transactions & balance
-    match config.model_provider:
-        case ModelProvider.ollama:
-            actually_parsed = parse_new_files_with_ollama(
-                CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama
-            )
-        case ModelProvider.llama_swap:
-            # TODO: implement
-            pass
+    actually_parsed = parse_new_files(CASE, new_files_to_parse, parsed_dir, config=config)
 
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)

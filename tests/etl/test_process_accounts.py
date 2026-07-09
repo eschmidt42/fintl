@@ -256,9 +256,7 @@ def test_scalable_broker_only(
     """
     from fintl.etl.providers.scalable import broker20260309
 
-    def _fake_extract_balance(
-        case: Case, file_path: Path, *, ollama_config: OllamaConfig
-    ) -> BalanceInfo:
+    def _fake_extract_balance(case: Case, file_path: Path, *, config: Config) -> BalanceInfo:
         date = broker20260309.get_date_from_string(file_path.name)
         return BalanceInfo(
             date=date,
@@ -273,8 +271,10 @@ def test_scalable_broker_only(
     monkeypatch.setattr(availability, "check_ollama_availability", lambda *a, **kw: None)
     monkeypatch.setattr(availability, "check_ollama_model_availability", lambda *a, **kw: None)
     monkeypatch.setattr(broker20260309, "extract_balance", _fake_extract_balance)
+
     scalable_src = tmp_path / "scalable_src"
     scalable_src.mkdir()
+
     for f in dirs["scalable"].iterdir():
         shutil.copy(f, scalable_src / f.name)
 

@@ -1,5 +1,7 @@
 target_dir = "/tmp/fintl-dev"
 
+model_provider = "ollama"
+
 # comment out the [ollama] section to prevent ollama usage for the scalable capital broker screenshots
 [ollama]
 model = "qwen3.5:27b"

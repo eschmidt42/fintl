@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from fintl.common import OllamaConfig
+from fintl.common import Config, OllamaConfig, Provider, Sources
+from fintl.common.logging import Logging
 from fintl.etl.providers.scalable import broker20260309 as broker
 
 
@@ -29,7 +30,7 @@ def test_files_exist(files_root_path: Path, png_file: Path):
 
 
 @pytest.fixture
-def real_ollama_config() -> OllamaConfig:  # pragma: no cover
+def ollama_config() -> OllamaConfig:  # pragma: no cover
     """Return an OllamaConfig built from environment variables, skipping if unset."""
     model = os.environ.get("FINTL_OLLAMA_MODEL")
     if not model:
@@ -38,12 +39,29 @@ def real_ollama_config() -> OllamaConfig:  # pragma: no cover
     return OllamaConfig(model=model, base_url=base_url)
 
 
+@pytest.fixture
+def config(
+    tmp_path: Path, png_file: Path, logger_config_path: Path, ollama_config: OllamaConfig
+) -> Config:
+    """Return a valid Config."""
+    scalable_src = png_file.parent
+    target_dir = tmp_path / "out"
+    target_dir.mkdir()
+
+    return Config(
+        target_dir=target_dir,
+        sources=Sources(scalable=Provider(broker=scalable_src)),
+        logging=Logging(config_file=logger_config_path),
+        ollama=ollama_config,
+    )
+
+
 @pytest.mark.ollama
 def test_extract_balance_with_real_ollama(  # pragma: no cover
-    real_ollama_config: OllamaConfig, png_file
+    config: Config, png_file: Path
 ) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""
-    result = broker.extract_balance(broker.CASE, png_file, ollama_config=real_ollama_config)
+    result = broker.extract_balance(broker.CASE, png_file, config=config)
 
     assert result.date == datetime.date(2026, 4, 27)
     assert isinstance(result.amount, float)

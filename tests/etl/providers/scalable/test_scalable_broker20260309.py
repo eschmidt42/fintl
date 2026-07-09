@@ -32,6 +32,19 @@ MOCK_AMOUNT = 1234.56
 MOCK_CURRENCY = "EUR"
 
 
+def _config(tmp_path: Path, logger_config_path: Path) -> Config:
+    scalable_src = tmp_path / "scalable_src"
+    scalable_src.mkdir()
+    target_dir = tmp_path / "out"
+    target_dir.mkdir()
+
+    return Config(
+        target_dir=target_dir,
+        sources=Sources(scalable=Provider(broker=scalable_src)),
+        logging=Logging(config_file=logger_config_path),
+    )
+
+
 def test_files_exist(files_root_path: Path, png_file: Path):
     """Test that required fixture files exist."""
     assert files_root_path.exists()
@@ -188,16 +201,18 @@ def test_get_date_from_string_raises_when_name_does_not_match():
 
 
 def test_parse_new_files_skips_when_ollama_not_configured(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture, png_fname: str
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, png_fname: str, logger_config_path: Path
 ):
     """parse_new_files logs a warning and returns early when ollama_config is None."""
     dummy = tmp_path / png_fname
     dummy.write_bytes(b"\x89PNG")
 
+    config = _config(tmp_path, logger_config_path)
+    config.model_provider = ModelProvider.ollama
+    config.ollama = None
+
     with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-        result = broker.parse_new_files_with_ollama(
-            broker.CASE, [dummy], tmp_path / "parsed", ollama_config=None
-        )
+        result = broker.parse_new_files(broker.CASE, [dummy], tmp_path / "parsed", config=config)
 
     assert result == []
     assert "Ollama configuration missing" in caplog.text
@@ -205,7 +220,7 @@ def test_parse_new_files_skips_when_ollama_not_configured(
 
 
 def test_parse_new_files_aborts_on_ollama_unavailable(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, logger_config_path: Path
 ):
     """parse_new_files stops before the loop when _check_ollama_availability raises."""
     files = [
@@ -216,27 +231,32 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
         f.write_bytes(b"\x89PNG")
     parsed_dir = tmp_path / "parsed"
 
+    config = _config(tmp_path, logger_config_path)
+    config.model_provider = ModelProvider.ollama
+
     with patch.object(
         availability,
         "check_ollama_availability",
         side_effect=OllamaUnavailableError("server down"),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-            broker.parse_new_files_with_ollama(
-                broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
-            )
+            broker.parse_new_files(broker.CASE, files, parsed_dir, config=config)
 
     assert "Ollama is not available" in caplog.text
     assert not parsed_dir.exists()
 
 
 def test_parse_new_files_aborts_on_model_unavailable(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, logger_config_path: Path
 ):
     """parse_new_files stops before the loop when _check_model_available raises."""
     dummy = tmp_path / "Screenshot 2026-03-09 at 14.30.53.png"
     dummy.write_bytes(b"\x89PNG")
     parsed_dir = tmp_path / "parsed"
+
+    config = _config(tmp_path, logger_config_path)
+    config.model_provider = ModelProvider.ollama
+    config.ollama = OllamaConfig.model_validate({"model": "m"})
 
     with (
         patch.object(availability, "check_ollama_availability"),
@@ -247,16 +267,17 @@ def test_parse_new_files_aborts_on_model_unavailable(
         ),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-            broker.parse_new_files_with_ollama(
-                broker.CASE, [dummy], parsed_dir, ollama_config=OllamaConfig(model="m")
-            )
+            broker.parse_new_files(broker.CASE, [dummy], parsed_dir, config=config)
 
     assert "Ollama model (m) not available" in caplog.text
     assert not parsed_dir.exists()
 
 
 def test_parse_new_files_continues_on_generic_error(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    logger_config_path: Path,
 ):
     """parse_new_files skips a file on generic Exception and continues with remaining files."""
     files = [
@@ -280,10 +301,12 @@ def test_parse_new_files_continues_on_generic_error(
     (monkeypatch.setattr(availability, "check_ollama_model_availability", lambda *a, **kw: None),)
     (monkeypatch.setattr(broker, "parse_image_file", _raise_generic),)
 
+    config = _config(tmp_path, logger_config_path)
+    config.model_provider = ModelProvider.ollama
+    config.ollama = OllamaConfig.model_validate({"model": "m"})
+
     with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
-        broker.parse_new_files_with_ollama(
-            broker.CASE, files, parsed_dir, ollama_config=OllamaConfig(model="m")
-        )
+        broker.parse_new_files(broker.CASE, files, parsed_dir, config=config)
 
     assert "parse failed" in caplog.text
     # Both files attempted (error is per-file, not fatal)

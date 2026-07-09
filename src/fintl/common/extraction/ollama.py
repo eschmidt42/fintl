@@ -9,6 +9,7 @@ import instructor
 from instructor.processing.multimodal import Image
 from instructor.processing.multimodal import Image as InstructorImage
 
+from fintl.common.extraction.constants import OLLAMA_BASE_URL
 from fintl.common.extraction.context import _SYSTEM_PROMPT, _BalanceInfoExtract
 from fintl.common.extraction.errors import (
     InferenceError,
@@ -153,9 +154,7 @@ class OllamaExtractionModel:
     client: instructor.Instructor
     timeout: int
 
-    def __init__(
-        self, model: str, *, base_url: str = "http://localhost:11434/v1", timeout: int = 2 * 60
-    ):
+    def __init__(self, model: str, *, base_url: str = OLLAMA_BASE_URL, timeout: int = 2 * 60):
         """Initialise the ollama extraction model and create the instructor client."""
         self.model = model
         self.base_url = base_url

@@ -1,5 +1,6 @@
 """llama-swap-backed extraction utilities for Scalable Capital broker screenshots."""
 
+import logging
 import time
 from pathlib import Path
 from typing import cast
@@ -9,10 +10,12 @@ import instructor
 from instructor.processing.multimodal import Image as InstructorImage
 from openai import OpenAI
 
-from fintl.common.extraction.constants import LLAMA_SWAP_URL, TIMEOUT
+from fintl.common.extraction.constants import LLAMA_SWAP_BASE_URL, TIMEOUT
 from fintl.common.extraction.context import _SYSTEM_PROMPT, _BalanceInfoExtract
 from fintl.common.extraction.errors import InferenceError
 from fintl.common.extraction.types import ExtractionOutput, ExtractionResponse
+
+logger = logging.getLogger(__name__)
 
 
 def check_health(client: httpx.Client) -> bool:
@@ -20,7 +23,7 @@ def check_health(client: httpx.Client) -> bool:
     r = client.get("/health", timeout=5.0)
     r.raise_for_status()
     body = r.text.strip()
-    print(f"  /health -> {r.status_code} '{body}'")
+    logger.debug(f"  /health -> {r.status_code} '{body}'")
     return r.status_code == 200 and body == "OK"
 
 
@@ -30,7 +33,7 @@ def check_model_available(client: httpx.Client, model: str) -> bool:
     r.raise_for_status()
     payload = r.json()
     ids = [m["id"] for m in payload.get("data", [])]
-    print(f"  /v1/models -> {len(ids)} model(s): {ids}")
+    logger.debug(f"  /v1/models -> {len(ids)} model(s): {ids}")
     return model in ids
 
 
@@ -53,22 +56,24 @@ def check_inference(client: httpx.Client, model: str) -> bool:
     )
     r.raise_for_status()
     content = r.json()["choices"][0]["message"]["content"]
-    print(f"  /v1/chat/completions -> '{content}'")
+    logger.debug(f"  /v1/chat/completions -> '{content}'")
     return bool(content)
 
 
-def sanity_check(model: str, *, timeout: int = TIMEOUT, base_url: str = LLAMA_SWAP_URL) -> bool:
+def sanity_check(
+    model: str, *, timeout: int = TIMEOUT, base_url: str = LLAMA_SWAP_BASE_URL
+) -> bool:
     """Run health, model-availability, and inference checks against the llama-swap server."""
-    print(f"llama-swap sanity check @ {base_url} (model='{model}')")
+    logger.debug(f"llama-swap sanity check @ {base_url} (model='{model}')")
     with httpx.Client(base_url=base_url, timeout=timeout) as client:
         try:
             assert check_health(client), "health check failed"
             assert check_model_available(client, model), f"model '{model}' not in /v1/models"
             assert check_inference(client, model), "inference produced no content"
         except (httpx.HTTPError, AssertionError, KeyError) as e:
-            print(f"  ✗ FAILED: {e}")
+            logger.debug(f"  ✗ FAILED: {e}")
             return False
-    print("  ✓ All checks passed")
+    logger.debug("  ✓ All checks passed")
     return True
 
 
@@ -105,7 +110,7 @@ def _get_llama_swap_extraction(
         raise RuntimeError(msg)
 
 
-class LLamaSwapExtractionModel:
+class LlamaSwapExtractionModel:
     """Extraction model that delegates inference to a llama-swap server."""
 
     model: str
@@ -113,7 +118,7 @@ class LLamaSwapExtractionModel:
     client: instructor.Instructor
     timeout: int
 
-    def __init__(self, model: str, *, base_url: str = LLAMA_SWAP_URL, timeout: int = 2 * 60):
+    def __init__(self, model: str, *, base_url: str = LLAMA_SWAP_BASE_URL, timeout: int = 2 * 60):
         """Initialise the llama-swap extraction model and create the instructor client."""
         self.model = model
         self.base_url = base_url
