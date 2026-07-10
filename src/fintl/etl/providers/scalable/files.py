@@ -44,7 +44,7 @@ def get_parser_source_files(
 
 def detect_relevant_target_files(raw_dir: Path) -> list[Path]:
     """Detects relevant raw files in the given target directory."""
-    relevant_target_files = relevant_target_files = [
+    relevant_target_files = [
         file_path
         for pattern in ["**/*.htm", "**/*.html", "**/*.png"]
         for file_path in raw_dir.glob(pattern)
