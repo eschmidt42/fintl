@@ -8,6 +8,8 @@ import pytest
 
 from fintl.common import Config, OllamaConfig, Provider, Sources
 from fintl.common.logging import Logging
+from fintl.etl.common.schemas import BalanceInfo
+from fintl.etl.io.files.filenames import balance_htm_name_to_json
 from fintl.etl.providers.scalable import broker20260309 as broker
 
 
@@ -57,11 +59,26 @@ def config(
 
 
 @pytest.mark.ollama
-def test_extract_balance_with_real_ollama(  # pragma: no cover
-    config: Config, png_file: Path
+def test_parse_new_files(  # pragma: no cover
+    tmp_path: Path, config: Config, png_file: Path
 ) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""
-    result = broker.extract_balance(broker.CASE, png_file, config=config)
+    target_dir = tmp_path / "target"
+    balance_html_source_paths = broker.parse_new_files(
+        broker.CASE, [png_file], parsed_dir=target_dir, config=config
+    )
+
+    assert len(balance_html_source_paths) == 1
+    html_path = balance_html_source_paths[0]
+    assert html_path.is_file()
+
+    json_fname = balance_htm_name_to_json(html_path)
+    json_path = target_dir / json_fname
+    assert json_path.exists()
+    assert json_path.is_file()
+
+    with json_path.open() as f:
+        result = BalanceInfo.model_validate_json(f.read())
 
     assert result.date == datetime.date(2026, 4, 27)
     assert isinstance(result.amount, float)
