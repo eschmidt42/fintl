@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from fintl.common import Config, OllamaConfig, Provider, Sources
+from fintl.common.extraction.availability import check_ollama_ok
 from fintl.common.logging import Logging
 from fintl.etl.common.schemas import BalanceInfo
 from fintl.etl.io.files.filenames import balance_htm_name_to_json
@@ -63,6 +64,8 @@ def test_parse_new_files(  # pragma: no cover
     tmp_path: Path, config: Config, png_file: Path
 ) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""
+    assert check_ollama_ok(config.ollama)
+
     target_dir = tmp_path / "target"
     balance_html_source_paths = broker.parse_new_files(
         broker.CASE, [png_file], parsed_dir=target_dir, config=config
