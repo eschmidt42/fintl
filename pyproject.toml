@@ -72,6 +72,7 @@ dev = [
 [tool.pytest.ini_options]
 markers = [
     "ollama: requires a running Ollama instance with a multimodal model (skipped by default; run with -m ollama)",
+    "llama_swap: requires a running llama-swap instance with a multimodal model (skipped by default; run with -m llama_swap)",
 ]
 testpaths = ["tests"]
 

@@ -1,12 +1,12 @@
 """Ollama-backed extraction utilities for Scalable Capital broker screenshots."""
 
+import logging
 import time
 from pathlib import Path
 from typing import cast
 
 import httpx
 import instructor
-from instructor.processing.multimodal import Image
 from instructor.processing.multimodal import Image as InstructorImage
 
 from fintl.common.extraction.constants import OLLAMA_BASE_URL
@@ -17,6 +17,8 @@ from fintl.common.extraction.errors import (
     OllamaUnavailableError,
 )
 from fintl.common.extraction.types import ExtractionOutput, ExtractionResponse
+
+logger = logging.getLogger(__name__)
 
 
 def check_provider_availability(base_url: str) -> None:
@@ -83,33 +85,6 @@ def _get_client(
         mode=instructor.Mode.JSON,
         async_client=False,
     )
-
-
-def _get_lm_extraction(
-    file_path: Path, extraction_client: instructor.Instructor
-) -> _BalanceInfoExtract:
-    """Run LM inference to extract balance information from an image file."""
-    from instructor.core.exceptions import InstructorRetryException
-
-    try:
-        return extraction_client.create(  # type: ignore
-            response_model=_BalanceInfoExtract,
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": [
-                        "Please extract data from the following image",
-                        Image.from_path(file_path),
-                    ],
-                },  # type: ignore[arg-type]
-            ],
-        )
-    except InstructorRetryException as exc:
-        last = exc.failed_attempts[-1].exception if exc.failed_attempts else exc
-        # explicitly cutting of the traceback here for readability.
-        # remove `from None` if you need to debug.
-        raise InferenceError(f"Ollama inference failed for {file_path.name}: {last}") from None
 
 
 def _get_extraction(

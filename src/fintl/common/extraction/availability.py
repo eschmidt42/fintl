@@ -51,9 +51,7 @@ def check_ollama_ok(
     return True
 
 
-def check_llama_swap_ok(
-    config: Config,
-) -> bool:
+def check_llama_swap_ok(config: Config, do_inference_check: bool) -> bool:
     """Testing aspects for llama-swap availability."""
     if config.llama_swap is None:
         logger.warning("llama-swap configuration missing, aborting PNG parsing.")
@@ -71,7 +69,7 @@ def check_llama_swap_ok(
             )
             return False
 
-        if not check_llamaswap_inference(client, config.llama_swap.model):
+        if do_inference_check and not check_llamaswap_inference(client, config.llama_swap.model):
             logger.warning(
                 "llama-swap model %s inference produced not output, aborting PNG parsing.",
                 config.llama_swap.model,

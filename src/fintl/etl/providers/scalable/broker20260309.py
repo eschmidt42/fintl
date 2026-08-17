@@ -143,7 +143,7 @@ def parse_new_files(
             if not check_ollama_ok(config.ollama):
                 return []
         case ModelProvider.llama_swap:
-            if not check_llama_swap_ok(config):
+            if not check_llama_swap_ok(config, do_inference_check=True):
                 return []
 
     return parse_utils.parse_new_files(

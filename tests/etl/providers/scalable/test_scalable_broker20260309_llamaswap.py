@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from fintl.common import Config, OllamaConfig, Provider, Sources
-from fintl.common.extraction.availability import check_ollama_ok
-from fintl.common.extraction.constants import OLLAMA_BASE_URL, ModelProvider
+from fintl.common import Config, LlamaSwapConfig, Provider, Sources
+from fintl.common.extraction.availability import check_llama_swap_ok
+from fintl.common.extraction.constants import LLAMA_SWAP_BASE_URL, ModelProvider
 from fintl.common.extraction.unload import unload_llama_swap, unload_ollama
 from fintl.common.logging import Logging
 from fintl.etl.common.schemas import BalanceInfo
@@ -35,18 +35,18 @@ def test_files_exist(files_root_path: Path, png_file: Path):
 
 
 @pytest.fixture
-def ollama_config() -> OllamaConfig:  # pragma: no cover
+def llama_swap_config() -> LlamaSwapConfig:  # pragma: no cover
     """Return an OllamaConfig built from environment variables, skipping if unset."""
-    model = os.environ.get("FINTL_OLLAMA_MODEL")
+    model = os.environ.get("FINTL_LLAMA_SWAP_MODEL")
     if not model:
-        pytest.skip("FINTL_OLLAMA_MODEL env var not set")
-    base_url = os.environ.get("FINTL_OLLAMA_BASE_URL", OLLAMA_BASE_URL)
-    return OllamaConfig(model=model, base_url=base_url)
+        pytest.skip("FINTL_LLAMA_SWAP_MODEL env var not set")
+    base_url = os.environ.get("FINTL_LLAMA_SWAP_BASE_URL", LLAMA_SWAP_BASE_URL)
+    return LlamaSwapConfig(model=model, base_url=base_url)
 
 
 @pytest.fixture
 def config(
-    tmp_path: Path, png_file: Path, logger_config_path: Path, ollama_config: OllamaConfig
+    tmp_path: Path, png_file: Path, logger_config_path: Path, llama_swap_config: LlamaSwapConfig
 ) -> Config:
     """Return a valid Config."""
     scalable_src = png_file.parent
@@ -57,19 +57,19 @@ def config(
         target_dir=target_dir,
         sources=Sources(scalable=Provider(broker=scalable_src)),
         logging=Logging(config_file=logger_config_path),
-        ollama=ollama_config,
-        model_provider=ModelProvider.ollama,
+        llama_swap=llama_swap_config,
+        model_provider=ModelProvider.llama_swap,
     )
 
 
-@pytest.mark.ollama
+@pytest.mark.llama_swap
 def test_parse_new_files(  # pragma: no cover
     tmp_path: Path, config: Config, png_file: Path
 ) -> None:
     """Verify that extract_balance returns a valid BalanceInfo from a real Ollama call."""
-    assert check_ollama_ok(config.ollama)
+    unload_ollama(config.ollama, config.model_timeout)
 
-    unload_llama_swap(config.llama_swap, config.model_timeout)
+    assert check_llama_swap_ok(config, do_inference_check=True)
 
     target_dir = tmp_path / "target"
     balance_html_source_paths = broker.parse_new_files(
@@ -95,4 +95,4 @@ def test_parse_new_files(  # pragma: no cover
     assert result.service == broker.CASE.service
     assert result.parser == broker.CASE.parser
 
-    unload_ollama(config.ollama, config.model_timeout)
+    unload_llama_swap(config.llama_swap, config.model_timeout)
