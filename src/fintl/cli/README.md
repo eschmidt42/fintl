@@ -317,6 +317,7 @@ entry, e.g. adding a `depot` service to Postbank.
        ...
        depot = "depot"
 
+
    class Provider(BaseModel):
        ...
        depot: Path | None = None
@@ -357,6 +358,7 @@ entry, e.g. adding a `depot` service to Postbank.
    class ProviderEnum(str, Enum):
        ...
        n26 = "n26"
+
 
    class Sources(BaseModel):
        ...

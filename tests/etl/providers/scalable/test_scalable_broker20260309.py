@@ -232,6 +232,7 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
 
     config = _config(tmp_path, logger_config_path)
     config.model_provider = ModelProvider.ollama
+    config.ollama = OllamaConfig(model="test-model")
 
     with patch.object(
         availability,

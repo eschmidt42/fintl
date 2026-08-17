@@ -1,10 +1,11 @@
 """Unit tests for fintl.common.extraction.availability module."""
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from fintl.common import Config, OllamaConfig
+from fintl.common import Config, OllamaConfig, Provider, Sources
 from fintl.common.extraction.availability import (
     check_llama_swap_ok,
     check_ollama_ok,
@@ -22,14 +23,16 @@ def ollama_config() -> OllamaConfig:
 
 
 @pytest.fixture
-def llama_swap_config() -> Config:
+def llama_swap_config(tmp_path: Path) -> Config:
     """Build a reusable config with llama-swap settings."""
     from fintl.common.config import LlamaSwapConfig
 
     llama_swap = LlamaSwapConfig(model="test-model", base_url="http://localhost:8000")
-    # Create a config with llama_swap set
-    config = Config(llama_swap=llama_swap)
-    return config
+    return Config(
+        target_dir=tmp_path,
+        sources=Sources(dkb=Provider()),
+        llama_swap=llama_swap,
+    )
 
 
 class TestCheckOllamaOk:
@@ -164,9 +167,13 @@ class TestCheckOllamaOk:
 class TestCheckLlamaSwapOk:
     """Tests for check_llama_swap_ok function."""
 
-    def test_llama_swap_config_is_none_returns_false_and_logs_warning(self) -> None:
+    def test_llama_swap_config_is_none_returns_false_and_logs_warning(self, tmp_path: Path) -> None:
         """Returns False and logs warning when config.llama_swap is None."""
-        config = Config(llama_swap=None)
+        config = Config(
+            target_dir=tmp_path,
+            sources=Sources(dkb=Provider()),
+            llama_swap=None,
+        )
 
         with patch("fintl.common.extraction.availability.logger") as mock_logger:
             result = check_llama_swap_ok(config, do_inference_check=False)

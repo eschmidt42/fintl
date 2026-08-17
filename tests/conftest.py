@@ -1,8 +1,11 @@
 """Shared pytest fixtures and hooks for the test suite."""
 
+import os
 from pathlib import Path
 
 import pytest
+
+os.environ["FINTL_CONFIG"] = str(Path(__file__).parent / ".pytest-fintl-config.toml")
 
 
 @pytest.fixture
