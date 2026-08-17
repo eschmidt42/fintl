@@ -7,7 +7,18 @@ from pathlib import Path
 
 import polars as pl
 
-from fintl.common import Case, Config, OllamaConfig
+from fintl.common import Case, Config
+from fintl.common.extraction.availability import check_llama_swap_ok, check_ollama_ok
+from fintl.common.extraction.constants import ModelProvider
+from fintl.common.extraction.errors import (
+    InferenceError,
+)
+from fintl.common.extraction.llama_swap import (
+    LlamaSwapExtractionModel,
+)
+from fintl.common.extraction.ollama import (
+    OllamaExtractionModel,
+)
 from fintl.etl.common.schemas import (
     BalanceInfo,
     ProviderEnum,
@@ -21,16 +32,6 @@ from fintl.etl.io.files.orchestrator import (
 )
 from fintl.etl.io.files.select import select_files_to_copy
 from fintl.etl.providers.scalable.broker0 import extract_transactions
-from fintl.etl.providers.scalable.extraction.errors import (
-    OllamaModelUnavailableError,
-    OllamaUnavailableError,
-)
-from fintl.etl.providers.scalable.extraction.ollama import (
-    _check_model_available,
-    _check_ollama_availability,
-    _get_lm_extraction,
-    _get_ollama_client,
-)
 from fintl.etl.providers.scalable.files import (
     detect_new_raw_files,
     detect_relevant_target_files,
@@ -68,21 +69,46 @@ def get_date_from_string(name: str) -> datetime.date:
         raise ValueError(f"Could not extract date from {name=}")
 
 
-def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig) -> BalanceInfo:
+def extract_balance(case: Case, file_path: Path, config: Config) -> BalanceInfo:
     """Extract balance information from a PNG screenshot using ollama."""
-    extraction_client = _get_ollama_client(
-        model=ollama_config.model, ollama_base_url=ollama_config.base_url
-    )
+    match config.model_provider:
+        case ModelProvider.ollama:
+            estimator = OllamaExtractionModel(
+                config.ollama.model,  # ty: ignore[unresolved-attribute]
+                base_url=config.ollama.base_url,  # ty: ignore[unresolved-attribute]
+                timeout=config.model_timeout,
+            )
+        case ModelProvider.llama_swap:
+            estimator = LlamaSwapExtractionModel(
+                config.llama_swap.model,  # ty: ignore[unresolved-attribute]
+                base_url=config.llama_swap.base_url,  # ty: ignore[unresolved-attribute]
+                timeout=config.model_timeout,
+            )
 
-    extraction = _get_lm_extraction(file_path, extraction_client)
+    _o = estimator.predict(file_path)
+
+    if _o.ok:
+        if _o.completion is None:
+            msg = "_completion is unexpectedly None"
+            raise ValueError(msg)
+
+        elif _o.completion.usage is None:
+            msg = "_completion.usage is unexpectedly None"
+            raise ValueError(msg)
+
+        if _o.completion.usage.completion_tokens_details is None:
+            msg = "_completion.usage.completion_tokens_details is unexpectedly None"
+            raise ValueError(msg)
+    else:
+        raise InferenceError(_o.error_message)
 
     # date from the file name
     date = get_date_from_string(file_path.name)
 
     return BalanceInfo(
         date=date,
-        amount=extraction.amount,
-        currency=extraction.currency,
+        amount=_o.extraction.amount,  # ty: ignore[unresolved-attribute]
+        currency=_o.extraction.currency,  # ty: ignore[unresolved-attribute]
         provider=case.provider,
         service=case.service,
         parser=case.parser,
@@ -91,11 +117,11 @@ def extract_balance(case: Case, file_path: Path, *, ollama_config: OllamaConfig)
 
 
 def parse_image_file(
-    case: Case, file_path: Path, *, ollama_config: OllamaConfig
+    case: Case, file_path: Path, config: Config
 ) -> tuple[pl.DataFrame, BalanceInfo]:
     """Parse a single PNG file and return transactions and balance."""
     transactions = extract_transactions()
-    balance = extract_balance(case, file_path, ollama_config=ollama_config)
+    balance = extract_balance(case, file_path, config=config)
 
     return transactions, balance
 
@@ -105,41 +131,26 @@ def parse_new_files(
     new_files_to_parse: list[Path],
     parsed_dir: Path,
     *,
-    ollama_config: OllamaConfig | None,
+    config: Config,
 ) -> list[Path]:
     """Parse PNG files and return the list of files that were successfully parsed."""
     if not new_files_to_parse:
         logger.info("No new files to parse")
         return []
 
-    if ollama_config is None:
-        logger.warning(
-            "Ollama is not configured. Skipping PNG parsing for %d file(s).",
-            len(new_files_to_parse),
-        )
-        return []
-
-    try:
-        _check_ollama_availability(ollama_config.base_url)
-    except OllamaUnavailableError as exc:
-        logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
-        return []
-
-    try:
-        _check_model_available(ollama_config.base_url, ollama_config.model)
-    except OllamaModelUnavailableError as exc:
-        logger.warning(
-            "Ollama model (%s) not available, aborting PNG parsing: %s",
-            ollama_config.model,
-            exc,
-        )
-        return []
+    match config.model_provider:
+        case ModelProvider.ollama:
+            if not check_ollama_ok(config.ollama):
+                return []
+        case ModelProvider.llama_swap:
+            if not check_llama_swap_ok(config, do_inference_check=True):
+                return []
 
     return parse_utils.parse_new_files(
         case,
         new_files_to_parse,
         parsed_dir,
-        parse_fn=lambda c, path: parse_image_file(c, path, ollama_config=ollama_config),
+        parse_fn=lambda c, path: parse_image_file(c, path, config),
         store_transactions_fn=store_transactions,
         store_balance_fn=store_balance,
         catch_errors=(Exception,),
@@ -171,9 +182,7 @@ def main(config: Config):
     )
 
     # parse new files to parquet -> transactions & balance
-    actually_parsed = parse_new_files(
-        CASE, new_files_to_parse, parsed_dir, ollama_config=config.ollama
-    )
+    actually_parsed = parse_new_files(CASE, new_files_to_parse, parsed_dir, config=config)
 
     # extend pre-existing parquets for this parser
     parser_dir = config.get_parser_dir(CASE)

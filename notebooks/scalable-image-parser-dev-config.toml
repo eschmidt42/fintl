@@ -1,0 +1,23 @@
+target_dir = "./tmp/"
+
+model_provider = "ollama"
+
+# comment out the [ollama] section to prevent ollama usage for the scalable capital broker screenshots
+[ollama]
+model = "qwen3.5:27b"
+
+[sources.dkb]
+giro      = "../tests/files/csv_files/DKB/kontoauszug"
+tagesgeld = "../tests/files/csv_files/DKB/tagesgeld"
+credit    = "../tests/files/csv_files/DKB/credit"
+festgeld = "../tests/files/csv_files/DKB/festgeld"
+
+[sources.postbank]
+giro = "../tests/files/csv_files/Postbank"
+
+[sources.scalable]
+broker = "../tests/files/artefacts/Scalable-Capital"
+
+[sources.gls]
+giro   = "../tests/files/csv_files/GLS/giro"
+credit = "../tests/files/csv_files/GLS/credit"

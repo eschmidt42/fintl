@@ -11,3 +11,7 @@ class OllamaModelUnavailableError(Exception):
 
 class OllamaInferenceError(Exception):
     """Raised when the ollama model runner fails during inference."""
+
+
+class InferenceError(Exception):
+    """Raised when the inference fails."""

@@ -13,6 +13,7 @@ from pydantic_settings import (
     TomlConfigSettingsSource,
 )
 
+from fintl.common.extraction.constants import ModelProvider
 from fintl.common.logging import Logging
 from fintl.common.paths import normalize_path, sanity_check_path
 from fintl.etl.common.labels import LabelRule
@@ -62,6 +63,13 @@ class OllamaConfig(BaseModel):
     base_url: str = "http://localhost:11434/v1"
 
 
+class LlamaSwapConfig(BaseModel):
+    """Configuration for connecting to a local Ollama instance."""
+
+    model: str
+    base_url: str = "http://0.0.0.0:8080"
+
+
 class Case(BaseModel):
     """Logical identity of a parser (provider, service, parser name)."""
 
@@ -83,7 +91,10 @@ class Config(BaseSettings):
     sources: Sources = Field(default=...)
     logging: Logging = Logging()
     label_rules: list[LabelRule] = Field(default_factory=list)
+    model_provider: ModelProvider = Field(default=ModelProvider.llama_swap)
+    model_timeout: int = Field(default=2 * 60)
     ollama: OllamaConfig | None = None
+    llama_swap: LlamaSwapConfig | None = None
 
     model_config = SettingsConfigDict()
 

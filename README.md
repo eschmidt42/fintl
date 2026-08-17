@@ -16,7 +16,7 @@ This tool helps you process, visualize and search your balance and transaction i
 
 Currently supports DKB, Postbank, GLS and Scalable Capital Broker.
 
-Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](https://ollama.com) instance with a multimodal model — opt-in via `fintl.toml` (required only for Scalable broker PNG statements; gracefully skipped when not configured).
+Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](https://ollama.com) / [llama-swap](https://github.com/mostlygeek/llama-swap) instance with a multimodal model — opt-in via `fintl.toml` (required only for Scalable broker PNG statements; gracefully skipped when not configured).
 
 **All your data stays on your machine. No need to trust another entity that is PSD2 certified.**
 
@@ -97,15 +97,18 @@ Lint, format, type check, test and all the other good stuff:
 prek run --all-files
 ```
 
-### Running Ollama integration tests
+### Running extraction integration tests
 
-Tests that require a live Ollama instance are marked `ollama` and skipped by default. To run them, set `FINTL_OLLAMA_MODEL` to the name of a multimodal model you have pulled (e.g. `qwen3.5:27b`) and pass `-m ollama`:
+Tests that require a live llama-swap / ollama service are marked `ollama` / `llama_swap` and skipped by default. To run them, set `FINTL_OLLAMA_MODEL` to the name of a multimodal model you have pulled (e.g. `qwen3.6:latest`) and pass `-m ollama` or `-m llama_swap`:
 
 ```bash
-FINTL_OLLAMA_MODEL=qwen3.5:27b uv run pytest -m ollama tests/
+FINTL_OLLAMA_MODEL=qwen3.6:latest uv run pytest -m ollama tests/
+FINTL_LLAMA_SWAP_MODEL=qwen-3.6-27b uv run pytest -m llama_swap tests/
 ```
 
 `FINTL_OLLAMA_BASE_URL` can optionally override the default `http://localhost:11434/v1`.
+
+`FINTL_LLAMA_SWAP_BASE_URL` can optionally override the default `http://0.0.0.0:8080`.
 
 ### Simulating CLI usage without real financial data
 
