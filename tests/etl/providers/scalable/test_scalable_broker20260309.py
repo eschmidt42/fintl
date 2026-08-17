@@ -12,8 +12,7 @@ from openai.types.completion_usage import CompletionTokensDetails
 
 import fintl.common.extraction.ollama
 from fintl.common import Config, OllamaConfig, Provider, Sources
-from fintl.common.extraction import availability, ollama
-from fintl.common.extraction.constants import ModelProvider
+from fintl.common.extraction import ModelProvider, availability, ollama
 from fintl.common.extraction.errors import OllamaModelUnavailableError, OllamaUnavailableError
 from fintl.common.logging import Logging
 from fintl.etl.io.files.filenames import (
@@ -335,6 +334,7 @@ def test_main_no_ollama_png_files_exist(
         sources=Sources(scalable=Provider(broker=broker_source_dir)),
         logging=Logging(config_file=logger_path),
         ollama=None,  # opt-out
+        model_provider=ModelProvider.ollama,
     )
 
     with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):

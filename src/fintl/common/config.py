@@ -91,7 +91,7 @@ class Config(BaseSettings):
     sources: Sources = Field(default=...)
     logging: Logging = Logging()
     label_rules: list[LabelRule] = Field(default_factory=list)
-    model_provider: ModelProvider = Field(default=ModelProvider.ollama)
+    model_provider: ModelProvider = Field(default=ModelProvider.llama_swap)
     model_timeout: int = Field(default=2 * 60)
     ollama: OllamaConfig | None = None
     llama_swap: LlamaSwapConfig | None = None

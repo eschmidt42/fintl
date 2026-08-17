@@ -8,7 +8,7 @@ import polars as pl
 import pytest
 
 from fintl.common import Case, Config, OllamaConfig, Provider, Sources
-from fintl.common.extraction import availability
+from fintl.common.extraction import ModelProvider, availability
 from fintl.common.logging import Logging
 from fintl.etl import process_accounts
 from fintl.etl.common.schemas import (
@@ -63,30 +63,13 @@ def dkb_giro0_file() -> str:
     return "0123456789_2022-09-15_to_2022-10-15.csv"
 
 
-# _FILES = Path(__file__).parent / "providers" / "files"
-# _CSV = _FILES / "csv_files"
-# _ARTEFACTS = _FILES / "artefacts"
-# _LOGGER_PATH = Path(__file__).parent.parent / "logger-config.json"
-
-# _DKB_GIRO = _CSV / "DKB" / "kontoauszug"
-# _DKB_TAGESGELD = _CSV / "DKB" / "tagesgeld"
-# _DKB_CREDIT = _CSV / "DKB" / "credit"
-# _DKB_FESTGELD = _CSV / "DKB" / "festgeld"
-# _POSTBANK = _CSV / "Postbank"
-# _SCALABLE = _ARTEFACTS / "Scalable-Capital"
-# _GLS_GIRO = _CSV / "GLS" / "giro"
-# _GLS_CREDIT = _CSV / "GLS" / "credit"
-
-# Only the giro0 parser handles files whose name starts with 10 digits (e.g. "0123456789_...")
-# _DKB_GIRO0_FILE = "0123456789_2022-09-15_to_2022-10-15.csv"
-
-
 # ── Shared helpers ─────────────────────────────────────────────────────────────
 def _config(target_dir: Path, sources: Sources, logger_config_path: Path) -> Config:
     return Config(
         target_dir=target_dir,
         sources=sources,
         logging=Logging(config_file=logger_config_path),
+        model_provider=ModelProvider.ollama,
     )
 
 
@@ -179,6 +162,7 @@ def test_all(tmp_path: Path, dirs: Dirs, logger_config_path: Path):
         ),
         logging=Logging(config_file=logger_path),
         ollama=None,  # keep this here - prevent s pydantic-settings to use the fallback
+        llama_swap=None,  # keep this here - prevent s pydantic-settings to use the fallback
     )
 
     transactions_parquet_path = config.target_dir / "all-transactions.parquet"
