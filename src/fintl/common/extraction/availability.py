@@ -27,7 +27,13 @@ logger = logging.getLogger(__name__)
 def check_ollama_ok(
     config: OllamaConfig | None,
 ) -> bool:
-    """Testing aspects for ollama availability."""
+    """Testing aspects for ollama availability.
+
+    Aspects:
+    - ollama config available
+    - ollama running
+    - model available on ollama
+    """
     if config is None:
         logger.warning("Ollama configuration missing, aborting PNG parsing.")
         return False
@@ -52,7 +58,14 @@ def check_ollama_ok(
 
 
 def check_llama_swap_ok(config: Config, do_inference_check: bool) -> bool:
-    """Testing aspects for llama-swap availability."""
+    """Testing aspects for llama-swap availability.
+
+    Aspects:
+    - llama-swap config available
+    - llama-swap is available
+    - model available on llama-swap
+    - (optional) inference functional
+    """
     if config.llama_swap is None:
         logger.warning("llama-swap configuration missing, aborting PNG parsing.")
         return False
