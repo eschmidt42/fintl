@@ -20,10 +20,31 @@ from fintl.common.extraction.errors import (
     OllamaUnavailableError,
 )
 from fintl.common.extraction.ollama import (
+    OllamaExtractionModel,
     _get_extraction,
     check_model_availability,
     check_provider_availability,
 )
+
+
+def _make_completion() -> ChatCompletion:
+    return ChatCompletion.model_construct(
+        id="test-id",
+        choices=[],
+        created=0,
+        model="fake-model",
+        object="chat.completion",
+        usage=CompletionUsage.model_construct(
+            completion_tokens=1,
+            prompt_tokens=1,
+            total_tokens=2,
+            completion_tokens_details=CompletionTokensDetails.model_construct(reasoning_tokens=0),
+        ),
+    )
+
+
+def _make_extraction() -> _BalanceInfoExtract:
+    return _BalanceInfoExtract(amount=1234.56, currency="EUR")
 
 
 def test_get_extraction_calls_client_create(tmp_path: Path, png_fname: str):
@@ -102,6 +123,71 @@ def test_get_ollama_client_propagates_provider_error():
     ):
         with pytest.raises(ValueError, match="bad model"):
             ollama._get_client(model="bad-model")
+
+
+def test_ollama_extraction_model_initializes_client():
+    """OllamaExtractionModel stores config and creates its instructor client."""
+    mock_client = MagicMock()
+    base_url = "http://localhost:11434/v1"
+    with patch("fintl.common.extraction.ollama._get_client", return_value=mock_client) as mock_get:
+        model = OllamaExtractionModel("fake-model", base_url=base_url, timeout=90)
+
+    mock_get.assert_called_once_with(model="fake-model", ollama_base_url=base_url)
+    assert model.model == "fake-model"
+    assert model.base_url == base_url
+    assert model.timeout == 90
+    assert model.client is mock_client
+
+
+def test_ollama_extraction_model_predict_returns_success(tmp_path: Path):
+    """Predict returns a successful ExtractionOutput when inference succeeds."""
+    mock_client = MagicMock()
+    expected = (_make_extraction(), _make_completion())
+    base_url = "http://localhost:11434/v1"
+    with patch("fintl.common.extraction.ollama._get_client", return_value=mock_client):
+        model = OllamaExtractionModel("fake-model", base_url=base_url)
+
+    with patch(
+        "fintl.common.extraction.ollama._get_extraction",
+        return_value=expected,
+    ) as mock_get:
+        result = model.predict(tmp_path / "statement.png")
+
+    assert result.ok is True
+    assert result.error_message == ""
+    assert result.extraction == expected[0]
+    assert result.completion == expected[1]
+    assert result.elapsed >= 0
+    mock_get.assert_called_once_with(
+        file_path=tmp_path / "statement.png",
+        extraction_client=mock_client,
+        timeout=model.timeout,
+    )
+
+
+def test_ollama_extraction_model_predict_returns_error(tmp_path: Path):
+    """Predict converts InferenceError into a failed ExtractionOutput."""
+    mock_client = MagicMock()
+    base_url = "http://localhost:11434/v1"
+    with patch("fintl.common.extraction.ollama._get_client", return_value=mock_client):
+        model = OllamaExtractionModel("fake-model", base_url=base_url)
+
+    with patch(
+        "fintl.common.extraction.ollama._get_extraction",
+        side_effect=InferenceError("boom"),
+    ) as mock_get:
+        result = model.predict(tmp_path / "statement.png")
+
+    assert result.ok is False
+    assert result.extraction is None
+    assert result.completion is None
+    assert result.error_message == "boom"
+    assert result.elapsed >= 0
+    mock_get.assert_called_once_with(
+        file_path=tmp_path / "statement.png",
+        extraction_client=mock_client,
+        timeout=model.timeout,
+    )
 
 
 def test_check_ollama_availability_uses_base_url_as_is_without_v1_suffix():
