@@ -28,6 +28,11 @@ By default, `Config` reads `~/.config/petprojects/fintl.toml`. Only configure th
 ```toml
 target_dir = "YOURPATH/accounts-data"
 
+# Either llama-swap or ollama can be used a local model providers.
+# In the dedicated [ollama] / [llama_swap] entry below you can define the model to be used.
+model_provider = "llama_swap"
+# model_provider = "ollama"
+
 [sources.dkb]
 giro = "YOURPATH/DKB/giro"
 tagesgeld = "YOURPATH/DKB/tagesgeld"
@@ -55,9 +60,13 @@ root_level = "DEBUG"
 
 # Optional: enable local ollama for Scalable broker PNG parsing.
 # Remove this section (or omit it) to skip PNG parsing entirely.
+[llama_swap]
+model = "gemma-4-31b"
+# base_url = "http://0.0.0.0:8080 # optional, default
+
 [ollama]
-model = "qwen3.5:27b"
-# base_url = "http://localhost:11434/v1"  # default; override if your ollama runs elsewhere
+model = "qwen3.6:latest"
+# base_url = "http://localhost:11434/v1"  # optional, default
 ```
 
 

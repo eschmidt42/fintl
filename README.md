@@ -97,9 +97,9 @@ Lint, format, type check, test and all the other good stuff:
 prek run --all-files
 ```
 
-### Running Ollama integration tests
+### Running extraction integration tests
 
-Tests that require a live Ollama instance are marked `ollama` and skipped by default. To run them, set `FINTL_OLLAMA_MODEL` to the name of a multimodal model you have pulled (e.g. `qwen3.6:latest`) and pass `-m ollama` or `-m llama_swap`:
+Tests that require a live llama-swap / ollama service are marked `ollama` / `llama_swap` and skipped by default. To run them, set `FINTL_OLLAMA_MODEL` to the name of a multimodal model you have pulled (e.g. `qwen3.6:latest`) and pass `-m ollama` or `-m llama_swap`:
 
 ```bash
 FINTL_OLLAMA_MODEL=qwen3.6:latest uv run pytest -m ollama tests/
