@@ -16,7 +16,7 @@ This tool helps you process, visualize and search your balance and transaction i
 
 Currently supports DKB, Postbank, GLS and Scalable Capital Broker.
 
-Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](https://ollama.com) instance with a multimodal model — opt-in via `fintl.toml` (required only for Scalable broker PNG statements; gracefully skipped when not configured).
+Supported file formats: CSV, HTML, and PNG. PNG parsing uses a local [ollama](https://ollama.com) / [llama-swap](https://github.com/mostlygeek/llama-swap) instance with a multimodal model — opt-in via `fintl.toml` (required only for Scalable broker PNG statements; gracefully skipped when not configured).
 
 **All your data stays on your machine. No need to trust another entity that is PSD2 certified.**
 
