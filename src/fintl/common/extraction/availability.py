@@ -38,21 +38,22 @@ def check_ollama_ok(
         logger.warning("Ollama configuration missing, aborting PNG parsing.")
         return False
 
-    try:
-        check_ollama_availability(config.base_url)
-    except OllamaUnavailableError as exc:
-        logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
-        return False
+    with httpx.Client(base_url=config.base_url, timeout=5.0) as client:
+        try:
+            check_ollama_availability(client)
+        except OllamaUnavailableError as exc:
+            logger.warning("Ollama is not available, aborting PNG parsing: %s", exc)
+            return False
 
-    try:
-        check_ollama_model_availability(config.base_url, config.model)
-    except OllamaModelUnavailableError as exc:
-        logger.warning(
-            "Ollama model (%s) not available, aborting PNG parsing: %s",
-            config.model,
-            exc,
-        )
-        return False
+        try:
+            check_ollama_model_availability(client, config.model)
+        except OllamaModelUnavailableError as exc:
+            logger.warning(
+                "Ollama model (%s) not available, aborting PNG parsing: %s",
+                config.model,
+                exc,
+            )
+            return False
 
     return True
 

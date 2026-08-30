@@ -106,7 +106,7 @@ FINTL_OLLAMA_MODEL=qwen3.6:latest uv run pytest -m ollama tests/
 FINTL_LLAMA_SWAP_MODEL=qwen-3.6-27b uv run pytest -m llama_swap tests/
 ```
 
-`FINTL_OLLAMA_BASE_URL` can optionally override the default `http://localhost:11434/v1`.
+`FINTL_OLLAMA_BASE_URL` can optionally override the default `http://localhost:11434`.
 
 `FINTL_LLAMA_SWAP_BASE_URL` can optionally override the default `http://0.0.0.0:8080`.
 

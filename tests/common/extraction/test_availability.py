@@ -19,7 +19,7 @@ from fintl.common.extraction.errors import (
 @pytest.fixture
 def ollama_config() -> OllamaConfig:
     """Build a reusable ollama config for tests."""
-    return OllamaConfig(model="test-model", base_url="http://localhost:11434/v1")
+    return OllamaConfig(model="test-model", base_url="http://localhost:11434")
 
 
 @pytest.fixture
@@ -111,7 +111,8 @@ class TestCheckOllamaOk:
         ):
             check_ollama_ok(ollama_config)
 
-        mock_check_avail.assert_called_once_with(ollama_config.base_url)
+        client = mock_check_avail.call_args.args[0]
+        assert client.base_url == ollama_config.base_url
 
     def test_passes_correct_base_url_and_model_to_model_check(
         self, ollama_config: OllamaConfig
@@ -125,7 +126,9 @@ class TestCheckOllamaOk:
         ):
             check_ollama_ok(ollama_config)
 
-        mock_check_model.assert_called_once_with(ollama_config.base_url, ollama_config.model)
+        client, model = mock_check_model.call_args.args
+        assert client.base_url == ollama_config.base_url
+        assert model == ollama_config.model
 
     def test_model_name_included_in_unavailable_warning(self, ollama_config: OllamaConfig) -> None:
         """Model name is included in the warning log when model is unavailable."""

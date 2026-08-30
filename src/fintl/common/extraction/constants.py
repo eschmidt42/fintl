@@ -12,4 +12,4 @@ class ModelProvider(StrEnum):
 
 TIMEOUT = 2 * 60
 LLAMA_SWAP_BASE_URL = "http://0.0.0.0:8080"
-OLLAMA_BASE_URL = "http://localhost:11434/v1"
+OLLAMA_BASE_URL = "http://localhost:11434"
