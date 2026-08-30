@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import polars as pl
 import pytest
@@ -83,8 +83,17 @@ def mock_lm_extraction(monkeypatch: pytest.MonkeyPatch):
     )
 
 
-def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_path: Path):
+def test_main(
+    tmp_path: Path,
+    mock_lm_extraction,
+    monkeypatch: pytest.MonkeyPatch,
+    png_file: Path,
+    logger_config_path: Path,
+):
     """Test that the broker20260309 parser runs end-to-end and produces expected output files."""
+    unload_opposite_provider = MagicMock()
+    monkeypatch.setattr(broker, "unload_llama_swap", unload_opposite_provider)
+
     broker_source_dir = png_file.parent
     assert broker_source_dir.exists()
 
@@ -188,6 +197,7 @@ def test_main(tmp_path: Path, mock_lm_extraction, png_file: Path, logger_config_
     assert t_balance_parquet_single < get_time(path_balance_parquet_single)
     assert t_transactions_parquet_single < get_time(path_transactions_parquet_single)
     assert t_transactions_xlsx_single < get_time(path_transactions_xlsx_single)
+    assert unload_opposite_provider.call_count == 2
 
 
 # ── Edge case / error path tests ──────────────────────────────────────────────
@@ -210,9 +220,13 @@ def test_parse_new_files_skips_when_ollama_not_configured(
     config.model_provider = ModelProvider.ollama
     config.ollama = None
 
-    with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
+    with (
+        patch.object(broker, "unload_llama_swap") as mock_unload,
+        caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"),
+    ):
         result = broker.parse_new_files(broker.CASE, [dummy], tmp_path / "parsed", config=config)
 
+    mock_unload.assert_called_once_with(config.llama_swap, config.model_timeout)
     assert result == []
     assert "Ollama configuration missing" in caplog.text
     assert not (tmp_path / "parsed").exists()
@@ -234,14 +248,18 @@ def test_parse_new_files_aborts_on_ollama_unavailable(
     config.model_provider = ModelProvider.ollama
     config.ollama = OllamaConfig(model="test-model")
 
-    with patch.object(
-        availability,
-        "check_ollama_availability",
-        side_effect=OllamaUnavailableError("server down"),
+    with (
+        patch.object(broker, "unload_llama_swap") as mock_unload,
+        patch.object(
+            availability,
+            "check_ollama_availability",
+            side_effect=OllamaUnavailableError("server down"),
+        ),
     ):
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(broker.CASE, files, parsed_dir, config=config)
 
+    mock_unload.assert_called_once_with(config.llama_swap, config.model_timeout)
     assert "Ollama is not available" in caplog.text
     assert not parsed_dir.exists()
 
@@ -259,6 +277,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
     config.ollama = OllamaConfig.model_validate({"model": "m"})
 
     with (
+        patch.object(broker, "unload_llama_swap") as mock_unload,
         patch.object(availability, "check_ollama_availability"),
         patch.object(
             availability,
@@ -269,6 +288,7 @@ def test_parse_new_files_aborts_on_model_unavailable(
         with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
             broker.parse_new_files(broker.CASE, [dummy], parsed_dir, config=config)
 
+    mock_unload.assert_called_once_with(config.llama_swap, config.model_timeout)
     assert "Ollama model (m) not available" in caplog.text
     assert not parsed_dir.exists()
 
@@ -305,9 +325,13 @@ def test_parse_new_files_continues_on_generic_error(
     config.model_provider = ModelProvider.ollama
     config.ollama = OllamaConfig.model_validate({"model": "m"})
 
-    with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
+    with (
+        patch.object(broker, "unload_llama_swap") as mock_unload,
+        caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"),
+    ):
         broker.parse_new_files(broker.CASE, files, parsed_dir, config=config)
 
+    mock_unload.assert_called_once_with(config.llama_swap, config.model_timeout)
     assert "parse failed" in caplog.text
     # Both files attempted (error is per-file, not fatal)
     assert call_count == 2
@@ -338,9 +362,13 @@ def test_main_no_ollama_png_files_exist(
         model_provider=ModelProvider.ollama,
     )
 
-    with caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"):
+    with (
+        patch.object(broker, "unload_llama_swap") as mock_unload,
+        caplog.at_level(logging.WARNING, logger="fintl.etl.scalable.broker20260309"),
+    ):
         broker.main(config)  # must not raise
 
+    mock_unload.assert_called_once_with(config.llama_swap, config.model_timeout)
     raw_dir = config.get_raw_dir(broker.CASE)
     parsed_dir = config.get_parsed_dir(broker.CASE)
     parser_dir = config.get_parser_dir(broker.CASE)

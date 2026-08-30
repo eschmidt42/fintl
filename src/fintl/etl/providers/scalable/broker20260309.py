@@ -19,6 +19,7 @@ from fintl.common.extraction.llama_swap import (
 from fintl.common.extraction.ollama import (
     OllamaExtractionModel,
 )
+from fintl.common.extraction.unload import unload_llama_swap, unload_ollama
 from fintl.etl.common.schemas import (
     BalanceInfo,
     ProviderEnum,
@@ -140,9 +141,11 @@ def parse_new_files(
 
     match config.model_provider:
         case ModelProvider.ollama:
+            unload_llama_swap(config.llama_swap, config.model_timeout)
             if not check_ollama_ok(config.ollama):
                 return []
         case ModelProvider.llama_swap:
+            unload_ollama(config.ollama, config.model_timeout)
             if not check_llama_swap_ok(config, do_inference_check=True):
                 return []
 
