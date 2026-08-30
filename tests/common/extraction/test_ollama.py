@@ -24,6 +24,7 @@ from fintl.common.extraction.ollama import (
     _get_extraction,
     check_model_availability,
     check_provider_availability,
+    v1ify,
 )
 
 
@@ -45,6 +46,21 @@ def _make_completion() -> ChatCompletion:
 
 def _make_extraction() -> _BalanceInfoExtract:
     return _BalanceInfoExtract(amount=1234.56, currency="EUR")
+
+
+@pytest.mark.parametrize(
+    ("url", "suffix", "expected"),
+    [
+        ("http://localhost:11434", "/v1", "http://localhost:11434/v1"),
+        ("http://localhost:11434/", "/v1", "http://localhost:11434/v1"),
+        ("http://localhost:11434/v1", "/v1", "http://localhost:11434/v1"),
+        ("http://localhost:11434", "/custom", "http://localhost:11434/custom"),
+        ("http://localhost:11434/custom", "/custom", "http://localhost:11434/custom"),
+    ],
+)
+def test_v1ify(url: str, suffix: str, expected: str):
+    """Appends a suffix once and removes a trailing slash before appending."""
+    assert v1ify(url, suffix=suffix) == expected
 
 
 def test_get_extraction_calls_client_create(tmp_path: Path, png_fname: str):
