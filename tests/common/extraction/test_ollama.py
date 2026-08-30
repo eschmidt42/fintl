@@ -99,19 +99,18 @@ def test_get_extraction_raises_ollama_inference_error_on_retry_exhausted(
 
 def test_check_ollama_availability_raises_on_connection_failure():
     """_check_ollama_availability raises OllamaUnavailableError when the server is unreachable."""
-    with patch.object(httpx, "get", side_effect=httpx.ConnectError("connection refused")):
-        with pytest.raises(OllamaUnavailableError, match="not reachable"):
-            check_provider_availability("http://localhost:11434/v1")
+    client = MagicMock()
+    client.get.side_effect = ConnectionError("connection refused")
+    with pytest.raises(OllamaUnavailableError, match="not reachable"):
+        check_provider_availability(client)
 
 
-def test_check_ollama_availability_strips_v1_suffix():
-    """_check_ollama_availability GET-s the root URL (without /v1)."""
-    mock_response = MagicMock()
-    mock_response.raise_for_status.return_value = None
-    with patch.object(httpx, "get", return_value=mock_response) as mock_get:
-        check_provider_availability("http://localhost:11434/v1")
+def test_check_ollama_availability_uses_root_client_endpoint():
+    """_check_ollama_availability checks the configured root client."""
+    client = MagicMock()
+    check_provider_availability(client)
 
-    mock_get.assert_called_once_with("http://localhost:11434", timeout=5.0)
+    client.get.assert_called_once_with("/", timeout=5.0)
 
 
 def test_get_ollama_client_propagates_provider_error():
@@ -128,7 +127,7 @@ def test_get_ollama_client_propagates_provider_error():
 def test_ollama_extraction_model_initializes_client():
     """OllamaExtractionModel stores config and creates its instructor client."""
     mock_client = MagicMock()
-    base_url = "http://localhost:11434/v1"
+    base_url = "http://localhost:11434"
     with patch("fintl.common.extraction.ollama._get_client", return_value=mock_client) as mock_get:
         model = OllamaExtractionModel("fake-model", base_url=base_url, timeout=90)
 
@@ -143,7 +142,7 @@ def test_ollama_extraction_model_predict_returns_success(tmp_path: Path):
     """Predict returns a successful ExtractionOutput when inference succeeds."""
     mock_client = MagicMock()
     expected = (_make_extraction(), _make_completion())
-    base_url = "http://localhost:11434/v1"
+    base_url = "http://localhost:11434"
     with patch("fintl.common.extraction.ollama._get_client", return_value=mock_client):
         model = OllamaExtractionModel("fake-model", base_url=base_url)
 
@@ -168,7 +167,7 @@ def test_ollama_extraction_model_predict_returns_success(tmp_path: Path):
 def test_ollama_extraction_model_predict_returns_error(tmp_path: Path):
     """Predict converts InferenceError into a failed ExtractionOutput."""
     mock_client = MagicMock()
-    base_url = "http://localhost:11434/v1"
+    base_url = "http://localhost:11434"
     with patch("fintl.common.extraction.ollama._get_client", return_value=mock_client):
         model = OllamaExtractionModel("fake-model", base_url=base_url)
 
@@ -190,24 +189,15 @@ def test_ollama_extraction_model_predict_returns_error(tmp_path: Path):
     )
 
 
-def test_check_ollama_availability_uses_base_url_as_is_without_v1_suffix():
-    """_check_ollama_availability uses base_url unchanged when it has no /v1 suffix."""
-    mock_response = MagicMock()
-    mock_response.raise_for_status.return_value = None
-    with patch.object(httpx, "get", return_value=mock_response) as mock_get:
-        check_provider_availability("http://localhost:11434")
-
-    mock_get.assert_called_once_with("http://localhost:11434", timeout=5.0)
-
-
 def test_check_model_available_raises_when_bare_name_also_missing():
     """_check_model_available raises when model has no tag and no bare-name match."""
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {"models": [{"name": "llama3.2:latest"}]}
-    with patch.object(httpx, "get", return_value=mock_response):
-        with pytest.raises(OllamaModelUnavailableError, match="qwen3.5"):
-            check_model_availability("http://localhost:11434/v1", "qwen3.5")
+    client = MagicMock()
+    client.get.return_value = mock_response
+    with pytest.raises(OllamaModelUnavailableError, match="qwen3.5"):
+        check_model_availability(client, "qwen3.5")
 
 
 def test_check_model_available_uses_base_url_as_is_without_v1_suffix():
@@ -215,10 +205,11 @@ def test_check_model_available_uses_base_url_as_is_without_v1_suffix():
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {"models": [{"name": "qwen3.5:27b"}]}
-    with patch.object(httpx, "get", return_value=mock_response) as mock_get:
-        check_model_availability("http://localhost:11434", "qwen3.5:27b")
+    client = MagicMock()
+    client.get.return_value = mock_response
+    check_model_availability(client, "qwen3.5:27b")
 
-    mock_get.assert_called_once_with("http://localhost:11434/api/tags", timeout=5.0)
+    client.get.assert_called_once_with("/api/tags", timeout=5.0)
 
 
 def test_check_model_available_passes_when_model_present():
@@ -228,8 +219,9 @@ def test_check_model_available_passes_when_model_present():
     mock_response.json.return_value = {
         "models": [{"name": "qwen3.5:27b"}, {"name": "llama3.2:latest"}]
     }
-    with patch.object(httpx, "get", return_value=mock_response):
-        check_model_availability("http://localhost:11434/v1", "qwen3.5:27b")  # no raise
+    client = MagicMock()
+    client.get.return_value = mock_response
+    check_model_availability(client, "qwen3.5:27b")  # no raise
 
 
 def test_check_model_available_passes_on_bare_name_match():
@@ -237,8 +229,9 @@ def test_check_model_available_passes_on_bare_name_match():
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {"models": [{"name": "qwen3.5:27b"}]}
-    with patch.object(httpx, "get", return_value=mock_response):
-        check_model_availability("http://localhost:11434/v1", "qwen3.5")  # no raise
+    client = MagicMock()
+    client.get.return_value = mock_response
+    check_model_availability(client, "qwen3.5")  # no raise
 
 
 def test_check_model_available_raises_when_model_missing():
@@ -246,13 +239,15 @@ def test_check_model_available_raises_when_model_missing():
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {"models": [{"name": "llama3.2:latest"}]}
-    with patch.object(httpx, "get", return_value=mock_response):
-        with pytest.raises(OllamaModelUnavailableError, match="qwen3.5:27b"):
-            check_model_availability("http://localhost:11434/v1", "qwen3.5:27b")
+    client = MagicMock()
+    client.get.return_value = mock_response
+    with pytest.raises(OllamaModelUnavailableError, match="qwen3.5:27b"):
+        check_model_availability(client, "qwen3.5:27b")
 
 
 def test_check_model_available_raises_on_http_error():
     """_check_model_available raises OllamaModelUnavailableError when the tags call fails."""
-    with patch.object(httpx, "get", side_effect=httpx.ConnectError("connection refused")):
-        with pytest.raises(OllamaModelUnavailableError, match="Could not retrieve"):
-            check_model_availability("http://localhost:11434/v1", "qwen3.5:27b")
+    client = MagicMock()
+    client.get.side_effect = httpx.ConnectError("connection refused")
+    with pytest.raises(OllamaModelUnavailableError, match="Could not retrieve"):
+        check_model_availability(client, "qwen3.5:27b")

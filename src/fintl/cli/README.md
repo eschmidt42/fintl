@@ -66,7 +66,7 @@ model = "gemma-4-31b"
 
 [ollama]
 model = "qwen3.6:latest"
-# base_url = "http://localhost:11434/v1"  # optional, default
+# base_url = "http://localhost:11434"  # optional, default
 ```
 
 
@@ -147,7 +147,7 @@ To enable it, add to your `~/.config/petprojects/fintl.toml`:
 ```toml
 [ollama]
 model = "qwen3.5:27b"          # any multimodal model available in your ollama instance
-# base_url = "http://localhost:11434/v1"  # optional; default shown
+# base_url = "http://localhost:11434"  # optional; default shown
 ```
 
 If ollama is configured but unreachable (not running, model not pulled, wrong URL), the affected PNG files are skipped with a warning and the rest of the ETL continues normally.

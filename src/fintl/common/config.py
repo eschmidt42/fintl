@@ -60,7 +60,7 @@ class OllamaConfig(BaseModel):
     """Configuration for connecting to a local Ollama instance."""
 
     model: str
-    base_url: str = "http://localhost:11434/v1"
+    base_url: str = "http://localhost:11434"
 
 
 class LlamaSwapConfig(BaseModel):

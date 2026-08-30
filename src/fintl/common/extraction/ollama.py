@@ -21,25 +21,21 @@ from fintl.common.extraction.types import ExtractionOutput, ExtractionResponse
 logger = logging.getLogger(__name__)
 
 
-def check_provider_availability(base_url: str) -> None:
+def check_provider_availability(client: httpx.Client) -> None:
     """Check that the ollama server is reachable.
 
-    Strips the ``/v1`` suffix (if present) to reach the ollama root endpoint
-    and performs a GET with a short timeout.
+    Performs a GET against the root endpoint with a short timeout.
 
     Raises:
         OllamaUnavailableError: when the server cannot be reached.
     """
-    root_url = base_url.rstrip("/")
-    if root_url.endswith("/v1"):
-        root_url = root_url[:-3]
     try:
-        httpx.get(root_url, timeout=5.0).raise_for_status()
+        client.get("/", timeout=5.0).raise_for_status()
     except Exception as exc:
-        raise OllamaUnavailableError(f"Ollama is not reachable at {base_url}: {exc}") from exc
+        raise OllamaUnavailableError(f"Ollama is not reachable: {exc}") from exc
 
 
-def check_model_availability(base_url: str, model: str) -> None:
+def check_model_availability(client: httpx.Client, model: str) -> None:
     """Check that *model* has been pulled into the local ollama instance.
 
     Calls ``GET {root}/api/tags`` and inspects the returned model list.
@@ -50,16 +46,13 @@ def check_model_availability(base_url: str, model: str) -> None:
     Raises:
         OllamaModelUnavailableError: when the model is not found.
     """
-    root_url = base_url.rstrip("/")
-    if root_url.endswith("/v1"):
-        root_url = root_url[:-3]
     try:
-        response = httpx.get(f"{root_url}/api/tags", timeout=5.0)
+        response = client.get("/api/tags", timeout=5.0)
         response.raise_for_status()
         available = [m["name"] for m in response.json().get("models", [])]
     except Exception as exc:
         raise OllamaModelUnavailableError(
-            f"Could not retrieve model list from ollama at {base_url}: {exc}"
+            f"Could not retrieve model list from ollama: {exc}"
         ) from exc
 
     # exact match first; then fall back to bare-name match when model has no tag
@@ -75,13 +68,11 @@ def check_model_availability(base_url: str, model: str) -> None:
     )
 
 
-def _get_client(
-    *, model: str, ollama_base_url: str = "http://localhost:11434/v1"
-) -> instructor.Instructor:
+def _get_client(*, model: str, ollama_base_url: str = OLLAMA_BASE_URL) -> instructor.Instructor:
     """Create and return an Instructor client configured for the given ollama model."""
     return instructor.from_provider(
         f"ollama/{model}",
-        base_url=ollama_base_url,
+        base_url=f"{ollama_base_url.rstrip('/')}/v1",
         mode=instructor.Mode.JSON,
         async_client=False,
     )
