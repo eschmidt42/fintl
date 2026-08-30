@@ -70,9 +70,10 @@ def check_model_availability(client: httpx.Client, model: str) -> None:
 
 def _get_client(*, model: str, ollama_base_url: str = OLLAMA_BASE_URL) -> instructor.Instructor:
     """Create and return an Instructor client configured for the given ollama model."""
+    v1_url = f"{ollama_base_url.rstrip('/')}/v1"
     return instructor.from_provider(
         f"ollama/{model}",
-        base_url=f"{ollama_base_url.rstrip('/')}/v1",
+        base_url=v1_url,
         mode=instructor.Mode.JSON,
         async_client=False,
     )
