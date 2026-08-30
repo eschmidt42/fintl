@@ -3,6 +3,7 @@
 import shutil
 from pathlib import Path
 from typing import TypedDict
+from unittest.mock import MagicMock
 
 import polars as pl
 import pytest
@@ -240,6 +241,8 @@ def test_scalable_broker_only(
     """
     from fintl.etl.providers.scalable import broker20260309
 
+    unload_opposite_provider = MagicMock()
+
     def _fake_extract_balance(case: Case, file_path: Path, *, config: Config) -> BalanceInfo:
         date = broker20260309.get_date_from_string(file_path.name)
         return BalanceInfo(
@@ -255,6 +258,7 @@ def test_scalable_broker_only(
     monkeypatch.setattr(availability, "check_ollama_availability", lambda *a, **kw: None)
     monkeypatch.setattr(availability, "check_ollama_model_availability", lambda *a, **kw: None)
     monkeypatch.setattr(broker20260309, "extract_balance", _fake_extract_balance)
+    monkeypatch.setattr(broker20260309, "unload_llama_swap", unload_opposite_provider)
 
     scalable_src = tmp_path / "scalable_src"
     scalable_src.mkdir()
@@ -268,6 +272,7 @@ def test_scalable_broker_only(
     config = config.model_copy(update={"ollama": OllamaConfig(model="fake-model")})
     process_accounts.main(config)
 
+    unload_opposite_provider.assert_called_once_with(config.llama_swap, config.model_timeout)
     bal_path = config.target_dir / "all-balances.parquet"
     assert bal_path.exists()
 
