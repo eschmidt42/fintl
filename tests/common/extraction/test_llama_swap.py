@@ -5,16 +5,14 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from instructor.core.exceptions import FailedAttempt, InstructorRetryException
 from openai.types import CompletionUsage
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.completion_usage import CompletionTokensDetails
 
-from fintl.common.extraction.context import _BalanceInfoExtract
+from fintl.common.extraction.context import BalanceInfoExtract
 from fintl.common.extraction.errors import InferenceError
 from fintl.common.extraction.llama_swap import (
     LlamaSwapExtractionModel,
-    _get_llama_swap_extraction,
     check_health,
     check_inference,
     check_model_available,
@@ -24,7 +22,6 @@ from fintl.common.extraction.llama_swap import (
 BASE_URL = "http://localhost:8080"
 MODEL = "fake-model"
 TIMEOUT = 30
-SYSTEM_PROMPT = "You are a Scraper for data contained in a screenshot of a broker web app."
 
 
 def _make_completion() -> ChatCompletion:
@@ -43,8 +40,8 @@ def _make_completion() -> ChatCompletion:
     )
 
 
-def _make_extraction() -> _BalanceInfoExtract:
-    return _BalanceInfoExtract(amount=1234.56, currency="EUR")
+def _make_extraction() -> BalanceInfoExtract:
+    return BalanceInfoExtract(amount=1234.56, currency="EUR")
 
 
 @pytest.fixture
@@ -170,54 +167,6 @@ def test_sanity_check_returns_false_on_http_error():
         assert sanity_check(MODEL, timeout=TIMEOUT, base_url=BASE_URL) is False
 
 
-def test_get_llama_swap_extraction_returns_client_result(tmp_path: Path):
-    """_get_llama_swap_extraction returns the client result on success."""
-    file_path = tmp_path / "statement.png"
-    file_path.write_bytes(b"\x89PNG\r\n\x1a\n")
-    expected = (_make_extraction(), _make_completion())
-    mock_client = MagicMock()
-    mock_client.create_with_completion.return_value = expected
-
-    with patch(
-        "fintl.common.extraction.llama_swap.InstructorImage.from_path",
-        return_value="image",
-    ):
-        result = _get_llama_swap_extraction(file_path, mock_client, MODEL, TIMEOUT)
-
-    assert result is expected
-    mock_client.create_with_completion.assert_called_once_with(
-        model=MODEL,
-        response_model=_BalanceInfoExtract,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": ["Please extract data from the following image", "image"]},
-        ],
-        timeout=TIMEOUT,
-    )
-
-
-def test_get_llama_swap_extraction_wraps_retry_exceptions(tmp_path: Path):
-    """_get_llama_swap_extraction translates retry exhaustion into InferenceError."""
-    file_path = tmp_path / "statement.png"
-    file_path.write_bytes(b"\x89PNG\r\n\x1a\n")
-    cause = RuntimeError("model runner stopped")
-    retry_exc = InstructorRetryException(
-        str(cause),
-        n_attempts=3,
-        total_usage=0,
-        failed_attempts=[FailedAttempt(1, cause, None)],
-    )
-    mock_client = MagicMock()
-    mock_client.create_with_completion.side_effect = retry_exc
-
-    with patch(
-        "fintl.common.extraction.llama_swap.InstructorImage.from_path",
-        return_value="image",
-    ):
-        with pytest.raises(InferenceError, match="statement.png: model runner stopped"):
-            _get_llama_swap_extraction(file_path, mock_client, MODEL, TIMEOUT)
-
-
 def test_init_creates_instructor_client():
     """LlamaSwapExtractionModel wires OpenAI and instructor clients."""
     mock_openai_client = MagicMock(name="openai_client")
@@ -248,7 +197,7 @@ def test_predict_returns_successful_output(llama_swap_model: LlamaSwapExtraction
     completion = _make_completion()
 
     with patch(
-        "fintl.common.extraction.llama_swap._get_llama_swap_extraction",
+        "fintl.common.extraction.core._get_extraction",
         return_value=(extraction, completion),
     ) as mock_get:
         result = llama_swap_model.predict(Path("statement.png"))
@@ -271,7 +220,7 @@ def test_predict_returns_error_output_on_inference_error(
 ):
     """Predict captures InferenceError as a failed ExtractionOutput."""
     with patch(
-        "fintl.common.extraction.llama_swap._get_llama_swap_extraction",
+        "fintl.common.extraction.core._get_extraction",
         side_effect=InferenceError("boom"),
     ) as mock_get:
         result = llama_swap_model.predict(Path("statement.png"))

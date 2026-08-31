@@ -5,14 +5,13 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from instructor.core.exceptions import FailedAttempt, InstructorRetryException
 from openai.types import CompletionUsage
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.completion_usage import CompletionTokensDetails
 
 from fintl.common.extraction import ollama
 from fintl.common.extraction.context import (
-    _BalanceInfoExtract,
+    BalanceInfoExtract,
 )
 from fintl.common.extraction.errors import (
     InferenceError,
@@ -21,7 +20,6 @@ from fintl.common.extraction.errors import (
 )
 from fintl.common.extraction.ollama import (
     OllamaExtractionModel,
-    _get_extraction,
     check_model_availability,
     check_provider_availability,
     v1ify,
@@ -44,8 +42,8 @@ def _make_completion() -> ChatCompletion:
     )
 
 
-def _make_extraction() -> _BalanceInfoExtract:
-    return _BalanceInfoExtract(amount=1234.56, currency="EUR")
+def _make_extraction() -> BalanceInfoExtract:
+    return BalanceInfoExtract(amount=1234.56, currency="EUR")
 
 
 @pytest.mark.parametrize(
@@ -61,56 +59,6 @@ def _make_extraction() -> _BalanceInfoExtract:
 def test_v1ify(url: str, suffix: str, expected: str):
     """Appends a suffix once and removes a trailing slash before appending."""
     assert v1ify(url, suffix=suffix) == expected
-
-
-def test_get_extraction_calls_client_create(tmp_path: Path, png_fname: str):
-    """_get_extraction must call extraction_client.create and return its result."""
-    extraction = _BalanceInfoExtract(amount=1234.56, currency="EUR")
-    completion = ChatCompletion.model_construct(
-        id="test-id",
-        choices=[],
-        created=0,
-        model="fake-model",
-        object="chat.completion",
-        usage=CompletionUsage.model_construct(
-            completion_tokens=1,
-            prompt_tokens=1,
-            total_tokens=2,
-            completion_tokens_details=CompletionTokensDetails.model_construct(reasoning_tokens=0),
-        ),
-    )
-    mock_client = MagicMock()
-    expected = (extraction, completion)
-    mock_client.create_with_completion.return_value = expected
-
-    dummy_file = tmp_path / png_fname
-    dummy_file.write_bytes(b"\x89PNG")  # minimal non-empty file
-
-    result = _get_extraction(dummy_file, mock_client, 2 * 60)
-
-    assert result is expected
-    mock_client.create_with_completion.assert_called_once()
-
-
-def test_get_extraction_raises_ollama_inference_error_on_retry_exhausted(
-    tmp_path: Path, png_fname: str
-):
-    """_get_extraction wraps InstructorRetryException as OllamaInferenceError."""
-    cause = RuntimeError("model runner has unexpectedly stopped")
-    retry_exc = InstructorRetryException(
-        str(cause),
-        n_attempts=3,
-        total_usage=0,
-        failed_attempts=[FailedAttempt(1, cause, None)],
-    )
-    mock_client = MagicMock()
-    mock_client.create_with_completion.side_effect = retry_exc
-
-    dummy_file = tmp_path / png_fname
-    dummy_file.write_bytes(b"\x89PNG")
-
-    with pytest.raises(InferenceError, match="model runner has unexpectedly stopped"):
-        _get_extraction(dummy_file, mock_client, 2 * 60)
 
 
 def test_check_ollama_availability_raises_on_connection_failure():
@@ -163,7 +111,7 @@ def test_ollama_extraction_model_predict_returns_success(tmp_path: Path):
         model = OllamaExtractionModel("fake-model", base_url=base_url)
 
     with patch(
-        "fintl.common.extraction.ollama._get_extraction",
+        "fintl.common.extraction.core._get_extraction",
         return_value=expected,
     ) as mock_get:
         result = model.predict(tmp_path / "statement.png")
@@ -176,6 +124,7 @@ def test_ollama_extraction_model_predict_returns_success(tmp_path: Path):
     mock_get.assert_called_once_with(
         file_path=tmp_path / "statement.png",
         extraction_client=mock_client,
+        model=model.model,
         timeout=model.timeout,
     )
 
@@ -188,7 +137,7 @@ def test_ollama_extraction_model_predict_returns_error(tmp_path: Path):
         model = OllamaExtractionModel("fake-model", base_url=base_url)
 
     with patch(
-        "fintl.common.extraction.ollama._get_extraction",
+        "fintl.common.extraction.core._get_extraction",
         side_effect=InferenceError("boom"),
     ) as mock_get:
         result = model.predict(tmp_path / "statement.png")
@@ -201,6 +150,7 @@ def test_ollama_extraction_model_predict_returns_error(tmp_path: Path):
     mock_get.assert_called_once_with(
         file_path=tmp_path / "statement.png",
         extraction_client=mock_client,
+        model=model.model,
         timeout=model.timeout,
     )
 

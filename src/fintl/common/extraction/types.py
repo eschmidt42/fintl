@@ -6,14 +6,14 @@ from openai.types.chat.chat_completion import ChatCompletion
 from pydantic import BaseModel
 
 from fintl.common.extraction.context import (
-    _BalanceInfoExtract,
+    BalanceInfoExtract,
 )
 
 
 class ExtractionOutput(BaseModel):
     """Container for the result of a single extraction attempt."""
 
-    extraction: _BalanceInfoExtract | None
+    extraction: BalanceInfoExtract | None
     completion: ChatCompletion | None
     elapsed: float
     ok: bool
@@ -39,4 +39,4 @@ class ResultDetails(TypedDict):
     reasoning_tokens: int | None
 
 
-ExtractionResponse = tuple[_BalanceInfoExtract, ChatCompletion]
+ExtractionResponse = tuple[BalanceInfoExtract, ChatCompletion]
