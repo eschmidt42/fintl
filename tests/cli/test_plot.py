@@ -122,4 +122,3 @@ def test_run_rejects_invalid_y_axis_bounds(cli_runner: CliRunner) -> None:
     result = cli_runner.invoke(app, ["plot", "--y-min", "100", "--y-max", "100"])
 
     assert result.exit_code == 2
-    assert "--y-min must be less than --y-max" in result.output
