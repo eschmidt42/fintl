@@ -76,7 +76,7 @@ def _get_client(*, model: str, ollama_base_url: str = OLLAMA_BASE_URL) -> instru
     return instructor.from_provider(
         f"ollama/{model}",
         base_url=v1_url,
-        mode=instructor.Mode.JSON,
+        mode=instructor.Mode.TOOLS,
         async_client=False,
     )
 
