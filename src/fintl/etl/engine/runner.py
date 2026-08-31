@@ -19,7 +19,8 @@ Execution flow
    c. Calls ``error_if_overlap`` to ensure no source file is claimed by more
       than one parser — a hard error that surfaces misconfigured applicability
       predicates early.
-   d. Executes ``spec.run(config)`` for each parser in order.
+   d. Executes ``spec.run(config)`` for each parser in order, logging and
+      displaying parser failures before continuing with the next parser.
 
 Overlap detection
 -----------------
@@ -143,22 +144,30 @@ def check_service_overlap(config: Config, provider: str, service: str) -> None:
         known_files.update(source_files)
 
 
-def run_service(config: Config, provider: str, service: str) -> None:
+def run_service(
+    config: Config,
+    provider: str,
+    service: str,
+    console: Console | None = None,
+) -> None:
     """Run all parsers for a provider/service pair in precedence order.
 
     Performs an overlap check before executing each parser so that a file
     claimed by two parsers causes an early error rather than silent double
-    processing.
+    processing. Errors raised by an individual parser are logged and displayed
+    before processing continues with the next parser.
 
     Args:
         config (Config): Shared ETL configuration supplying source directories
             and the output target directory.
         provider (str): Provider name (e.g. ``"dkb"``).
         service (str): Service name within the provider (e.g. ``"giro"``).
+        console (Console | None): Rich console for parser error output.
 
     Raises:
         ValueError: If a source file is claimed by more than one parser.
     """
+    console = console or Console()
     logger.info(f"Processing parsers for {provider=} -> {service=}")
 
     specs = parsers_for(provider, service)
@@ -179,7 +188,19 @@ def run_service(config: Config, provider: str, service: str) -> None:
         source_files = _get_source_files(spec, config)
         error_if_overlap(spec.case.name, known_files, source_files)
         known_files.update(source_files)
-        spec.run(config)
+        try:
+            spec.run(config)
+        except Exception:
+            logger.exception(
+                "Parser failed for provider=%s, service=%s, spec=%s; continuing.",
+                provider,
+                service,
+                spec.case.parser,
+            )
+            console.print(
+                f"[bold red]Parser failed for {provider} -> {service} -> "
+                f"{spec.case.parser}; continuing.[/bold red]"
+            )
 
 
 def run_provider(config: Config, provider: str, console: Console | None = None) -> None:
@@ -204,7 +225,7 @@ def run_provider(config: Config, provider: str, console: Console | None = None) 
             logger.info(f"Skipping service={service_name!r} because no path was given.")
             continue
         logger.info(f"Processing {provider=} -> service={service_name!r} @ {path=}")
-        run_service(config, provider, service_name)
+        run_service(config, provider, service_name, console)
     logger.info(f"Done processing {provider=}")
 
 
