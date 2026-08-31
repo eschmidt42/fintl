@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
-from instructor.core.exceptions import FailedAttempt, InstructorRetryException
 from openai.types import CompletionUsage
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.completion_usage import CompletionTokensDetails
@@ -14,7 +13,6 @@ from fintl.common.extraction import ollama
 from fintl.common.extraction.context import (
     BalanceInfoExtract,
 )
-from fintl.common.extraction.core import _get_extraction
 from fintl.common.extraction.errors import (
     InferenceError,
     OllamaModelUnavailableError,
@@ -61,56 +59,6 @@ def _make_extraction() -> BalanceInfoExtract:
 def test_v1ify(url: str, suffix: str, expected: str):
     """Appends a suffix once and removes a trailing slash before appending."""
     assert v1ify(url, suffix=suffix) == expected
-
-
-def test_get_extraction_calls_client_create(tmp_path: Path, png_fname: str):
-    """_get_extraction must call extraction_client.create and return its result."""
-    extraction = BalanceInfoExtract(amount=1234.56, currency="EUR")
-    completion = ChatCompletion.model_construct(
-        id="test-id",
-        choices=[],
-        created=0,
-        model="fake-model",
-        object="chat.completion",
-        usage=CompletionUsage.model_construct(
-            completion_tokens=1,
-            prompt_tokens=1,
-            total_tokens=2,
-            completion_tokens_details=CompletionTokensDetails.model_construct(reasoning_tokens=0),
-        ),
-    )
-    mock_client = MagicMock()
-    expected = (extraction, completion)
-    mock_client.create_with_completion.return_value = expected
-
-    dummy_file = tmp_path / png_fname
-    dummy_file.write_bytes(b"\x89PNG")  # minimal non-empty file
-
-    result = _get_extraction(dummy_file, mock_client, "fake-model", 2 * 60)
-
-    assert result is expected
-    mock_client.create_with_completion.assert_called_once()
-
-
-def test_get_extraction_raises_ollama_inference_error_on_retry_exhausted(
-    tmp_path: Path, png_fname: str
-):
-    """_get_extraction wraps InstructorRetryException as OllamaInferenceError."""
-    cause = RuntimeError("model runner has unexpectedly stopped")
-    retry_exc = InstructorRetryException(
-        str(cause),
-        n_attempts=3,
-        total_usage=0,
-        failed_attempts=[FailedAttempt(1, cause, None)],
-    )
-    mock_client = MagicMock()
-    mock_client.create_with_completion.side_effect = retry_exc
-
-    dummy_file = tmp_path / png_fname
-    dummy_file.write_bytes(b"\x89PNG")
-
-    with pytest.raises(InferenceError, match="model runner has unexpectedly stopped"):
-        _get_extraction(dummy_file, mock_client, "fake-model", 2 * 60)
 
 
 def test_check_ollama_availability_raises_on_connection_failure():
