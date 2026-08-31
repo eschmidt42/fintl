@@ -25,7 +25,7 @@ def display_plot(save: Path | None, chart: alt.Chart):
         webbrowser.open(tmp.resolve().as_uri())
 
 
-def draw_plot(balances: pl.DataFrame) -> alt.Chart:
+def draw_plot(balances: pl.DataFrame, y_min: float = 0, y_max: float = 250_000) -> alt.Chart:
     """Build an Altair scatter chart of balances over time."""
     chart = (
         balances.plot.scatter(x="date", y="amount", color="name")
@@ -33,7 +33,7 @@ def draw_plot(balances: pl.DataFrame) -> alt.Chart:
         .encode(
             y=alt.Y(
                 "amount:Q",
-                scale=alt.Scale(domain=[0, 200_000]),
+                scale=alt.Scale(domain=[y_min, y_max]),
             )
         )
         .interactive()
