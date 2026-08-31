@@ -8,7 +8,7 @@ import polars as pl
 import pytest
 from typer.testing import CliRunner
 
-from fintl.cli.commands.plot.helper import draw_plot
+from fintl.cli.commands.plot.helper import draw_raw_amounts
 from fintl.cli.main import app
 from fintl.common import Provider, Sources
 from fintl.etl.common.schemas import BALANCE_SCHEMA
@@ -20,13 +20,13 @@ def _write_balances(target_dir: Path) -> None:
     """Write a minimal all-balances.parquet fixture to target_dir."""
     df = pl.DataFrame(
         {
-            "date": [datetime.date(2024, 1, 1), datetime.date(2024, 1, 2)],
-            "amount": [1000.0, 1100.0],
-            "currency": ["EUR", "EUR"],
-            "provider": ["dkb", "dkb"],
-            "service": ["giro", "giro"],
-            "parser": ["giro0", "giro0"],
-            "file": ["a.csv", "b.csv"],
+            "date": [datetime.date(2024, month, 1) for month in range(1, 7)],
+            "amount": [1000.0 + month * 100 for month in range(6)],
+            "currency": ["EUR"] * 6,
+            "provider": ["dkb"] * 6,
+            "service": ["giro"] * 6,
+            "parser": ["giro0"] * 6,
+            "file": [f"{month}.csv" for month in range(1, 7)],
         },
         schema=BALANCE_SCHEMA,
     )
@@ -59,7 +59,7 @@ def test_run_save_writes_html(
 
     assert result.exit_code == 0, result.output
     assert save_path.exists()
-    mock_open.assert_called_once()
+    assert mock_open.call_count == 3
 
 
 def test_run_without_save_opens_browser(
@@ -77,7 +77,7 @@ def test_run_without_save_opens_browser(
     result = cli_runner.invoke(app, ["plot"])
 
     assert result.exit_code == 0, result.output
-    mock_open.assert_called_once()
+    assert mock_open.call_count == 3
 
 
 def test_draw_plot_uses_default_y_axis_bounds() -> None:
@@ -90,7 +90,7 @@ def test_draw_plot_uses_default_y_axis_bounds() -> None:
         }
     )
 
-    y_scale = draw_plot(config).to_dict()["encoding"]["y"]["scale"]
+    y_scale = draw_raw_amounts(config).to_dict()["encoding"]["y"]["scale"]
 
     assert y_scale["domain"] == [0, 250_000]
 
@@ -104,8 +104,8 @@ def test_run_accepts_custom_y_axis_bounds(
     """Test that custom y-axis bounds are passed to the chart."""
     config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
-    mock_open = MagicMock()
-    monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
+    display_mock = MagicMock()
+    monkeypatch.setattr("fintl.cli.commands.plot.core.display_plot", display_mock)
 
     save_path = tmp_path / "chart.html"
     result = cli_runner.invoke(
@@ -114,7 +114,9 @@ def test_run_accepts_custom_y_axis_bounds(
     )
 
     assert result.exit_code == 0, result.output
-    assert '"domain": [-100.5, 5000.25]' in save_path.read_text()
+    assert display_mock.call_count == 3
+    first_chart = display_mock.call_args_list[0].args[1]
+    assert first_chart.to_dict()["encoding"]["y"]["scale"]["domain"] == [-100.5, 5000.25]
 
 
 def test_run_rejects_invalid_y_axis_bounds(cli_runner: CliRunner) -> None:
