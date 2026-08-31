@@ -2,12 +2,15 @@
 
 import datetime
 import json
+import logging
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from fintl.etl.common.schemas import BALANCE_SCHEMA, BalanceInfo
 from fintl.etl.io.files.balances import (
+    load_balances,
     merge_balances,
     store_balance,
     update_balances_history,
@@ -118,10 +121,101 @@ def test_merge_balances_no_existing_history(tmp_path: Path):
 
     merged, delta = merge_balances(parser_dir, parsed_dir, files)
 
+    assert merged is not None
     assert len(merged) == 2
     assert delta == 2
     assert merged[0, "date"] == datetime.date(2023, 1, 1)
     assert merged[1, "date"] == datetime.date(2023, 1, 2)
+
+
+def test_load_balances_skips_missing_parquet(tmp_path: Path, caplog: pytest.LogCaptureFixture):
+    """Tests that load_balances skips missing files and logs a warning."""
+    caplog.set_level(logging.WARNING, logger="fintl.etl.io.files.balances")
+    parsed_dir = tmp_path / "parsed"
+    parsed_dir.mkdir()
+
+    valid_file = Path("valid.csv")
+    _write_balance_parquet(
+        parsed_dir,
+        valid_file,
+        _make_balance(datetime.date(2023, 1, 1)),
+    )
+
+    result = load_balances(parsed_dir, [valid_file, Path("missing.csv")])
+
+    assert len(result) == 1
+    assert len(result[0]) == 1
+    assert any(
+        record.levelno == logging.WARNING and "does not exist" in record.message
+        for record in caplog.records
+    )
+
+
+def test_load_balances_skips_parquet_read_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Tests that load_balances skips files that cannot be read."""
+    caplog.set_level(logging.WARNING, logger="fintl.etl.io.files.balances")
+    parsed_dir = tmp_path / "parsed"
+    parsed_dir.mkdir()
+
+    valid_file = Path("valid.csv")
+    failed_file = Path("failed.csv")
+    _write_balance_parquet(
+        parsed_dir,
+        valid_file,
+        _make_balance(datetime.date(2023, 1, 1)),
+    )
+    _write_balance_parquet(
+        parsed_dir,
+        failed_file,
+        _make_balance(datetime.date(2023, 1, 2)),
+    )
+
+    original_read_parquet = pl.read_parquet
+
+    def read_parquet(path: Path, *args, **kwargs) -> pl.DataFrame:
+        if path.name == "failed-balance.parquet":
+            raise pl.exceptions.ComputeError("invalid parquet")
+        return original_read_parquet(path, *args, **kwargs)
+
+    monkeypatch.setattr(pl, "read_parquet", read_parquet)
+    result = load_balances(parsed_dir, [valid_file, failed_file])
+
+    assert len(result) == 1
+    assert len(result[0]) == 1
+    assert any(
+        record.levelno == logging.WARNING
+        and "Failed to read" in record.message
+        and "invalid parquet" in record.message
+        for record in caplog.records
+    )
+
+
+def test_merge_balances_returns_none_when_no_files_are_loadable(tmp_path: Path):
+    """Tests that merge_balances returns no data when generated files are missing."""
+    parser_dir = tmp_path / "parser"
+    parser_dir.mkdir()
+    parsed_dir = tmp_path / "parsed"
+    parsed_dir.mkdir()
+
+    merged, delta = merge_balances(parser_dir, parsed_dir, [Path("missing.csv")])
+
+    assert merged is None
+    assert delta == 0
+
+
+def test_update_balances_history_skips_missing_files(tmp_path: Path):
+    """Tests that missing balance files do not create or overwrite history."""
+    parser_dir = tmp_path / "parser"
+    parser_dir.mkdir()
+    parsed_dir = tmp_path / "parsed"
+    parsed_dir.mkdir()
+
+    update_balances_history(parser_dir, parsed_dir, [Path("missing.csv")])
+
+    assert not (parser_dir / "balances.parquet").exists()
+    assert not (parser_dir / "balances.xlsx").exists()
 
 
 def test_merge_balances_with_existing_history(tmp_path: Path):
@@ -146,6 +240,7 @@ def test_merge_balances_with_existing_history(tmp_path: Path):
 
     merged, delta = merge_balances(parser_dir, parsed_dir, files)
 
+    assert merged is not None
     assert len(merged) == 2
     assert delta == 1
     assert merged[0, "date"] == datetime.date(2022, 12, 31)
@@ -171,6 +266,7 @@ def test_merge_balances_deduplicates(tmp_path: Path):
 
     merged, delta = merge_balances(parser_dir, parsed_dir, files)
 
+    assert merged is not None
     # Should be deduplicated, so only 1 row remains
     assert len(merged) == 1
     assert delta == 0

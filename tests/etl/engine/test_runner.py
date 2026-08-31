@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from rich.console import Console
 
 from fintl.common import Case, Config, Provider, Sources
 from fintl.common.logging import Logging
@@ -196,6 +197,43 @@ def test_run_service_calls_parsers_in_precedence_order(tmp_path: Path, logger_co
     assert call_order == ["giro0", "giro202312"]
 
 
+def test_run_service_logs_and_prints_parser_error_then_continues(
+    tmp_path: Path, logger_config_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """Test that parser errors are reported and do not stop later parsers."""
+    failed_run = MagicMock(side_effect=RuntimeError("parser exploded"))
+    succeeding_run = MagicMock()
+    failed_spec = ParserSpec(
+        case=Case(provider="dkb", service="giro", parser="giro0"),
+        applies=MagicMock(return_value=True),
+        run=failed_run,
+    )
+    succeeding_spec = ParserSpec(
+        case=Case(provider="dkb", service="giro", parser="giro202312"),
+        applies=MagicMock(return_value=True),
+        run=succeeding_run,
+        precedence=20,
+    )
+    console = MagicMock(spec=Console)
+    sources = Sources(dkb=Provider(giro=tmp_path))
+    config = _config(tmp_path, sources, logger_config_path)
+
+    with (
+        patch.object(runner, "ALL_PARSERS", [failed_spec, succeeding_spec]),
+        patch.object(runner, "_get_source_files", return_value=[]),
+        caplog.at_level("ERROR", logger=runner.logger.name),
+    ):
+        runner.run_service(config, "dkb", "giro", console)
+
+    failed_run.assert_called_once_with(config)
+    succeeding_run.assert_called_once_with(config)
+    assert "Parser failed for provider=dkb, service=giro, spec=giro0; continuing." in caplog.text
+    assert "parser exploded" in caplog.text
+    console.print.assert_called_once_with(
+        "[bold red]Parser failed for dkb -> giro -> giro0; continuing.[/bold red]"
+    )
+
+
 def test_run_service_raises_on_overlap(tmp_path: Path, logger_config_path: Path):
     """Test that run_service raises ValueError when parsers claim overlapping files."""
     shared_file = tmp_path / "shared.csv"
@@ -258,7 +296,9 @@ def test_run_provider_skips_services_with_no_path(tmp_path: Path, logger_config_
         runner.run_provider(config, "dkb")
 
     # only "giro" should be dispatched, not tagesgeld/credit/festgeld
-    mock_run_service.assert_called_once_with(config, "dkb", "giro")
+    mock_run_service.assert_called_once()
+    assert mock_run_service.call_args.args[:3] == (config, "dkb", "giro")
+    assert isinstance(mock_run_service.call_args.args[3], Console)
 
 
 def test_run_provider_calls_run_service_for_each_enabled_service(
