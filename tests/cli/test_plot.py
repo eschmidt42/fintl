@@ -8,13 +8,11 @@ import polars as pl
 import pytest
 from typer.testing import CliRunner
 
-from fintl.cli.commands.plot import helper
+from fintl.cli.commands.plot import calc, helper
+from fintl.cli.commands.plot.calc import calc_month_means, calc_predictions
+from fintl.cli.commands.plot.draw import draw_predictions, draw_raw_amounts
 from fintl.cli.commands.plot.helper import (
-    calc_month_means,
-    calc_predictions,
     display_plot,
-    draw_predictions,
-    draw_raw_amounts,
     load_data,
 )
 from fintl.cli.main import app
@@ -117,7 +115,7 @@ def test_calc_predictions_skips_short_histories_and_builds_forecast(
     )
     fitted_model = MagicMock(get_forecast=MagicMock(return_value=forecast))
     sarimax = MagicMock(return_value=MagicMock(fit=MagicMock(return_value=fitted_model)))
-    monkeypatch.setattr(helper.sm.tsa, "SARIMAX", sarimax)
+    monkeypatch.setattr(calc.sm.tsa, "SARIMAX", sarimax)
 
     result = calc_predictions(
         month_means,

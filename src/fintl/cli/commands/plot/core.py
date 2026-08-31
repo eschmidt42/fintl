@@ -5,12 +5,10 @@ from typing import Annotated, Optional
 
 import typer
 
+from fintl.cli.commands.plot.calc import calc_month_means, calc_predictions
+from fintl.cli.commands.plot.draw import draw_predictions, draw_raw_amounts
 from fintl.cli.commands.plot.helper import (
-    calc_month_means,
-    calc_predictions,
     display_plot,
-    draw_predictions,
-    draw_raw_amounts,
     load_data,
 )
 from fintl.common import Config
