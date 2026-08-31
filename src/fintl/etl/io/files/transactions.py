@@ -133,7 +133,9 @@ def merge_transactions(
     newly_parsed_transactions = load_transactions(parsed_dir, new_files_to_parse)
 
     if len(newly_parsed_transactions) == 0:
-        logger.warning(f"{len(newly_parsed_transactions)=:_}, returning empty.")
+        logger.warning(
+            f"There were no new transaction items loaded, i.e. {len(newly_parsed_transactions)=:_}."
+        )
         return None, 0
 
     find_common_columns(newly_parsed_transactions)
