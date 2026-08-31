@@ -436,6 +436,48 @@ def test_load_transactions_skips_missing_parquet(tmp_path: Path, caplog: pytest.
     assert "WARNING" in caplog.text
 
 
+def test_load_transactions_skips_parquet_read_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Test that load_transactions skips files that cannot be read."""
+    parsed_dir = tmp_path / "parsed"
+    parsed_dir.mkdir()
+
+    valid_file = Path("valid.csv")
+    failed_file = Path("failed.csv")
+    df = pl.DataFrame(
+        {
+            "date": ["2023-01-01"],
+            "amount": [100.0],
+            "hash": [123],
+            "source": ["src"],
+            "recipient": ["rec"],
+            "description": ["desc"],
+            "provider": ["prov"],
+            "service": ["svc"],
+            "parser": ["pars"],
+            "file": ["fi"],
+        }
+    )
+    df.write_parquet(parsed_dir / "valid-transactions.parquet")
+    df.write_parquet(parsed_dir / "failed-transactions.parquet")
+
+    original_read_parquet = pl.read_parquet
+
+    def read_parquet(path: Path, *args, **kwargs) -> pl.DataFrame:
+        if path.name == "failed-transactions.parquet":
+            raise pl.exceptions.ComputeError("invalid parquet")
+        return original_read_parquet(path, *args, **kwargs)
+
+    monkeypatch.setattr(pl, "read_parquet", read_parquet)
+    result = load_transactions(parsed_dir, [valid_file, failed_file])
+
+    assert len(result) == 1
+    assert result[0].equals(df)
+    assert "Failed to read" in caplog.text
+    assert "invalid parquet" in caplog.text
+
+
 def test_load_transactions_returns_empty_list_when_no_files(tmp_path: Path):
     """Test that load_transactions returns an empty list when no files are provided."""
     parsed_dir = tmp_path / "parsed"

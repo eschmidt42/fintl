@@ -102,7 +102,12 @@ def load_transactions(parsed_dir: Path, new_files_to_parse: list[Path]) -> list[
             logger.warning(f"{parquet_file_path=} does not exist, skipping.")
             continue
 
-        transaction_df = pl.read_parquet(parquet_file_path)
+        try:
+            transaction_df = pl.read_parquet(parquet_file_path)
+        except (OSError, pl.exceptions.PolarsError) as error:
+            logger.warning(f"Failed to read {parquet_file_path=}: {error}, skipping.")
+            continue
+
         newly_parsed_transactions.append(transaction_df)
         logger.debug(f"Processing {parquet_file_path}: Shape = {transaction_df.shape}")
 

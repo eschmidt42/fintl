@@ -147,6 +147,42 @@ def test_load_balances_skips_missing_parquet(tmp_path: Path, caplog: pytest.LogC
     assert "WARNING" in caplog.text
 
 
+def test_load_balances_skips_parquet_read_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Tests that load_balances skips files that cannot be read."""
+    parsed_dir = tmp_path / "parsed"
+    parsed_dir.mkdir()
+
+    valid_file = Path("valid.csv")
+    failed_file = Path("failed.csv")
+    _write_balance_parquet(
+        parsed_dir,
+        valid_file,
+        _make_balance(datetime.date(2023, 1, 1)),
+    )
+    _write_balance_parquet(
+        parsed_dir,
+        failed_file,
+        _make_balance(datetime.date(2023, 1, 2)),
+    )
+
+    original_read_parquet = pl.read_parquet
+
+    def read_parquet(path: Path, *args, **kwargs) -> pl.DataFrame:
+        if path.name == "failed-balance.parquet":
+            raise pl.exceptions.ComputeError("invalid parquet")
+        return original_read_parquet(path, *args, **kwargs)
+
+    monkeypatch.setattr(pl, "read_parquet", read_parquet)
+    result = load_balances(parsed_dir, [valid_file, failed_file])
+
+    assert len(result) == 1
+    assert len(result[0]) == 1
+    assert "Failed to read" in caplog.text
+    assert "invalid parquet" in caplog.text
+
+
 def test_merge_balances_returns_none_when_no_files_are_loadable(tmp_path: Path):
     """Tests that merge_balances returns no data when generated files are missing."""
     parser_dir = tmp_path / "parser"

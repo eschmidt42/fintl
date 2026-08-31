@@ -38,7 +38,12 @@ def load_balances(parsed_dir: Path, new_files_to_parse: list[Path]) -> list[pl.D
             logger.warning(f"{parquet_file_path=} does not exist, skipping.")
             continue
 
-        balance_df = pl.read_parquet(parquet_file_path)
+        try:
+            balance_df = pl.read_parquet(parquet_file_path)
+        except (OSError, pl.exceptions.PolarsError) as error:
+            logger.warning(f"Failed to read {parquet_file_path=}: {error}, skipping.")
+            continue
+
         newly_parsed_balances.append(balance_df)
         logger.debug(f"Processing {parquet_file_path}: Shape = {balance_df.shape}")
 
