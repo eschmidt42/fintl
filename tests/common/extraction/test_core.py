@@ -9,13 +9,12 @@ from openai.types import CompletionUsage
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.completion_usage import CompletionTokensDetails
 
-from fintl.common.extraction.context import BalanceInfoExtract
+from fintl.common.extraction.context import SYSTEM_PROMPT, BalanceInfoExtract
 from fintl.common.extraction.core import _get_extraction
 from fintl.common.extraction.errors import InferenceError
 
 MODEL = "fake-model"
 TIMEOUT = 30
-SYSTEM_PROMPT = "You are a Scraper for data contained in a screenshot of a broker web app."
 
 
 def _make_completion() -> ChatCompletion:

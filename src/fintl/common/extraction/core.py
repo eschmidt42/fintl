@@ -39,7 +39,9 @@ def _get_extraction(
         return cast(ExtractionResponse, res)
     except InstructorRetryException as exc:
         last = exc.failed_attempts[-1].exception if exc.failed_attempts else exc
-        raise InferenceError(f"Inference failed for {file_path.name}: {last}") from None
+        raise InferenceError(
+            f"Inference failed for {file_path.name}: {last} {model=}, {extraction_client=})"
+        ) from None
 
 
 class ExtractionModel(ABC):
