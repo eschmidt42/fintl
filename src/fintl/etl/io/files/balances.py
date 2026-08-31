@@ -69,7 +69,9 @@ def merge_balances(
     all_balances_file = parser_dir / "balances.parquet"
     newly_parsed_balances = load_balances(parsed_dir, new_files_to_parse)
     if len(newly_parsed_balances) == 0:
-        logger.warning(f"{len(newly_parsed_balances)=:_}, returning empty.")
+        logger.warning(
+            f"There were no enw balance items loaded, i.e. {len(newly_parsed_balances)=:_}."
+        )
         return None, 0
 
     newly_parsed_balances = pl.concat(newly_parsed_balances)
