@@ -19,9 +19,35 @@ from fintl.etl.io.files.filenames import (
 logger = logging.getLogger(__name__)
 
 
+def load_balances(parsed_dir: Path, new_files_to_parse: list[Path]) -> list[pl.DataFrame]:
+    """Loads newly parsed balance DataFrames from Parquet files.
+
+    Args:
+        parsed_dir: The directory containing the parsed Parquet files.
+        new_files_to_parse: A list of paths to the new source files.
+
+    Returns:
+        A list of Polars DataFrames containing the newly loaded balances.
+    """
+    newly_parsed_balances: list[pl.DataFrame] = []
+
+    for file_path in new_files_to_parse:
+        parquet_file_path = parsed_dir / balance_name_to_parquet(file_path)
+
+        if not parquet_file_path.exists():
+            logger.warning(f"{parquet_file_path=} does not exist, skipping.")
+            continue
+
+        balance_df = pl.read_parquet(parquet_file_path)
+        newly_parsed_balances.append(balance_df)
+        logger.debug(f"Processing {parquet_file_path}: Shape = {balance_df.shape}")
+
+    return newly_parsed_balances
+
+
 def merge_balances(
     parser_dir: Path, parsed_dir: Path, new_files_to_parse: list[Path]
-) -> tuple[pl.DataFrame, int]:
+) -> tuple[pl.DataFrame | None, int]:
     """Loads and concatenates new balance records with existing history.
 
     Args:
@@ -31,14 +57,16 @@ def merge_balances(
 
     Returns:
         A tuple containing:
-            - The combined DataFrame of old and new balance records.
+            - The combined DataFrame of old and new balance records, or None if no
+              new data is available.
             - The count of newly added balance records.
     """
     all_balances_file = parser_dir / "balances.parquet"
-    newly_parsed_balances = [
-        pl.read_parquet(parsed_dir / balance_name_to_parquet(file_path))
-        for file_path in new_files_to_parse
-    ]
+    newly_parsed_balances = load_balances(parsed_dir, new_files_to_parse)
+    if len(newly_parsed_balances) == 0:
+        logger.warning(f"{len(newly_parsed_balances)=:_}, returning empty.")
+        return None, 0
+
     newly_parsed_balances = pl.concat(newly_parsed_balances)
 
     n_old = 0
@@ -69,6 +97,10 @@ def update_balances_history(
         new_files_to_parse: List of paths to new balance files to process.
     """
     balances, n_new_lines = merge_balances(parser_dir, parsed_dir, new_files_to_parse)
+    if balances is None:
+        logger.warning(f"{balances=}, skipping writing to disk.")
+        return
+
     balances = balances.sort(TransactionColumnsEnum.date.value, descending=False)
 
     balances_parquet_path = parser_dir / "balances.parquet"
