@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import logging
 from pathlib import Path
 
 import polars as pl
@@ -129,6 +130,7 @@ def test_merge_balances_no_existing_history(tmp_path: Path):
 
 def test_load_balances_skips_missing_parquet(tmp_path: Path, caplog: pytest.LogCaptureFixture):
     """Tests that load_balances skips missing files and logs a warning."""
+    caplog.set_level(logging.WARNING, logger="fintl.etl.io.files.balances")
     parsed_dir = tmp_path / "parsed"
     parsed_dir.mkdir()
 
@@ -143,14 +145,17 @@ def test_load_balances_skips_missing_parquet(tmp_path: Path, caplog: pytest.LogC
 
     assert len(result) == 1
     assert len(result[0]) == 1
-    assert "does not exist" in caplog.text
-    assert "WARNING" in caplog.text
+    assert any(
+        record.levelno == logging.WARNING and "does not exist" in record.message
+        for record in caplog.records
+    )
 
 
 def test_load_balances_skips_parquet_read_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """Tests that load_balances skips files that cannot be read."""
+    caplog.set_level(logging.WARNING, logger="fintl.etl.io.files.balances")
     parsed_dir = tmp_path / "parsed"
     parsed_dir.mkdir()
 
@@ -179,8 +184,12 @@ def test_load_balances_skips_parquet_read_failure(
 
     assert len(result) == 1
     assert len(result[0]) == 1
-    assert "Failed to read" in caplog.text
-    assert "invalid parquet" in caplog.text
+    assert any(
+        record.levelno == logging.WARNING
+        and "Failed to read" in record.message
+        and "invalid parquet" in record.message
+        for record in caplog.records
+    )
 
 
 def test_merge_balances_returns_none_when_no_files_are_loadable(tmp_path: Path):
