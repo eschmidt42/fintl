@@ -12,7 +12,7 @@ from openai.types.completion_usage import CompletionTokensDetails
 
 from fintl.common import Config, OllamaConfig, Provider, Sources
 from fintl.common.extraction import ModelProvider, availability, core, ollama
-from fintl.common.extraction.context import _BalanceInfoExtract
+from fintl.common.extraction.context import BalanceInfoExtract
 from fintl.common.extraction.errors import OllamaModelUnavailableError, OllamaUnavailableError
 from fintl.common.logging import Logging
 from fintl.etl.io.files.filenames import (
@@ -58,7 +58,7 @@ def get_time(path: Path) -> float:
 @pytest.fixture
 def mock_lm_extraction(monkeypatch: pytest.MonkeyPatch):
     """Provide patched Ollama extraction helpers that return a fixed mock result."""
-    mock_extraction = _BalanceInfoExtract(amount=MOCK_AMOUNT, currency=MOCK_CURRENCY)
+    mock_extraction = BalanceInfoExtract(amount=MOCK_AMOUNT, currency=MOCK_CURRENCY)
     mock_completion = ChatCompletion.model_construct(
         id="test-id",
         choices=[],

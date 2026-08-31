@@ -12,7 +12,7 @@ from openai.types.completion_usage import CompletionTokensDetails
 
 from fintl.common.extraction import ollama
 from fintl.common.extraction.context import (
-    _BalanceInfoExtract,
+    BalanceInfoExtract,
 )
 from fintl.common.extraction.core import _get_extraction
 from fintl.common.extraction.errors import (
@@ -44,8 +44,8 @@ def _make_completion() -> ChatCompletion:
     )
 
 
-def _make_extraction() -> _BalanceInfoExtract:
-    return _BalanceInfoExtract(amount=1234.56, currency="EUR")
+def _make_extraction() -> BalanceInfoExtract:
+    return BalanceInfoExtract(amount=1234.56, currency="EUR")
 
 
 @pytest.mark.parametrize(
@@ -65,7 +65,7 @@ def test_v1ify(url: str, suffix: str, expected: str):
 
 def test_get_extraction_calls_client_create(tmp_path: Path, png_fname: str):
     """_get_extraction must call extraction_client.create and return its result."""
-    extraction = _BalanceInfoExtract(amount=1234.56, currency="EUR")
+    extraction = BalanceInfoExtract(amount=1234.56, currency="EUR")
     completion = ChatCompletion.model_construct(
         id="test-id",
         choices=[],

@@ -10,7 +10,7 @@ from openai.types import CompletionUsage
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.completion_usage import CompletionTokensDetails
 
-from fintl.common.extraction.context import _BalanceInfoExtract
+from fintl.common.extraction.context import BalanceInfoExtract
 from fintl.common.extraction.core import _get_extraction
 from fintl.common.extraction.errors import InferenceError
 from fintl.common.extraction.llama_swap import (
@@ -43,8 +43,8 @@ def _make_completion() -> ChatCompletion:
     )
 
 
-def _make_extraction() -> _BalanceInfoExtract:
-    return _BalanceInfoExtract(amount=1234.56, currency="EUR")
+def _make_extraction() -> BalanceInfoExtract:
+    return BalanceInfoExtract(amount=1234.56, currency="EUR")
 
 
 @pytest.fixture
@@ -187,7 +187,7 @@ def test_get_extraction_returns_client_result(tmp_path: Path):
     assert result is expected
     mock_client.create_with_completion.assert_called_once_with(
         model=MODEL,
-        response_model=_BalanceInfoExtract,
+        response_model=BalanceInfoExtract,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": ["Please extract data from the following image", "image"]},

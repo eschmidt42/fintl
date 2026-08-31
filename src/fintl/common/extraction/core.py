@@ -8,7 +8,7 @@ from typing import cast
 import instructor
 from instructor.processing.multimodal import Image as InstructorImage
 
-from fintl.common.extraction.context import _SYSTEM_PROMPT, _BalanceInfoExtract
+from fintl.common.extraction.context import SYSTEM_PROMPT, BalanceInfoExtract
 from fintl.common.extraction.errors import InferenceError
 from fintl.common.extraction.types import ExtractionOutput, ExtractionResponse
 
@@ -22,9 +22,9 @@ def _get_extraction(
     try:
         res = extraction_client.create_with_completion(  # type: ignore
             model=model,
-            response_model=_BalanceInfoExtract,
+            response_model=BalanceInfoExtract,
             messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {
                     "role": "user",
                     "content": [
