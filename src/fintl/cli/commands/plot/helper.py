@@ -12,7 +12,17 @@ import typer
 from fintl.common import Config
 
 
-def display_plot(save: Path | None, chart: alt.Chart):
+def load_data(config: Config) -> pl.DataFrame:
+    """Load the all-balances parquet file and add a display name column."""
+    balances = pl.read_parquet(config.target_dir / "all-balances.parquet")
+    balances = balances.with_columns(
+        name=pl.col("provider").str.to_lowercase() + " " + pl.col("service").str.to_lowercase()
+    )
+
+    return balances
+
+
+def display_plot(save: Path | None, chart: alt.TopLevelMixin) -> None:
     """Save the chart to disk or open it in a temporary browser tab."""
     if save is not None:
         chart.save(str(save))
@@ -23,29 +33,3 @@ def display_plot(save: Path | None, chart: alt.Chart):
             tmp = pathlib.Path(f.name)
         chart.save(str(tmp))
         webbrowser.open(tmp.resolve().as_uri())
-
-
-def draw_plot(balances: pl.DataFrame, y_min: float = 0, y_max: float = 250_000) -> alt.Chart:
-    """Build an Altair scatter chart of balances over time."""
-    chart = (
-        balances.plot.scatter(x="date", y="amount", color="name")
-        .properties(width=600, height=400)
-        .encode(
-            y=alt.Y(
-                "amount:Q",
-                scale=alt.Scale(domain=[y_min, y_max]),
-            )
-        )
-        .interactive()
-    )
-    return chart
-
-
-def load_data(config: Config) -> pl.DataFrame:
-    """Load the all-balances parquet file and add a display name column."""
-    balances = pl.read_parquet(config.target_dir / "all-balances.parquet")
-    balances = balances.with_columns(
-        name=pl.col("provider").str.to_lowercase() + " " + pl.col("service").str.to_lowercase()
-    )
-
-    return balances

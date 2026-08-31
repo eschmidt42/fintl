@@ -81,7 +81,7 @@ Available commands:
 - `fintl etl` — run the accounts ETL pipeline
 - `fintl store` — route downloaded bank files into the ETL input directories
 - `fintl search` — interactive transaction search
-- `fintl plot` — open a balances chart in your browser
+- `fintl plot` — open a balances, delta and prediction chart in your browser
 
 You can inspect the live CLI help with:
 
