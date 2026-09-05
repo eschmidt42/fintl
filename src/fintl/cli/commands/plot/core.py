@@ -7,10 +7,7 @@ import typer
 
 from fintl.cli.commands.plot.calc import calc_month_means, calc_predictions
 from fintl.cli.commands.plot.draw import draw_predictions, draw_raw_amounts
-from fintl.cli.commands.plot.helper import (
-    display_plot,
-    load_data,
-)
+from fintl.cli.commands.plot.helper import display_plot, load_data, resolve_html_path, save_chart
 from fintl.common import Config
 
 
@@ -59,5 +56,8 @@ def run(
         save_dir.mkdir(parents=True, exist_ok=True)
 
     for filename, chart in charts:
-        output_path = save_dir / filename if save_dir is not None else None
-        display_plot(output_path, chart, quiet=quiet)
+        output_path = resolve_html_path(save_dir, filename)
+        save_chart(chart, output_path)
+        if quiet:
+            continue
+        display_plot(output_path)
