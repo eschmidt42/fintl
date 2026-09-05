@@ -22,14 +22,23 @@ def load_data(config: Config) -> pl.DataFrame:
     return balances
 
 
-def display_plot(save: Path | None, chart: alt.TopLevelMixin) -> None:
-    """Save the chart to disk or open it in a temporary browser tab."""
-    if save is not None:
-        chart.save(str(save))
-        typer.echo(f"Chart saved to {save}")
-        webbrowser.open(save.resolve().as_uri())
-    else:
+def resolve_html_path(save_dir: Path | None, filename: str) -> Path:
+    """Resolve a named output path or create a temporary HTML path."""
+    output_path = save_dir / filename if save_dir is not None else None
+
+    if output_path is None:
         with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as f:
-            tmp = pathlib.Path(f.name)
-        chart.save(str(tmp))
-        webbrowser.open(tmp.resolve().as_uri())
+            output_path = pathlib.Path(f.name)
+
+    return output_path
+
+
+def save_chart(chart: alt.TopLevelMixin, output_path: Path):
+    """Save a chart to an HTML path and report the destination."""
+    chart.save(str(output_path))
+    typer.echo(f"Chart saved to {output_path}")
+
+
+def display_plot(output_path: Path) -> None:
+    """Open the chart contained in the html file in `output_path` in a browser tab."""
+    webbrowser.open(output_path.resolve().as_uri())

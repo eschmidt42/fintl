@@ -14,6 +14,8 @@ from fintl.cli.commands.plot.draw import draw_predictions, draw_raw_amounts
 from fintl.cli.commands.plot.helper import (
     display_plot,
     load_data,
+    resolve_html_path,
+    save_chart,
 )
 from fintl.cli.main import app
 from fintl.common import Provider, Sources
@@ -136,41 +138,53 @@ def test_calc_predictions_skips_short_histories_and_builds_forecast(
     assert result.filter(pl.col("mean").is_not_null())["mean"].to_list() == [160.0, 170.0]
 
 
-def test_display_plot_saves_and_opens_existing_path(
+def test_resolve_html_path_uses_save_directory(tmp_path: Path) -> None:
+    """Test that an explicit save directory produces the named output path."""
+    save_path = tmp_path / "chart.html"
+
+    assert resolve_html_path(tmp_path, "chart.html") == save_path
+
+
+def test_resolve_html_path_uses_temporary_html_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test saving a chart opens the resolved output path."""
+    """Test that no save directory produces a temporary HTML path."""
+    temporary_file = MagicMock()
+    temporary_file.name = str(tmp_path / "temporary.html")
+    temporary_file.__enter__.return_value = temporary_file
+    named_temporary_file = MagicMock(return_value=temporary_file)
+    monkeypatch.setattr(helper.tempfile, "NamedTemporaryFile", named_temporary_file)
+
+    output_path = resolve_html_path(None, "chart.html")
+
+    assert output_path == Path(temporary_file.name)
+    named_temporary_file.assert_called_once_with(suffix=".html", delete=False)
+
+
+def test_save_chart_saves_chart_and_reports_path(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that chart saving delegates to Altair and reports the destination."""
     chart = MagicMock()
+    save_path = tmp_path / "chart.html"
+
+    save_chart(chart, save_path)
+
+    chart.save.assert_called_once_with(str(save_path))
+    assert capsys.readouterr().out == f"Chart saved to {save_path}\n"
+
+
+def test_display_plot_opens_existing_html_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that display_plot opens the resolved output path."""
     save_path = tmp_path / "chart.html"
     open_browser = MagicMock()
     monkeypatch.setattr(helper.webbrowser, "open", open_browser)
 
-    display_plot(save_path, chart)
+    display_plot(save_path)
 
-    chart.save.assert_called_once_with(str(save_path))
     open_browser.assert_called_once_with(save_path.resolve().as_uri())
-
-
-def test_display_plot_uses_temporary_path_when_not_saving(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test opening a chart without a save path uses a temporary HTML file."""
-    chart = MagicMock()
-    temporary_file = MagicMock(name=str(tmp_path / "temporary.html"))
-    temporary_file.name = str(tmp_path / "temporary.html")
-    temporary_file.__enter__.return_value = temporary_file
-    open_browser = MagicMock()
-    monkeypatch.setattr(
-        helper.tempfile,
-        "NamedTemporaryFile",
-        MagicMock(return_value=temporary_file),
-    )
-    monkeypatch.setattr(helper.webbrowser, "open", open_browser)
-
-    display_plot(None, chart)
-
-    chart.save.assert_called_once_with(temporary_file.name)
-    open_browser.assert_called_once_with(Path(temporary_file.name).resolve().as_uri())
 
 
 def test_draw_predictions_has_three_layers_and_axis_bounds() -> None:
@@ -193,24 +207,52 @@ def test_draw_predictions_has_three_layers_and_axis_bounds() -> None:
     assert chart_dict["layer"][0]["encoding"]["y"]["scale"]["domain"] == [-100.0, 500.0]
 
 
-def test_run_save_writes_html(
+def test_run_save_dir_writes_named_html_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
-    """Test that fintl plot --save writes an HTML file and opens the browser."""
+    """Test that fintl plot --save-dir writes all named HTML files."""
     config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
     mock_open = MagicMock()
     monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
 
-    save_path = tmp_path / "chart.html"
-    result = cli_runner.invoke(app, ["plot", "--save", str(save_path)])
+    save_dir = tmp_path / "charts" / "nested"
+    result = cli_runner.invoke(app, ["plot", "--save-dir", str(save_dir)])
 
     assert result.exit_code == 0, result.output
-    assert save_path.exists()
+    assert {path.name for path in save_dir.iterdir()} == {
+        "balances.html",
+        "monthly-deltas.html",
+        "predictions.html",
+    }
     assert mock_open.call_count == 3
+
+
+def test_run_quiet_suppresses_browser_opening(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
+) -> None:
+    """Test that quiet mode saves charts without opening the browser."""
+    config = _plot_config(tmp_path, logger_config_path)
+    monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
+    mock_open = MagicMock()
+    monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
+
+    save_dir = tmp_path / "charts"
+    result = cli_runner.invoke(app, ["plot", "--save-dir", str(save_dir), "--quiet"])
+
+    assert result.exit_code == 0, result.output
+    assert {path.name for path in save_dir.iterdir()} == {
+        "balances.html",
+        "monthly-deltas.html",
+        "predictions.html",
+    }
+    mock_open.assert_not_called()
 
 
 def test_run_without_save_opens_browser(
@@ -229,6 +271,24 @@ def test_run_without_save_opens_browser(
 
     assert result.exit_code == 0, result.output
     assert mock_open.call_count == 3
+
+
+def test_run_quiet_without_save_does_not_open_browser(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
+) -> None:
+    """Test that quiet mode also suppresses temporary browser charts."""
+    config = _plot_config(tmp_path, logger_config_path)
+    monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
+    mock_open = MagicMock()
+    monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
+
+    result = cli_runner.invoke(app, ["plot", "--quiet"])
+
+    assert result.exit_code == 0, result.output
+    mock_open.assert_not_called()
 
 
 def test_draw_plot_uses_default_y_axis_bounds() -> None:
@@ -255,18 +315,19 @@ def test_run_accepts_custom_y_axis_bounds(
     """Test that custom y-axis bounds are passed to the chart."""
     config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
-    display_mock = MagicMock()
-    monkeypatch.setattr("fintl.cli.commands.plot.core.display_plot", display_mock)
+    save_mock = MagicMock()
+    monkeypatch.setattr("fintl.cli.commands.plot.core.save_chart", save_mock)
+    monkeypatch.setattr("fintl.cli.commands.plot.core.display_plot", MagicMock())
 
-    save_path = tmp_path / "chart.html"
+    save_dir = tmp_path / "charts"
     result = cli_runner.invoke(
         app,
-        ["plot", "--save", str(save_path), "--y-min", "-100.5", "--y-max", "5000.25"],
+        ["plot", "--save-dir", str(save_dir), "--y-min", "-100.5", "--y-max", "5000.25"],
     )
 
     assert result.exit_code == 0, result.output
-    assert display_mock.call_count == 3
-    first_chart = display_mock.call_args_list[0].args[1]
+    assert save_mock.call_count == 3
+    first_chart = save_mock.call_args_list[0].args[0]
     assert first_chart.to_dict()["encoding"]["y"]["scale"]["domain"] == [-100.5, 5000.25]
 
 
