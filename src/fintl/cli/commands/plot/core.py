@@ -15,10 +15,14 @@ from fintl.common import Config
 
 
 def run(
-    save: Annotated[
+    save_dir: Annotated[
         Optional[pathlib.Path],
-        typer.Option("--save", help="Save chart as HTML to this path"),
+        typer.Option("--save-dir", help="Save charts as HTML files in this directory"),
     ] = None,
+    quiet: Annotated[
+        bool,
+        typer.Option("--quiet", help="Do not open charts in the browser"),
+    ] = False,
     y_min: Annotated[
         float,
         typer.Option("--y-min", help="Lower y-axis limit"),
@@ -37,14 +41,23 @@ def run(
     balances = load_data(config)
 
     raw_balance_chart = draw_raw_amounts(balances, y_min=y_min, y_max=y_max)
-    display_plot(save, raw_balance_chart)
 
     month_means = calc_month_means(balances)
     month_mean_diffs_chart = draw_raw_amounts(
         month_means.drop("amount").rename({"delta": "amount"})
     )
-    display_plot(save, month_mean_diffs_chart)
 
     predictions = calc_predictions(month_means)
     predictions_chart = draw_predictions(predictions)
-    display_plot(save, predictions_chart)
+
+    charts = (
+        ("balances.html", raw_balance_chart),
+        ("monthly-deltas.html", month_mean_diffs_chart),
+        ("predictions.html", predictions_chart),
+    )
+    if save_dir is not None:
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+    for filename, chart in charts:
+        output_path = save_dir / filename if save_dir is not None else None
+        display_plot(output_path, chart, quiet=quiet)

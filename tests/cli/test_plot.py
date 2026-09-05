@@ -151,6 +151,21 @@ def test_display_plot_saves_and_opens_existing_path(
     open_browser.assert_called_once_with(save_path.resolve().as_uri())
 
 
+def test_display_plot_saves_without_opening_when_quiet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test saving a chart without opening a browser when quiet."""
+    chart = MagicMock()
+    save_path = tmp_path / "chart.html"
+    open_browser = MagicMock()
+    monkeypatch.setattr(helper.webbrowser, "open", open_browser)
+
+    display_plot(save_path, chart, quiet=True)
+
+    chart.save.assert_called_once_with(str(save_path))
+    open_browser.assert_not_called()
+
+
 def test_display_plot_uses_temporary_path_when_not_saving(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -173,6 +188,20 @@ def test_display_plot_uses_temporary_path_when_not_saving(
     open_browser.assert_called_once_with(Path(temporary_file.name).resolve().as_uri())
 
 
+def test_display_plot_does_not_create_temporary_file_when_quiet(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test quiet mode does not create a temporary chart without an output path."""
+    chart = MagicMock()
+    open_browser = MagicMock()
+    monkeypatch.setattr(helper.webbrowser, "open", open_browser)
+
+    display_plot(None, chart, quiet=True)
+
+    chart.save.assert_not_called()
+    open_browser.assert_not_called()
+
+
 def test_draw_predictions_has_three_layers_and_axis_bounds() -> None:
     """Test prediction chart layers and configured y-axis bounds."""
     balances = pl.DataFrame(
@@ -193,24 +222,52 @@ def test_draw_predictions_has_three_layers_and_axis_bounds() -> None:
     assert chart_dict["layer"][0]["encoding"]["y"]["scale"]["domain"] == [-100.0, 500.0]
 
 
-def test_run_save_writes_html(
+def test_run_save_dir_writes_named_html_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     cli_runner: CliRunner,
     logger_config_path: Path,
 ):
-    """Test that fintl plot --save writes an HTML file and opens the browser."""
+    """Test that fintl plot --save-dir writes all named HTML files."""
     config = _plot_config(tmp_path, logger_config_path)
     monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
     mock_open = MagicMock()
     monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
 
-    save_path = tmp_path / "chart.html"
-    result = cli_runner.invoke(app, ["plot", "--save", str(save_path)])
+    save_dir = tmp_path / "charts" / "nested"
+    result = cli_runner.invoke(app, ["plot", "--save-dir", str(save_dir)])
 
     assert result.exit_code == 0, result.output
-    assert save_path.exists()
+    assert {path.name for path in save_dir.iterdir()} == {
+        "balances.html",
+        "monthly-deltas.html",
+        "predictions.html",
+    }
     assert mock_open.call_count == 3
+
+
+def test_run_quiet_suppresses_browser_opening(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
+) -> None:
+    """Test that quiet mode saves charts without opening the browser."""
+    config = _plot_config(tmp_path, logger_config_path)
+    monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
+    mock_open = MagicMock()
+    monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
+
+    save_dir = tmp_path / "charts"
+    result = cli_runner.invoke(app, ["plot", "--save-dir", str(save_dir), "--quiet"])
+
+    assert result.exit_code == 0, result.output
+    assert {path.name for path in save_dir.iterdir()} == {
+        "balances.html",
+        "monthly-deltas.html",
+        "predictions.html",
+    }
+    mock_open.assert_not_called()
 
 
 def test_run_without_save_opens_browser(
@@ -229,6 +286,24 @@ def test_run_without_save_opens_browser(
 
     assert result.exit_code == 0, result.output
     assert mock_open.call_count == 3
+
+
+def test_run_quiet_without_save_does_not_open_browser(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cli_runner: CliRunner,
+    logger_config_path: Path,
+) -> None:
+    """Test that quiet mode also suppresses temporary browser charts."""
+    config = _plot_config(tmp_path, logger_config_path)
+    monkeypatch.setattr("fintl.cli.commands.plot.core.Config", lambda: config)
+    mock_open = MagicMock()
+    monkeypatch.setattr("fintl.cli.commands.plot.helper.webbrowser.open", mock_open)
+
+    result = cli_runner.invoke(app, ["plot", "--quiet"])
+
+    assert result.exit_code == 0, result.output
+    mock_open.assert_not_called()
 
 
 def test_draw_plot_uses_default_y_axis_bounds() -> None:
@@ -258,10 +333,10 @@ def test_run_accepts_custom_y_axis_bounds(
     display_mock = MagicMock()
     monkeypatch.setattr("fintl.cli.commands.plot.core.display_plot", display_mock)
 
-    save_path = tmp_path / "chart.html"
+    save_dir = tmp_path / "charts"
     result = cli_runner.invoke(
         app,
-        ["plot", "--save", str(save_path), "--y-min", "-100.5", "--y-max", "5000.25"],
+        ["plot", "--save-dir", str(save_dir), "--y-min", "-100.5", "--y-max", "5000.25"],
     )
 
     assert result.exit_code == 0, result.output

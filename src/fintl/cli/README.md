@@ -235,15 +235,26 @@ Builds a scatter chart of account balances over time and opens it in your defaul
 fintl plot
 ```
 
-To save the chart to a specific HTML file:
+To save the charts to a directory:
 
 ```bash
-fintl plot --save chart.html
+fintl plot --save-dir charts
 ```
 
 The command reads `all-balances.parquet` from `Config.target_dir`.
 
-When `--save` is omitted, the chart is written to a temporary HTML file and opened automatically. When `--save` is provided, the chart is saved to that path and then opened.
+The three charts are saved as `balances.html`, `monthly-deltas.html`, and
+`predictions.html`. The output directory and missing parent directories are
+created automatically. Saved charts are opened automatically; use `--quiet` to
+disable browser opening:
+
+```bash
+fintl plot --save-dir charts --quiet
+```
+
+When `--save-dir` is omitted, each chart is written to a temporary HTML file
+and opened automatically. `--quiet` also suppresses browser opening in this
+mode.
 
 Source: `src/fintl/cli/plot/core.py`
 
