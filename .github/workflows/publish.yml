@@ -4,7 +4,6 @@ name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 # Shared variables
 env:
   UV_VERSION: "0.12.10"
-  PYTHON_VERSION: "3.14"
 
 # only push on tag creation
 on:
@@ -116,6 +115,11 @@ jobs:
     needs: [publish-to-testpypi]
     if: contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc') || contains(github.ref_name, '.dev')
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.13"
+          - "3.14"
     steps:
       - uses: actions/checkout@v6
         with:
@@ -131,7 +135,7 @@ jobs:
           # Install the package from TestPyPI. TestPyPI publication can take a
           # short time to appear on the simple index, so retry with backoff.
           VERSION="${GITHUB_REF_NAME#v}"
-          uv venv --python ${{ env.PYTHON_VERSION }}
+          uv venv --python ${{ matrix.python-version }}
           for attempt in 1 2 3 4 5; do
             if uv pip install \
               --index-url https://test.pypi.org/simple/ \

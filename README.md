@@ -3,7 +3,7 @@
 [![CI](https://github.com/eschmidt42/fintl/actions/workflows/ci.yml/badge.svg)](https://github.com/eschmidt42/fintl/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/eschmidt42/fintl/branch/main/graph/badge.svg?token=FM1L1A7BQ8)](https://codecov.io/gh/eschmidt42/fintl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/)
+[![Python 3.13-3.14](https://img.shields.io/badge/python-3.13--3.14-blue.svg)](https://www.python.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
