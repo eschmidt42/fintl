@@ -39,13 +39,13 @@ jobs:
         run: uv audit --preview-features audit
 
       - name: Install the project
-        run: uv sync --all-extras --dev
+        run: uv sync --frozen --no-default-groups --group test --group quality
 
       - name: Dead code check (vulture)
         run: |
           # Vulture reports unused variables too, but we only want to fail on
           # unused functions/classes (dead code with runtime impact).
-          uv run vulture src --min-confidence 90 > vulture.txt || true
+          uv run --frozen --no-default-groups --group quality vulture src --min-confidence 90 > vulture.txt || true
           matches="$(grep -nE "unused (function|class)" vulture.txt || true)"
           if [ -n "$matches" ]; then
             printf "\nVulture found unused functions/classes:\n\n%s\n" "$matches"
@@ -56,7 +56,7 @@ jobs:
 
       - name: Run tests (with coverage)
         run: |
-          uv run pytest tests --cov --cov-branch --cov-report=xml
+          uv run --frozen --no-default-groups --group test pytest tests --cov --cov-branch --cov-report=xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
