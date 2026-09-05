@@ -12,13 +12,14 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Office/Business :: Financial",
 ]
 authors = [
     { name = "eschmidt42", email = "11818904+eschmidt42@users.noreply.github.com" }
 ]
-requires-python = ">=3.14, <3.15"
+requires-python = ">=3.13, <3.15"
 dependencies = [
     "aiohttp>=3.13.4",
     "altair>=6.0.0",
